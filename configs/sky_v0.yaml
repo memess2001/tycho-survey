@@ -1,0 +1,81 @@
+# Sky v0 of the Tycho survey: small objects (seconds to minutes on one CPU core).
+# Each region is a grid over "knobs". A knob name is a task-config key, or "train.<TrainConfig field>".
+# kind: categorical | ordinal | log | linear.  refine: the scheduler may insert midpoints near boundaries.
+# ri_policy: always (in-situ RI spectroscopy for every object) | followup (RI only by replay when selected) | never
+version: sky-v0
+description: >
+  First sky. Positive controls with known interaction structure (sparse parity, Markov language with planted
+  orders), known phenomena (grokking on modular addition, staged in-context learning, superposition), and a broad
+  parity grid for boundary hunting.
+regions:
+  # ---------------------------------------------------------------- positive controls (always observed with RI)
+  - name: control-parity
+    task: sparse_parity
+    seeds: 5
+    priority: 3.0
+    ri_policy: always
+    ri: {n_probe: 4096, n_points: 30}
+    fixed: {n: 20, depth: 1, act: relu, test_size: 2048}
+    train: {steps: 20000, batch_size: 32, optimizer: sgd, momentum: 0.0, lr: 0.05, n_log_evals: 60, n_lin_evals: 40}
+    knobs:
+      k: {values: [2, 3], kind: ordinal}
+      width: {values: [128, 512], kind: log}
+  - name: control-markov
+    task: markov_lang
+    seeds: 5
+    priority: 3.0
+    ri_policy: always
+    ri: {n_probe: 8192, n_points: 30}
+    fixed: {window: 6, width: 128, depth: 1, n_tokens: 200000}
+    train: {steps: 15000, batch_size: 64, optimizer: adam, lr: 0.001}
+    knobs:
+      couplings: {values: ["1:1.0;1,3:0.8", "1:1.0;1,2,3:1.0", "1,3:0.8"], kind: categorical}
+  # ---------------------------------------------------------------- known phenomena
+  - name: grokking
+    task: modular_addition
+    seeds: 3
+    priority: 1.5
+    ri_policy: followup
+    fixed: {depth: 1, embed: onehot}
+    train: {steps: 20000, batch_size: 512, optimizer: adamw, beta2: 0.98}
+    knobs:
+      p: {values: [23, 47], kind: ordinal}
+      train_frac: {values: [0.3, 0.5, 0.7], kind: linear, refine: true}
+      width: {values: [64, 256], kind: log}
+      train.lr: {values: [0.0003, 0.001, 0.003], kind: log, refine: true}
+      train.weight_decay: {values: [0.1, 0.3, 1.0], kind: log, refine: true}
+  - name: icl-markov
+    task: icl_markov
+    seeds: 3
+    priority: 1.0
+    ri_policy: followup
+    fixed: {vocab: 3, seq_len: 48, n_layer: 2, n_head: 1, attn_only: true}
+    train: {steps: 6000, batch_size: 32, optimizer: adamw, weight_decay: 0.0}
+    knobs:
+      d_model: {values: [16, 32], kind: log}
+      train.lr: {values: [0.001, 0.003], kind: log, refine: true}
+  - name: superposition
+    task: toy_superposition
+    seeds: 3
+    priority: 1.0
+    ri_policy: followup
+    fixed: {n_features: 20, m_hidden: 5}
+    train: {steps: 8000, batch_size: 1024, optimizer: adam, lr: 0.001, ntk_every: 0}
+    knobs:
+      feature_prob: {values: [0.01, 0.03, 0.1, 0.3], kind: log, refine: true}
+      importance_decay: {values: [0.7, 0.9], kind: linear}
+  # ---------------------------------------------------------------- broad survey region
+  - name: parity-wide
+    task: sparse_parity
+    seeds: 3
+    priority: 1.0
+    ri_policy: followup
+    fixed: {depth: 1, act: relu, test_size: 2048}
+    train: {steps: 30000, batch_size: 32, optimizer: sgd, momentum: 0.0}
+    knobs:
+      n: {values: [16, 24, 32], kind: ordinal}
+      k: {values: [2, 3], kind: ordinal}
+      width: {values: [32, 128, 512], kind: log, refine: true}
+      n_train: {values: [1000, 4000, 16000, null], kind: categorical}
+      train.lr: {values: [0.01, 0.03, 0.1], kind: log, refine: true}
+      train.weight_decay: {values: [0.0, 0.0001, 0.01], kind: ordinal}

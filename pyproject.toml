@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tycho-survey"
+version = "0.1.0"
+description = "A 24x7 sky survey of neural-network training dynamics with refined information (RI) spectroscopy"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "torch>=2.3",
+  "pyyaml>=6",
+  "matplotlib>=3.8",
+  "pandas>=2.1",
+  "pyarrow>=14",
+]
+
+[project.optional-dependencies]
+agent = ["anthropic>=1.0"]
+dev = ["pytest>=8", "pytest-timeout>=2"]
+
+[project.scripts]
+tycho = "tycho.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["tycho*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: slow tests (run with --runslow)"]
+timeout = 600
