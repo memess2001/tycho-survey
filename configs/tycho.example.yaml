@@ -1,0 +1,99 @@
+# Tycho survey configuration: <survey root>/tycho.yaml
+#
+# Every setting is listed with its built-in default (tycho.config.DEFAULT_CONFIG); edit what you need.
+# Restart the daemon afterwards:  launchctl kickstart -k gui/$(id -u)/com.tycho.survey
+# Write small floats with a decimal point (1.0e-3, not 1e-3): YAML 1.1 reads 1e-3 as a string.
+
+survey:
+  # Sky definition (regions of knobs), relative to the survey root.
+  sky: configs/sky_v0.yaml
+  # Worker processes; null = number of CPU cores minus two.
+  n_workers: null
+  # Threads per worker (torch and BLAS). Exact replay needs the same value as the original observation.
+  torch_threads: 1
+  # cpu (deterministic; fastest for tiny models) | mps | auto (MPS only for models with >= 2M parameters).
+  device: cpu
+  # Worker heartbeat period; a running job whose worker is silent for stale_after_s is requeued (seconds).
+  heartbeat_s: 15.0
+  stale_after_s: 300.0
+  # How often the daemon tops up the queue, requests RI follow-ups and writes reports/status.json and
+  # reports/dashboard.html (seconds).
+  topup_every_s: 60.0
+  followup_every_s: 600.0
+  status_every_s: 300.0
+  # Online catalog backups into backups/: interval (hours) and how many to keep.
+  backup_every_h: 24.0
+  backups_keep: 14
+  # Disk guard: below this much free space (GB) workers stop claiming work and the daemon alerts once.
+  min_free_gb: 20.0
+  # A job whose worker was lost this many times is marked failed.
+  max_attempts: 3
+  # Recorded with every object; null = Tycho version + `git describe` of the checkout.
+  code_version: null
+
+scheduler:
+  # The queue is refilled to target_queue whenever it falls below half of it.
+  target_queue: 200
+  # Bracket boundaries between phenomena with extra seeds and midpoints on refinable knobs.
+  boundary_refine: true
+  max_refine_depth: 3
+  extra_seeds: 2
+  # Fraction of coarse-grid objects in the uniform random control sample (guards against selection bias).
+  random_control_frac: 0.05
+  # RI follow-ups (deterministic replays with dense spectroscopy) the scheduler requests per 24 h.
+  followups_per_day: 200
+
+ri:
+  # Probe samples per RI checkpoint and the FDR level (Benjamini-Hochberg q) of a detection.
+  n_probe: 4096
+  alpha: 0.01
+  # Effect-size threshold of a detection (bias-corrected local RI, nats). Leave it unset to use the calibrated
+  # value of calibration_file at n_probe (written by `tycho calibrate`), or 1.0e-3 without calibration. A value set
+  # here, or in a region's `ri:` mapping in the sky file, overrides the calibration.
+  # min_effect: 1.0e-3
+  # Null distribution of the RI test: chi2 | parametric_bootstrap.
+  null: chi2
+  # RI checkpoints per object (log-spaced; follow-ups add 30 dense points around the largest loss drop).
+  n_points: 40
+  # Refuse scans with more candidate subsets than max_subsets; stored curves keep the keep_top strongest subsets
+  # (plus every detected and every ground-truth subset).
+  max_subsets: 50000
+  keep_top: 200
+  calibration_file: reports/calibration/calibration.json
+
+notify:
+  # Pushes per rolling hour; messages over the limit are sent later as one digest.
+  max_per_hour: 6
+  # Transients of at least this severity are pushed (1 info, 2 notable, 3 surprising); weaker ones are only logged
+  # (logs/notifications.log).
+  min_severity: 2
+  channels:
+    ntfy:
+      enabled: false
+      server: https://ntfy.sh
+      # Use a long random topic: anyone who knows it can read the notifications.
+      topic: ""
+    webhook:
+      # Slack-compatible incoming webhook (POST {"text": ...}).
+      enabled: false
+      url: ""
+    macos:
+      # Notification Center banners (macOS only; ignored elsewhere).
+      enabled: true
+
+agent:
+  enabled: true
+  model: claude-opus-5-5
+  nightly_effort: medium
+  weekly_effort: high
+  # Hard caps per run: API calls and estimated cost in USD.
+  max_iterations: 40
+  max_cost_usd: 3.0
+  # Server-side refusal fallbacks.
+  fallbacks: true
+  # Language of the nightly log and the weekly report: en | zh | ja.
+  language: en
+  # Caps on what the agent may write.
+  max_proposals_per_run: 50
+  max_objects_per_day: 400
+  max_followups_per_run: 20
