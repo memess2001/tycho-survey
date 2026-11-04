@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Tycho nightly agent run (daily at 03:17 local time; a run missed while the Mac slept starts on wake). Template:
+  ops/install_macmini.sh replaces __ROOT__, __PYTHON__ and __USER__. The agent needs Anthropic credentials
+  (`ant auth login` as __USER__, or ANTHROPIC_API_KEY added to EnvironmentVariables; keep this file mode 600 then).
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.tycho.nightly</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__PYTHON__</string>
+    <string>-m</string>
+    <string>tycho</string>
+    <string>--root</string>
+    <string>__ROOT__</string>
+    <string>agent</string>
+    <string>nightly</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__ROOT__</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>PYTHONUNBUFFERED</key>
+    <string>1</string>
+    <key>TYCHO_ROOT</key>
+    <string>__ROOT__</string>
+    <key>USER</key>
+    <string>__USER__</string>
+  </dict>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>3</integer>
+    <key>Minute</key>
+    <integer>17</integer>
+  </dict>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>StandardOutPath</key>
+  <string>__ROOT__/logs/launchd-nightly.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__ROOT__/logs/launchd-nightly.err.log</string>
+</dict>
+</plist>

@@ -10,3 +10,4 @@ __pycache__/
 /survey/
 *.egg-info/
 .DS_Store
+/tycho.yaml

@@ -20,6 +20,11 @@ Rate limit and digest
     times and the held messages are saved next to the log (``<log>.state.json``), so a restarting daemon cannot
     exceed the limit or lose a pending digest.
 
+Log file
+    One JSON record per message (time, outcome ``pushed`` / ``held`` / ``failed`` / ``logged``, priority, title,
+    message, tags, per-channel results). It is rotated at :data:`LOG_MAX_BYTES` (``<log>.1`` … ``<log>.N``,
+    :data:`LOG_BACKUPS` files), so it stays bounded over months of operation.
+
 Severity
     :meth:`Notifier.send` takes a priority (``min``, ``low``, ``default``, ``high``, ``urgent``); the daemon decides
     what is pushed: transients with severity ≥ ``notify.min_severity`` are sent (priority :data:`SEVERITY_PRIORITY`),
@@ -70,6 +75,10 @@ DIGEST_MAX_TITLES = 20
 
 MAX_HELD = 500
 """Held messages kept for the digest (the oldest are dropped beyond this, but still counted)."""
+
+LOG_MAX_BYTES = 5_000_000
+LOG_BACKUPS = 3
+"""Rotation of the notification log: at most LOG_BACKUPS old files of about LOG_MAX_BYTES each."""
 
 _USER_AGENT = f"tycho-survey/{tycho.__version__}"
 
@@ -250,10 +259,24 @@ class Notifier:
                   "message": message, "tags": list(tags), "channels": dict(channels)}
         try:
             self.log_path.parent.mkdir(parents=True, exist_ok=True)
+            self._rotate_log()
             with open(self.log_path, "a", encoding="utf-8") as fh:
                 fh.write(json.dumps(record, ensure_ascii=False) + "\n")
         except OSError as exc:
             logger.error("notifier: cannot append to %s: %s", self.log_path, exc)
+
+    def _rotate_log(self) -> None:
+        """Shift ``<log>`` → ``<log>.1`` → … → ``<log>.LOG_BACKUPS`` once it exceeds :data:`LOG_MAX_BYTES`."""
+        try:
+            if self.log_path.stat().st_size < LOG_MAX_BYTES:
+                return
+        except FileNotFoundError:
+            return
+        for i in range(LOG_BACKUPS - 1, 0, -1):
+            older = self.log_path.with_name(f"{self.log_path.name}.{i}")
+            if older.exists():
+                os.replace(older, self.log_path.with_name(f"{self.log_path.name}.{i + 1}"))
+        os.replace(self.log_path, self.log_path.with_name(f"{self.log_path.name}.1"))
 
     def _load_state(self) -> None:
         try:

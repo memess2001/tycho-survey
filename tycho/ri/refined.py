@@ -44,16 +44,26 @@ How local RI is computed (:func:`local_projection_batch`)
 * otherwise: IPF over the ``m`` generators, vectorised across the batch, with per-table convergence and the exact
   facial start of :func:`tycho.ri.loglinear.facial_support`.
 
-Note on sources
----------------
-The orchestrator could not access the full text of Enouen & Sugiyama, "A Complete Decomposition of KL Error using
-Refined Information and Mode Interaction Selection" (TMLR 2026; network-restricted). The chain definition above
-matches the paper's abstract (drop in divergence between successive projected distributions along a chain of
-hierarchical collections; non-negative; extends mutual information; completely decomposes the KL error).
-**The user must cross-check the notation and the canonical chain choice against the paper.** Both
-:func:`chain_decomposition` and :func:`local_ri` are kept so that either convention can be used. The greedy "mode
-interaction selection" here (:func:`greedy_selection`) is a plain forward selection by largest RI gain and may
-differ in detail from the paper's procedure.
+Alignment with Enouen & Sugiyama (TMLR 2026)
+--------------------------------------------
+Checked against the paper (arXiv:2410.11964v2): **Definition 1** ``RI_{I,S}(p) = D_KL(p_{I+S}; p_I)`` for a
+hierarchical collection ``I`` (which contains ``∅``) and the complete chain ``{∅} = I_0 ⊊ … ⊊ I_T = P([d])``, whose
+terms sum to ``D_KL(p; u)`` (``u`` uniform), eq. (6). :func:`chain_decomposition` with ``start="empty"`` reproduces
+this exactly (singletons are then chain steps with ``RI = D(p_k‖u_k) = log I_k − H(X_k)``); the default
+``start="singletons"`` skips those first-order steps and decomposes the total correlation instead.
+The paper's two **order-invariant canonical values** (Appendix C.1) are both implemented:
+
+* ``RI^marg_S = RI_{I^min_S, S}`` with ``I^min_S = P(S) − S``: the **marginal refined information**. This is what
+  this code calls *local RI* (:func:`local_ri`, :func:`marginal_ri`); for ``|S| = 2`` it is the mutual information.
+* ``RI^cond_S = RI_{I^max_S, S}`` with ``I^max_S = P([d]) − {T ⊇ S}``: the **conditional (purified) refined
+  information** (:func:`conditional_ri`), which depends on which other variables are in the table.
+
+The paper's Figure 3 shows that ``RI_{I,S}`` of one subset can vary by orders of magnitude across contexts ``I``;
+the survey therefore reports the marginal value (estimable from small sub-tables, with a known χ² null) for event
+detection, and the conditional value only for small variable sets. :func:`j_information` is the paper's cheap
+proxy ``J(p_S) = Σ_{T⊆S} (−1)^{|S|−|T|} D_KL(p_T; u_T)`` used as the selection score of MAHGenTa.
+:func:`greedy_selection` is a strong-heredity, exact-gain variant of the paper's mode interaction selection (the
+paper selects by ``|J_S|`` with a weak-heredity threshold τ = 30 % and fits θ by gradient descent with Gibbs/AIS).
 """
 from __future__ import annotations
 
@@ -86,6 +96,9 @@ __all__ = [
     "local_ri_batch",
     "local_projection_batch",
     "local_ri_from_table",
+    "marginal_ri",
+    "conditional_ri",
+    "j_information",
 ]
 
 #: Methods of :func:`local_projection_batch`.
@@ -151,25 +164,58 @@ def graded_chain(d: int, max_order: int | None = None) -> list[Subset]:
     return graded_order(d, 2, max_order)
 
 
+def _project_family(Pn: np.ndarray, family: set[Subset], *, tol: float,
+                    init: np.ndarray | None = None) -> np.ndarray:
+    """m-projection onto a hierarchical family that need not contain every singleton.
+
+    Axes covered by no member of ``family`` are uniform and independent of the rest (they carry no θ coordinate).
+    With the empty family the projection is the uniform distribution ``u``.
+    """
+    d = Pn.ndim
+    covered = sorted({i for S in family for i in S})
+    if len(covered) == d:
+        return m_project(Pn, family, tol=tol, init=init).Q
+    shape = Pn.shape
+    if not covered:
+        return np.full(shape, 1.0 / Pn.size)
+    pos = {a: k for k, a in enumerate(covered)}
+    Qc = m_project(marginal(Pn, covered), {tuple(pos[a] for a in S) for S in family}, tol=tol).Q
+    uncovered = [a for a in range(d) if a not in pos]
+    n_unc = int(np.prod([shape[a] for a in uncovered]))
+    Q = np.multiply.outer(Qc, np.full([shape[a] for a in uncovered], 1.0 / n_unc))
+    return np.transpose(Q, np.argsort(covered + uncovered))
+
+
 def chain_decomposition(P: np.ndarray, chain: Sequence[Sequence[int]], *,
-                        base: Sequence[Sequence[int]] | None = None, tol: float = 1e-12) -> ChainDecomposition:
+                        base: Sequence[Sequence[int]] | None = None, tol: float = 1e-12,
+                        start: str = "singletons") -> ChainDecomposition:
     """Refined information of each subset along an explicit chain.
 
     Args:
         P: probability table (normalised internally).
         chain: subsets ``S_1..S_m`` added in order; each must be admissible when it is added.
-        base: subsets generating ``H_0`` (default: none, i.e. ``H_0`` = all singletons; singletons are always added).
-        tol: IPF tolerance of each projection (each warm-started from the previous one).
+        base: subsets generating ``H_0`` in addition to the start family.
+        tol: IPF tolerance of each projection (each warm-started from the previous one when possible).
+        start: ``"singletons"`` (default): ``H_0`` contains all singletons, chain elements have order ≥ 2 and the
+            terms decompose the total correlation. ``"empty"``: ``H_0 = {∅}`` as in Enouen & Sugiyama (2026), chain
+            elements may be singletons, and a complete chain decomposes ``D(P‖u)``.
 
     Raises:
-        ValueError: if a chain element is not admissible at its position (order < 2, already present, or a proper
-            subset missing), or uses an axis ``>= P.ndim``.
+        ValueError: if a chain element is not admissible at its position (too small, already present, or a proper
+            subset missing), uses an axis ``>= P.ndim``, or ``start`` is unknown.
     """
+    if start not in ("singletons", "empty"):
+        raise ValueError(f"start must be 'singletons' or 'empty', got {start!r}")
     Pn = normalize_table(P)
     d = Pn.ndim
-    base_family = down_closure(() if base is None else base, d)
+    raw_base = () if base is None else base
+    if start == "singletons":
+        base_family = down_closure(raw_base, d)
+    else:
+        base_family = down_closure(raw_base) if raw_base else frozenset()
+    min_order = 2 if start == "singletons" else 1
     family = set(base_family)
-    Q = m_project(Pn, family, tol=tol).Q
+    Q = _project_family(Pn, family, tol=tol)
     kl_base = kl(Pn, Q)
     kl_prev = kl_base
     steps: list[RIStep] = []
@@ -177,20 +223,21 @@ def chain_decomposition(P: np.ndarray, chain: Sequence[Sequence[int]], *,
         S = normalize_subset(raw)
         if S and S[-1] >= d:
             raise ValueError(f"chain element {pos} {S} uses an axis >= d={d}")
-        if len(S) < 2:
-            raise ValueError(f"chain element {pos} {S} has order < 2 (singletons belong to the base)")
+        if len(S) < min_order:
+            raise ValueError(f"chain element {pos} {S} has order < {min_order}"
+                             + (" (singletons belong to the base)" if start == "singletons" else ""))
         if S in family:
             raise ValueError(f"chain element {pos} {S} is already in the family")
         missing = [T for T in nonempty_subsets(S, proper=True) if T not in family]
         if missing:
             raise ValueError(f"chain element {pos} {S} is not admissible: missing proper subsets {missing}")
         family.add(S)
-        Q_new = m_project(Pn, family, tol=tol, init=Q).Q
+        Q_new = _project_family(Pn, family, tol=tol, init=Q)
         kl_after = kl(Pn, Q_new)
         steps.append(RIStep(subset=S, order=len(S), ri=kl(Q_new, Q), kl_before=kl_prev, kl_after=kl_after))
         Q, kl_prev = Q_new, kl_after
-    return ChainDecomposition(base=tuple(maximal_elements(base_family)), steps=steps, kl_base=kl_base,
-                              residual=kl_prev)
+    return ChainDecomposition(base=tuple(maximal_elements(base_family)) if base_family else (), steps=steps,
+                              kl_base=kl_base, residual=kl_prev)
 
 
 def greedy_selection(P: np.ndarray, *, max_order: int | None = None, max_steps: int | None = None,
@@ -477,3 +524,52 @@ def local_ri_from_table(P: np.ndarray, subsets: Sequence[Sequence[int]]) -> np.n
     for idx in groups.values():
         out[idx] = local_ri_batch(np.stack([marginal(Pn, subs[i]) for i in idx]))
     return out
+
+
+def marginal_ri(P: np.ndarray, S: Sequence[int]) -> float:
+    """Marginal refined information ``RI^marg_S = D(p_S ‖ (p_S)_{P(S)−S})`` (Enouen & Sugiyama 2026, App. C.1).
+
+    Identical to the local RI of ``S`` (see :func:`local_ri_from_table`); for ``|S| = 2`` it is the mutual information
+    and for ``|S| = 1`` it is 0 (the survey's per-subset quantity measures interactions, not marginal skew).
+    """
+    return float(local_ri_from_table(P, [S])[0])
+
+
+def conditional_ri(P: np.ndarray, S: Sequence[int], *, tol: float = 1e-12) -> float:
+    """Conditional (purified) refined information ``RI^cond_S = D(p_{I+S} ‖ p_I)``, ``I = P([d]) − {T ⊇ S}``.
+
+    ``I`` contains every subset that does not contain ``S``; its generators are ``[d] − {s}`` for ``s ∈ S``. The value
+    depends on all variables of ``P`` (e.g. it vanishes for two variables that are conditionally independent given a
+    third), so it is computed on the full table: use it for small variable sets only.
+    """
+    Pn = normalize_table(P)
+    d = Pn.ndim
+    S = normalize_subset(S)
+    if not S:
+        raise ValueError("empty subset")
+    if S[-1] >= d:
+        raise ValueError(f"subset {S} uses an axis >= d={d}")
+    full = tuple(range(d))
+    gens = [tuple(a for a in full if a != s) for s in S]
+    lower = set(down_closure([g for g in gens if g]))
+    Q_lo = _project_family(Pn, lower, tol=tol)
+    upper = lower | {S}
+    Q_hi = _project_family(Pn, upper, tol=tol, init=Q_lo if len(S) > 1 else None)
+    return float(kl(Q_hi, Q_lo))
+
+
+def j_information(P: np.ndarray, S: Sequence[int]) -> float:
+    """``J(p_S) = Σ_{T⊆S} (−1)^{|S|−|T|} D_KL(p_T; u_T)`` (Enouen & Sugiyama 2026, eq. 3), in nats.
+
+    Equals ``(−1)^{|S|} I(p_S)`` (multiple mutual information) for ``|S| ≥ 2``; may be negative. The paper uses
+    ``|J_S|`` as a cheap proxy for refined information when selecting mode interactions.
+    """
+    Pn = normalize_table(P)
+    S = normalize_subset(S)
+    if not S:
+        raise ValueError("empty subset")
+    total = 0.0
+    for T in nonempty_subsets(S):
+        pT = marginal(Pn, T)
+        total += (-1) ** (len(S) - len(T)) * kl(pT, np.full(pT.shape, 1.0 / pT.size))
+    return float(total)

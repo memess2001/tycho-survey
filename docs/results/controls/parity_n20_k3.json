@@ -1,0 +1,87 @@
+{
+ "name": "parity_n20_k3",
+ "status": "done",
+ "wall_s": 238.0,
+ "final_test_acc": 1.0,
+ "t_test_acc90": 1538,
+ "summary": {
+  "t_test_acc90": 1538.0,
+  "plateau_frac": 0.06815,
+  "n_drops": 0,
+  "diverged": false
+ },
+ "events": [
+  {
+   "subset": [
+    "x9",
+    "yhat"
+   ],
+   "order": 2,
+   "kind": "activation",
+   "step": 0,
+   "bracket": [
+    0,
+    0
+   ],
+   "ri_after": 0.0028,
+   "gt": false,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x9",
+    "yhat"
+   ],
+   "order": 2,
+   "kind": "extinction",
+   "step": 15,
+   "bracket": [
+    10,
+    15
+   ],
+   "ri_after": 0.0,
+   "gt": false,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x10",
+    "x12",
+    "x15",
+    "yhat"
+   ],
+   "order": 4,
+   "kind": "activation",
+   "step": 1363,
+   "bracket": [
+    975,
+    1363
+   ],
+   "ri_after": 0.2146,
+   "gt": true,
+   "precursor": false
+  }
+ ],
+ "ground_truth_final": [
+  {
+   "subset": [
+    "x10",
+    "x12",
+    "x15",
+    "yhat"
+   ],
+   "final_ri": 0.6878,
+   "max_q": null
+  }
+ ],
+ "n_detected_final": 1,
+ "detected_final": [
+  [
+   "x10",
+   "x12",
+   "x15",
+   "yhat"
+  ]
+ ],
+ "n_candidates": 1350
+}

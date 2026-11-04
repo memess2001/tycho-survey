@@ -51,6 +51,8 @@ EVENT_KINDS: tuple[str, ...] = ("activation", "extinction", "reactivation")
 TRANSIENT_KINDS: tuple[str, ...] = ("late_activation", "extinction", "reactivation", "pure_synergy",
                                     "order_inversion", "grokking", "loss_spike", "unknown_class")
 
+#: Event-based transients need a peak RI of at least this multiple of the detection threshold min_effect.
+TRANSIENT_PEAK_FACTOR = 5.0
 TRANSIENT_SEVERITY: dict[str, int] = {
     "late_activation": 3,  # an interaction switches on after the training set has been fitted
     "pure_synergy": 3,  # an order >= 3 interaction with no lower-order (>= 2) part ever active
@@ -237,9 +239,24 @@ def _mark_precursors(events: list[RIEvent]) -> None:
 
 
 # ---------------------------------------------------------------------------------------------- transients
+def transient_min_peak(curve: Any) -> float:
+    """Peak-RI gate of event-based transients: :data:`TRANSIENT_PEAK_FACTOR` × the curve's ``min_effect``.
+
+    An event whose subset never exceeded a few times the detection threshold is recorded in the catalog but is not
+    pushed as a transient: in practice such events are weak interactions of intermediate solutions flickering near
+    the threshold, and alerting on them floods the transient channel.
+    """
+    if curve is None:
+        return 0.0
+    return TRANSIENT_PEAK_FACTOR * float(getattr(curve, "meta", {}).get("min_effect", 1e-3))
+
+
 def find_transients(events: Sequence[RIEvent], summary: Mapping[str, Any] | None, classification: Any, *,
-                    late_frac: float = 0.5) -> list[Transient]:
+                    late_frac: float = 0.5, min_peak: float = 0.0) -> list[Transient]:
     """Transients of one object: event-based ones in event order, then loss_spike, grokking and unknown_class.
+
+    Event-based transients are only raised for events whose ``peak_ri >= min_peak`` (see
+    :func:`transient_min_peak`); every event still counts as a precursor for the synergy/inversion logic.
 
     * late_activation: an activation whose whole onset bracket lies after the training set was fitted,
       ``step_lo ≥ summary["t_train_acc99"]``; when the summary has no accuracies at all (regression tasks), after
@@ -264,10 +281,18 @@ def find_transients(events: Sequence[RIEvent], summary: Mapping[str, Any] | None
     out: list[Transient] = []
 
     def add(kind: str, message: str, index: int | None = None) -> None:
-        out.append(Transient(kind=kind, severity=TRANSIENT_SEVERITY[kind], message=message, event_index=index))
+        severity = TRANSIENT_SEVERITY[kind]
+        if index is not None and events[index].matches_ground_truth:
+            # a positive control behaving as designed confirms the instrument; it is not a surprise
+            severity, message = 1, message + " (expected: matches ground truth)"
+        out.append(Transient(kind=kind, severity=severity, message=message, event_index=index))
 
     seen: set[Subset] = set()
     for idx, ev in enumerate(events):
+        if not ev.peak_ri >= min_peak:
+            if ev.kind != "extinction":
+                seen.add(ev.subset)
+            continue
         what = _describe(ev)
         if ev.kind == "activation" and not ev.left_censored and late is not None and ev.step_lo >= late[0]:
             add("late_activation", f"late activation of {what} at step {ev.step} (onset in ({ev.step_lo}, "

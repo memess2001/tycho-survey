@@ -35,12 +35,15 @@ from tycho.ri.refined import (
     ChainDecomposition,
     RIStep,
     chain_decomposition,
+    conditional_ri,
     graded_chain,
     greedy_selection,
     local_projection_batch,
     local_ri,
     local_ri_batch,
     local_ri_from_table,
+    j_information,
+    marginal_ri,
 )
 from tycho.ri.variables import VariableSet
 
@@ -50,6 +53,9 @@ __all__ = [
     "m_project",
     "kl",
     "local_ri",
+    "marginal_ri",
+    "conditional_ri",
+    "j_information",
     "local_ri_batch",
     "chain_decomposition",
     "graded_chain",

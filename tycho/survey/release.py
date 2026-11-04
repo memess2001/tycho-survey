@@ -23,8 +23,9 @@ the daemon is running is one consistent snapshot. Only done objects are released
 not observations yet; failed objects are infrastructure failures, kept in the catalog), and only events, runs and
 transients of released objects. Releases are immutable: an existing tag is an error unless ``overwrite=True``. The
 release is assembled in a temporary directory and renamed into place, so a crash never leaves a partial release
-under the tag. Archives are reproducible (sorted members, zero timestamps and owners), so re-releasing unchanged
-data gives byte-identical archives.
+under the tag (a leftover ``releases/.<tag>.partial-<pid>`` directory is removed by the next attempt). Archives
+are reproducible (sorted members, zero timestamps and owners), so re-releasing unchanged data gives byte-identical
+archives.
 """
 from __future__ import annotations
 
@@ -40,15 +41,16 @@ import tarfile
 from dataclasses import fields
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
-
-import pandas as pd
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Sequence
 
 import tycho
 from tycho.analysis.summarize import SUMMARY_KEYS
 from tycho.config import Paths, load_config
 from tycho.survey.catalog import SCHEMA_VERSION, Catalog
 from tycho.train.spec import TrainConfig
+
+if TYPE_CHECKING:  # pragma: no cover
+    import pandas as pd
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +78,7 @@ OBJECT_COLUMNS: dict[str, str] = {
     "sky_version": "version of the sky definition (part of the identity)",
     "seed": "training seed (initial weights and batch order)",
     "task_cfg_json": "task configuration as canonical JSON (all keys of the task's defaults that were set)",
-    "source": "why it was observed: coarse (grid), refine (boundary refinement), agent (proposal), cli",
+    "source": "why it was observed: coarse (grid), refine (boundary refinement) or agent (proposal)",
     "random_control": "1 if the object belongs to the uniform random control sample",
     "priority": "scheduling priority",
     "attempts": "claims that crashed, failed, completed or are running (graceful interruptions excluded)",
@@ -142,9 +144,9 @@ def make_release(catalog: Catalog, paths: Paths, tag: str, *, include_lightcurve
     if target.exists() and not overwrite:
         raise FileExistsError(f"release {tag} already exists at {target} (releases are immutable)")
     paths.releases.mkdir(parents=True, exist_ok=True)
+    for stale in paths.releases.glob(f".{tag}.partial-*"):  # left behind by an interrupted release of this tag
+        shutil.rmtree(stale, ignore_errors=True)
     work = paths.releases / f".{tag}.partial-{os.getpid()}"
-    if work.exists():
-        shutil.rmtree(work)
     work.mkdir()
     try:
         snapshot_path = work / ".catalog-snapshot.sqlite"
@@ -186,6 +188,8 @@ def verify_release(release_dir: Path | str) -> list[str]:
 # ---------------------------------------------------------------------------------------------- building
 def _build(snapshot: Catalog, paths: Paths, cfg: Mapping[str, Any], tag: str, work: Path, *,
            include_lightcurves: bool, include_ri_curves: bool) -> None:
+    import pandas as pd  # imported on use: the daemon and the CLI need it only for releases
+
     objects = _objects_table(snapshot)
     released = set(objects["object_id"])
     runs = _table(snapshot, "SELECT r.ri_run_id, r.object_id, r.kind, r.path, r.n_subsets, r.n_points, r.max_order, "
@@ -266,10 +270,14 @@ def _build(snapshot: Catalog, paths: Paths, cfg: Mapping[str, Any], tag: str, wo
 
 
 def _table(catalog: Catalog, sql: str, columns: Sequence[str]) -> pd.DataFrame:
+    import pandas as pd
+
     return pd.DataFrame(catalog.query(sql), columns=list(columns))
 
 
 def _objects_table(snapshot: Catalog) -> pd.DataFrame:
+    import pandas as pd
+
     rows = snapshot.query(
         "SELECT o.object_id, o.task, o.region, o.sky_version, o.seed, o.spec_json, o.source, o.random_control, "
         "o.priority, o.attempts, o.created_at, o.started_at, o.finished_at, o.wall_time_s, o.device, o.n_params, "

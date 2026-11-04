@@ -35,12 +35,13 @@ Every periodic task is isolated: an exception is logged (and alerted once after 
 row) and the loop goes on.
 
 Stopping
-    SIGTERM / SIGINT (launchd's ``bootout``, Ctrl-C), the ``hours`` limit or the ``max_objects`` budget set the shared
-    stop event. Workers then stop at their next poll (within :data:`tycho.train.runner.POLL_STEPS` updates), save a
-    resume checkpoint and mark their object *interrupted*; interrupted objects are claimed again later and resume
-    exactly. The supervisor waits :data:`SHUTDOWN_TIMEOUT_S` for them (launchd's ``ExitTimeOut`` in
-    ``ops/launchd/com.tycho.survey.plist`` is longer), then kills stragglers and hands their jobs back. A second
-    signal stops waiting. Signal handlers only set a flag; the loop acts on it (no locks are taken in a handler).
+    SIGTERM / SIGINT / SIGHUP (launchd's ``bootout``, Ctrl-C, a closed terminal), the ``hours`` limit or the
+    ``max_objects`` budget set the shared stop event. Workers then stop at their next poll (within
+    :data:`tycho.train.runner.POLL_STEPS` updates), save a resume checkpoint and mark their object *interrupted*;
+    interrupted objects are claimed again later and resume exactly. The supervisor waits :data:`SHUTDOWN_TIMEOUT_S`
+    for them (launchd's ``ExitTimeOut`` in ``ops/launchd/com.tycho.survey.plist`` is longer), then kills stragglers
+    and hands their jobs back. A second signal stops waiting. Signal handlers only set a flag; the loop acts on it
+    (no locks are taken in a handler).
 
 ``max_objects`` is a claim budget shared by the workers: once it is used up, nothing new is claimed and the daemon
 stops when the claimed objects have finished.
@@ -72,9 +73,9 @@ from tycho.survey.worker import LOG_FILE, LOG_FORMAT, code_version, free_disk_gb
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["BACKUP_GLOB", "LOCK_FILE", "LOOP_INTERVAL_S", "SHUTDOWN_TIMEOUT_S", "STATUS_FILE", "Supervisor",
-           "SurveyLock", "SurveyLockError", "backup_catalog", "list_backups", "prune_backups", "resolve_n_workers",
-           "run_survey", "running_daemon_pid"]
+__all__ = ["BACKUP_GLOB", "LOCK_FILE", "LOOP_INTERVAL_S", "SHUTDOWN_TIMEOUT_S", "STATUS_FILE", "STOP_SIGNALS",
+           "Supervisor", "SurveyLock", "SurveyLockError", "backup_catalog", "list_backups", "prune_backups",
+           "resolve_n_workers", "run_survey", "running_daemon_pid"]
 
 LOOP_INTERVAL_S = 2.0
 """Period of the supervisor loop."""
@@ -133,6 +134,11 @@ NOTIFY_LOG = "notifications.log"
 BACKUP_PREFIX, BACKUP_SUFFIX = "catalog-", ".sqlite"
 BACKUP_GLOB = f"{BACKUP_PREFIX}*{BACKUP_SUFFIX}"
 """Backups are ``backups/catalog-<UTC timestamp>.sqlite``; names sort chronologically."""
+
+STOP_SIGNALS: tuple[signal.Signals, ...] = tuple(
+    getattr(signal, name) for name in ("SIGTERM", "SIGINT", "SIGHUP") if hasattr(signal, name))
+"""Signals that stop the survey gracefully (launchd's bootout sends SIGTERM; Ctrl-C SIGINT; closing the terminal of
+a foreground ``tycho survey run`` SIGHUP)."""
 
 _THREAD_ENV = ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "VECLIB_MAXIMUM_THREADS")
 """Thread-count variables of the BLAS/OpenMP runtimes, set (unless already set) to ``survey.torch_threads`` before
@@ -660,7 +666,7 @@ def _run(paths: Paths, *, hours: float | None, max_objects: int | None, n_worker
         raise
     previous = {}
     if threading.current_thread() is threading.main_thread():
-        for sig in (signal.SIGTERM, signal.SIGINT):
+        for sig in STOP_SIGNALS:
             previous[sig] = signal.signal(sig, sup.handle_signal)
     try:
         sup.start()

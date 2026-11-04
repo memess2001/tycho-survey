@@ -91,11 +91,12 @@ the S-marginal has no |S|-th-order interaction. Its finite-sample estimator has 
 This makes it the calibrated "spectral line". (Amari's k-cut coordinates and Schneidman et al.'s connected
 information of top order coincide with this quantity.)
 
-> NOTE: The orchestrator could not access the full text of Enouen & Sugiyama (network-restricted). The chain
-> definition above matches the paper's abstract ("drop in divergence between successive projected distributions
-> along a chain of hierarchical collections; non-negative; extends mutual information; completely decomposes the
-> KL error"). The user (who works with this framework) must cross-check notation and canonical chain choice against
-> the paper; keep both `chain_decomposition` and `local_ri` so either convention can be used.
+> Verified against the paper (arXiv:2410.11964v2). Definition 1 is RI_{I,S}(p) = D_KL(p_{I+S}; p_I), and the
+> complete chain starts at I_0 = {∅}, summing to D_KL(p; u), eq. (6). `chain_decomposition(..., start="empty")`
+> reproduces this; the default `start="singletons"` decomposes the total correlation. Our *local RI* is exactly the
+> paper's **marginal refined information** RI^marg_S = RI_{P(S)−S, S} (App. C.1). The paper's other canonical value,
+> the **conditional refined information** RI^cond_S = RI_{P([d])−{T⊇S}, S}, is `conditional_ri`. `j_information`
+> is the paper's eq. (3) proxy. `tests/test_ri_paper.py` reproduces the paper's Figure 1 and Figure 10 numbers.
 
 **Binary spin coding** for constructing distributions (used by calibration/tasks): for binary variables with
 codes x_i ∈ {0,1}, spins s_i = 2x_i − 1 ∈ {−1,+1}; a scalar θ_S contributes θ_S·∏_{i∈S} s_i to log q.

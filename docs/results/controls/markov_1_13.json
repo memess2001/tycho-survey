@@ -1,0 +1,308 @@
+{
+ "name": "markov_1_13",
+ "status": "done",
+ "wall_s": 21.7,
+ "final_test_acc": 0.900390625,
+ "t_test_acc90": 133,
+ "summary": {
+  "t_test_acc90": NaN,
+  "plateau_frac": 0.0002,
+  "n_drops": 0,
+  "diverged": false
+ },
+ "events": [
+  {
+   "subset": [
+    "x[t-1]",
+    "xhat"
+   ],
+   "order": 2,
+   "kind": "activation",
+   "step": 0,
+   "bracket": [
+    0,
+    0
+   ],
+   "ri_after": 0.0016,
+   "gt": true,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x[t-5]",
+    "xhat"
+   ],
+   "order": 2,
+   "kind": "activation",
+   "step": 0,
+   "bracket": [
+    0,
+    0
+   ],
+   "ri_after": 0.0013,
+   "gt": false,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x[t-2]",
+    "xhat"
+   ],
+   "order": 2,
+   "kind": "activation",
+   "step": 1,
+   "bracket": [
+    0,
+    1
+   ],
+   "ri_after": 0.0012,
+   "gt": false,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x[t-1]",
+    "xhat"
+   ],
+   "order": 2,
+   "kind": "extinction",
+   "step": 4,
+   "bracket": [
+    3,
+    4
+   ],
+   "ri_after": 0.0002,
+   "gt": true,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x[t-4]",
+    "xhat"
+   ],
+   "order": 2,
+   "kind": "activation",
+   "step": 10,
+   "bracket": [
+    6,
+    10
+   ],
+   "ri_after": 0.0014,
+   "gt": false,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x[t-1]",
+    "xhat"
+   ],
+   "order": 2,
+   "kind": "reactivation",
+   "step": 14,
+   "bracket": [
+    10,
+    14
+   ],
+   "ri_after": 0.0022,
+   "gt": true,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x[t-5]",
+    "xhat"
+   ],
+   "order": 2,
+   "kind": "extinction",
+   "step": 96,
+   "bracket": [
+    69,
+    96
+   ],
+   "ri_after": 0.0003,
+   "gt": false,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x[t-1]",
+    "x[t-3]",
+    "xhat"
+   ],
+   "order": 3,
+   "kind": "activation",
+   "step": 96,
+   "bracket": [
+    69,
+    96
+   ],
+   "ri_after": 0.0031,
+   "gt": true,
+   "precursor": true
+  },
+  {
+   "subset": [
+    "x[t-3]",
+    "xhat"
+   ],
+   "order": 2,
+   "kind": "activation",
+   "step": 217,
+   "bracket": [
+    133,
+    217
+   ],
+   "ri_after": 0.0021,
+   "gt": false,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x[t-1]",
+    "x[t-4]",
+    "xhat"
+   ],
+   "order": 3,
+   "kind": "activation",
+   "step": 217,
+   "bracket": [
+    133,
+    217
+   ],
+   "ri_after": 0.0017,
+   "gt": false,
+   "precursor": true
+  },
+  {
+   "subset": [
+    "x[t-1]",
+    "x[t-2]",
+    "xhat"
+   ],
+   "order": 3,
+   "kind": "activation",
+   "step": 385,
+   "bracket": [
+    300,
+    385
+   ],
+   "ri_after": 0.0015,
+   "gt": false,
+   "precursor": true
+  },
+  {
+   "subset": [
+    "x[t-3]",
+    "xhat"
+   ],
+   "order": 2,
+   "kind": "extinction",
+   "step": 769,
+   "bracket": [
+    576,
+    769
+   ],
+   "ri_after": 0.0003,
+   "gt": false,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x[t-4]",
+    "xhat"
+   ],
+   "order": 2,
+   "kind": "extinction",
+   "step": 769,
+   "bracket": [
+    576,
+    769
+   ],
+   "ri_after": 0.0001,
+   "gt": false,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x[t-1]",
+    "x[t-2]",
+    "xhat"
+   ],
+   "order": 3,
+   "kind": "extinction",
+   "step": 769,
+   "bracket": [
+    576,
+    769
+   ],
+   "ri_after": 0.0004,
+   "gt": false,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x[t-2]",
+    "xhat"
+   ],
+   "order": 2,
+   "kind": "extinction",
+   "step": 1106,
+   "bracket": [
+    769,
+    1106
+   ],
+   "ri_after": 0.0,
+   "gt": false,
+   "precursor": null
+  },
+  {
+   "subset": [
+    "x[t-1]",
+    "x[t-4]",
+    "xhat"
+   ],
+   "order": 3,
+   "kind": "extinction",
+   "step": 1106,
+   "bracket": [
+    769,
+    1106
+   ],
+   "ri_after": 0.0001,
+   "gt": false,
+   "precursor": null
+  }
+ ],
+ "ground_truth_final": [
+  {
+   "subset": [
+    "x[t-1]",
+    "xhat"
+   ],
+   "final_ri": 0.1727,
+   "max_q": null
+  },
+  {
+   "subset": [
+    "x[t-1]",
+    "x[t-3]",
+    "xhat"
+   ],
+   "final_ri": 0.1142,
+   "max_q": null
+  }
+ ],
+ "n_detected_final": 2,
+ "detected_final": [
+  [
+   "x[t-1]",
+   "xhat"
+  ],
+  [
+   "x[t-1]",
+   "x[t-3]",
+   "xhat"
+  ]
+ ],
+ "n_candidates": 21
+}

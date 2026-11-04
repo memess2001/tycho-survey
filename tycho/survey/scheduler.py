@@ -220,8 +220,14 @@ class Scheduler:
         added = self._enqueue_coarse(need)
         if added < need and self.policy.boundary_refine:
             added += self.refine(max_new=need - added)
-        logger.info("top_up: queue %d -> %d (target %d)", queued, queued + added, target)
+        (logger.info if added else logger.debug)("top_up: queue %d -> %d (target %d)", queued, queued + added,
+                                                   target)
         return added
+
+    def enqueue_coarse(self, limit: int) -> int:
+        """Enqueue up to ``limit`` objects of unobserved coarse-grid points now, regardless of the queue level
+        (used by ``tycho survey enqueue``). Returns the number enqueued."""
+        return self._enqueue_coarse(limit) if limit > 0 else 0
 
     def _plan(self, region: Region) -> list[tuple[list[ObjectSpec], list[str]]]:
         """Coarse grid of a region in visiting order: (specs of the initial seeds, their object ids) per point."""

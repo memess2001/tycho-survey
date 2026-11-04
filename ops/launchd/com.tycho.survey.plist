@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Tycho survey daemon (supervisor + workers), always on. Template: ops/install_macmini.sh replaces __ROOT__ (survey
+  root), __PYTHON__ (virtualenv python) and __USER__ (survey user) and installs it into ~/Library/LaunchAgents.
+  launchd sends SIGTERM on `launchctl bootout`: workers save resume checkpoints and mark their objects interrupted
+  within the daemon's 90 s shutdown timeout, so ExitTimeOut (before SIGKILL) is longer than that.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.tycho.survey</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__PYTHON__</string>
+    <string>-m</string>
+    <string>tycho</string>
+    <string>--root</string>
+    <string>__ROOT__</string>
+    <string>survey</string>
+    <string>run</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__ROOT__</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>PYTHONUNBUFFERED</key>
+    <string>1</string>
+    <key>TYCHO_ROOT</key>
+    <string>__ROOT__</string>
+    <key>USER</key>
+    <string>__USER__</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+  <key>ExitTimeOut</key>
+  <integer>150</integer>
+  <key>ProcessType</key>
+  <string>Standard</string>
+  <key>StandardOutPath</key>
+  <string>__ROOT__/logs/launchd-survey.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__ROOT__/logs/launchd-survey.err.log</string>
+</dict>
+</plist>

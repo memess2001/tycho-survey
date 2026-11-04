@@ -3,9 +3,9 @@
 A worker is one process (started by :mod:`tycho.survey.daemon` with the ``spawn`` context) running
 :func:`worker_main`. Its loop:
 
-1. Stop when the shared ``stop_event`` is set, on its own SIGTERM, or when its supervisor is gone (an orphan must
-   not keep claiming work). SIGINT is ignored: a Ctrl-C in the terminal reaches every process of the group, and the
-   supervisor turns it into ``stop_event``.
+1. Stop when the shared ``stop_event`` is set, on its own SIGTERM or SIGHUP, or when its supervisor is gone (an
+   orphan must not keep claiming work). SIGINT is ignored: a Ctrl-C in the terminal reaches every process of the
+   group, and the supervisor turns it into ``stop_event``.
 2. **Disk guard**: while the survey root's file system has less than ``survey.min_free_gb`` free, claim nothing
    (heartbeat status ``paused: ...``) and re-check every :data:`DISK_RECHECK_S` seconds. The supervisor sends the
    alert.
@@ -24,8 +24,14 @@ Observing an object (:func:`process_object`)
     it is requeued and observed again. The products are recorded idempotently (an existing rules classification,
     in-situ RI run or set of transients of the object is not recorded twice), so such a re-observation, or a
     worker that finishes an object after it was requeued, never duplicates catalog rows. A graceful stop gives
-    status ``interrupted`` (the runner saved a resume checkpoint; ``mark_interrupted`` refunds the attempt), an
-    exception status ``failed`` with the traceback.
+    status ``interrupted`` (the runner saved a resume checkpoint; ``mark_interrupted`` refunds the attempt), a
+    training exception status ``failed`` with the traceback. An *infrastructure* error while recording (the
+    database stayed locked beyond its busy timeout, a full or failing disk: ``sqlite3.OperationalError``,
+    ``OSError``) is not the object's fault: it propagates, and the worker hands the object back
+    (``Catalog.release_worker``), so it is retried under the ``survey.max_attempts`` rule instead of being lost.
+    The in-situ RI settings are part of the resume checkpoint's fingerprint, so an object interrupted before a new
+    calibration file appeared (which changes ``min_effect``) restarts from scratch when resumed (logged by the
+    runner).
 
 Heartbeats
     A thread writes ``Catalog.heartbeat(worker_id, object_id, status)`` every ``survey.heartbeat_s`` seconds; the
@@ -35,6 +41,10 @@ Heartbeats
 
 Threads and torch: ``configure_torch(survey.torch_threads)``; one thread per worker is the default (the survey's
 objects are tiny and many single-threaded workers are fastest; exact replay needs a fixed thread count).
+
+:func:`run_followups` is the foreground variant used by ``tycho followup run``: it requests follow-ups from the
+scheduler if fewer than asked for are waiting, then claims and replays them one by one in the calling process
+(with a heartbeat thread, so a running daemon does not mistake it for a lost worker).
 """
 from __future__ import annotations
 
@@ -45,6 +55,7 @@ import logging.handlers
 import os
 import shutil
 import signal
+import socket
 import subprocess
 import threading
 import time
@@ -57,14 +68,14 @@ import numpy as np
 import tycho
 from tycho.config import Paths, load_config
 from tycho.survey.catalog import Catalog
-from tycho.survey.followup import INSITU_KIND, process_followup, resolve_ri_config
+from tycho.survey.followup import INFRASTRUCTURE_ERRORS, INSITU_KIND, process_followup, resolve_ri_config
 from tycho.survey.sky import Region, Sky
 from tycho.train.spec import ObjectSpec, RIConfig, RunResult
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["DISK_RECHECK_S", "IDLE_POLL_S", "LOG_FORMAT", "STALL_S", "code_version", "free_disk_gb", "load_sky",
-           "process_object", "region_of", "save_light_curve", "worker_main"]
+__all__ = ["DISK_RECHECK_S", "IDLE_POLL_S", "LOG_FORMAT", "STALL_S", "Heartbeat", "code_version", "free_disk_gb",
+           "load_sky", "process_object", "region_of", "run_followups", "save_light_curve", "worker_main"]
 
 IDLE_POLL_S = 5.0
 """Seconds between claim attempts while there is nothing to do."""
@@ -202,6 +213,8 @@ def _process(catalog: Catalog, paths: Paths, spec: ObjectSpec, cfg: Mapping[str,
         return "failed"
     try:
         _record(catalog, paths, result, ri_cfg, version=version)
+    except INFRASTRUCTURE_ERRORS:
+        raise  # not the object's fault: the worker hands it back (module docstring)
     except Exception:  # a recording bug must cost one object, not the worker
         error = traceback.format_exc()
         logger.error("recording %s failed:\n%s", oid, error)
@@ -217,7 +230,7 @@ def _process(catalog: Catalog, paths: Paths, spec: ObjectSpec, cfg: Mapping[str,
 def _record(catalog: Catalog, paths: Paths, result: RunResult, ri_cfg: RIConfig | None, *, version: str) -> None:
     """Light curve, classification, in-situ RI, transients, then mark_done (idempotent; module docstring)."""
     from tycho.analysis.classify import classify
-    from tycho.analysis.events import detect_events, find_transients
+    from tycho.analysis.events import detect_events, find_transients, transient_min_peak
 
     oid = result.object_id
     lc_path = save_light_curve(paths.lightcurve_path(oid), result.light_curve)
@@ -238,15 +251,19 @@ def _record(catalog: Catalog, paths: Paths, result: RunResult, ri_cfg: RIConfig 
             events = detect_events(curve, alpha=ri_cfg.alpha)
             event_ids = catalog.add_events(ri_run_id, oid, events)
     if not _exists(catalog, "SELECT 1 FROM transients WHERE object_id = ?", (oid,)):
-        catalog.add_transients(oid, find_transients(events, summary, cls), event_ids)
+        catalog.add_transients(oid, find_transients(events, summary, cls, min_peak=transient_min_peak(curve)),
+                               event_ids)
     catalog.mark_done(result, lc_path, code_version=version)
     logger.info("%s done in %.1f s: %s (score %.2f)%s", oid, result.wall_time_s, cls.label, cls.score,
                 f", {len(events)} RI events" if curve is not None else "")
 
 
 # ---------------------------------------------------------------------------------------------- heartbeats
-class _Heartbeat:
-    """Background thread writing the worker's heartbeat row (see the module docstring)."""
+class Heartbeat:
+    """Background thread writing ``worker_id``'s heartbeat row every ``interval_s`` seconds (see the module
+    docstring). :meth:`set` names the current job (None when idle) and its status, :meth:`progress` updates the
+    status and the progress clock; while a job reports no progress for ``stall_s`` seconds no heartbeat is written.
+    A failed write (e.g. a locked database) is retried at the next beat."""
 
     def __init__(self, catalog: Catalog, worker_id: str, interval_s: float, stall_s: float = STALL_S) -> None:
         self.catalog = catalog
@@ -321,7 +338,9 @@ def worker_main(worker_id: str, root: Path | str, stop_event: Any, *, claim_budg
     local_stop = threading.Event()
     if threading.current_thread() is threading.main_thread():
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGTERM, lambda signum, frame: local_stop.set())
+        for name in ("SIGTERM", "SIGHUP"):
+            if hasattr(signal, name):
+                signal.signal(getattr(signal, name), lambda signum, frame: local_stop.set())
     if configure_logging:
         _configure_logging(paths)
     from tycho.train.device import configure_torch  # imports torch
@@ -359,7 +378,7 @@ class _Worker:
         self.catalog = Catalog(paths.db, root=paths.root, max_attempts=int(survey["max_attempts"]))
         self.sky = load_sky(paths, cfg)
         self.version = code_version(cfg)
-        self.heartbeat = _Heartbeat(self.catalog, worker_id, float(survey["heartbeat_s"]))
+        self.heartbeat = Heartbeat(self.catalog, worker_id, float(survey["heartbeat_s"]))
         self._paused = False
         self._job = "running"
         self._needs_release = False
@@ -497,3 +516,49 @@ class _Worker:
             self._needs_release = True
         finally:
             self.heartbeat.set(None, "idle")
+
+
+# ---------------------------------------------------------------------------------------------- foreground follow-ups
+def run_followups(paths: Paths, cfg: Mapping[str, Any], n: int, *, stop_flag: Callable[[], bool] | None = None,
+                  worker_id: str | None = None) -> list[tuple[str, str]]:
+    """Run up to ``n`` follow-ups in this process (``tycho followup run``) and return ``(object_id, outcome)`` pairs.
+
+    If fewer than ``n`` follow-ups are waiting, ``Scheduler.select_followups`` is asked for the difference first (so
+    the daily budget and the priority order apply). Each follow-up is then claimed (``Catalog.claim_followup``) and
+    replayed with :func:`~tycho.survey.followup.process_followup` under ``worker_id`` (default
+    ``cli-<host>-<pid>``), while a :class:`Heartbeat` thread keeps the claim fresh. ``stop_flag`` interrupts the
+    current replay (it is handed back and resumes later) and ends the loop.
+    """
+    from tycho.survey.scheduler import Scheduler, SchedulerPolicy
+    from tycho.train.device import configure_torch  # imports torch
+
+    survey = cfg["survey"]
+    worker_id = worker_id or f"cli-{socket.gethostname()}-{os.getpid()}"
+    stop_flag = stop_flag if stop_flag is not None else (lambda: False)
+    sky = load_sky(paths, cfg)
+    outcomes: list[tuple[str, str]] = []
+    with Catalog(paths.db, root=paths.root, max_attempts=int(survey["max_attempts"])) as catalog:
+        waiting = catalog.query("SELECT COUNT(*) AS n FROM followups WHERE status = 'requested'")[0]["n"]
+        if waiting < n:
+            policy = SchedulerPolicy.from_dict(cfg.get("scheduler"))
+            Scheduler(catalog, sky, policy, device=str(survey.get("device") or "cpu")).select_followups(n - waiting)
+        configure_torch(int(survey.get("torch_threads") or 1))
+        heartbeat = Heartbeat(catalog, worker_id, float(survey["heartbeat_s"]))
+        heartbeat.set(None, "idle")
+        heartbeat.start()
+        try:
+            while len(outcomes) < n and not stop_flag():
+                oid = catalog.claim_followup(worker_id)
+                if oid is None:
+                    break
+                heartbeat.set(oid, "followup")
+                ri_cfg = resolve_ri_config(cfg, region_of(sky, catalog.get_spec(oid)), root=paths.root)
+                outcome = process_followup(
+                    catalog, paths, oid, ri_cfg, worker_id=worker_id, stop_flag=stop_flag,
+                    on_progress=lambda step, total: heartbeat.progress(f"followup {100.0 * step / max(total, 1):.0f}%"))
+                heartbeat.set(None, "idle")
+                outcomes.append((oid, outcome))
+        finally:
+            heartbeat.stop()
+            catalog.heartbeat(worker_id, None, "stopped")
+    return outcomes

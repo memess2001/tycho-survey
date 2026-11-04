@@ -566,8 +566,9 @@ computed in this run. Source data: `results.json` and one CSV per experiment; ma
 
 ## How to read this report
 
-The survey's instrument is the **local refined information** RI(S) of a subset S of discrete variables: the
-top-order term of the S-marginal, `RI(S) = D(P_S ‖ (P_S)_∂S)`, in nats (`tycho/ri/refined.py`). It is 0 exactly
+The survey's instrument is the **marginal refined information** RI(S) = RI^marg_S of a subset S of discrete
+variables (Enouen & Sugiyama, TMLR 2026, Appendix C.1; called *local RI* in the code): the top-order term of the
+S-marginal, `RI(S) = D(P_S ‖ (P_S)_∂S)`, in nats (`tycho/ri/refined.py`). It is 0 exactly
 when the variables of S have no |S|-th-order interaction, and it equals the mutual information for |S| = 2. For
 scale: log 2 = 0.693 nats is the RI of a perfect parity, and a pair of binary variables with correlation r has
 RI ≈ r²/2 (so 1e-3 nats ≈ r = 0.045).

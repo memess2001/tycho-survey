@@ -113,30 +113,34 @@ marginals on every S ∈ H; equivalently it is the maximum-entropy distribution 
 by iterative proportional fitting over the maximal elements of H. For H ⊆ H′ the Pythagorean relation
 D(P‖P_H) = D(P‖P_{H′}) + D(P_{H′}‖P_H) holds.
 
-**Chain refined information.** Along a complete hierarchical chain H_0 ⊂ H_1 ⊂ … in which each step adds one
-subset S_j whose proper subsets are already present,
+**Refined information (Definition 1 of the paper).** For a hierarchical collection I and a subset S whose proper
+subsets are in I,
 
-  RI_C(S_j) = D(P‖P_{H_{j−1}}) − D(P‖P_{H_j}) = D(P_{H_j}‖P_{H_{j−1}}) ≥ 0.
+  RI_{I,S}(p) = D(p_{I+S} ‖ p_I) = D(p‖p_I) − D(p‖p_{I+S}) ≥ 0.
 
-From the independence model to the saturated model, these terms sum to the total correlation
-Σ_i H(X_i) − H(X). This is a *complete* decomposition of the KL error into non-negative contributions, one per
-mode interaction. For two variables it is the mutual information. The values depend on how incomparable subsets
-are ordered in the chain. The code exposes the chain explicitly (`graded_chain`, `greedy_selection` for mode
-interaction selection).
+Along a complete chain {∅} = I_0 ⊊ I_1 ⊊ … ⊊ I_T = P([d]) that adds one subset at a time, the terms sum to
+D(p‖u), the KL error of the uniform model (eq. 6). This is a *complete* decomposition into non-negative
+contributions, one per mode interaction. The singleton steps give D(p_k‖u_k); starting the chain from the
+singletons decomposes the total correlation Σ_i H(X_i) − H(X). RI_{I,S} depends on the context I: the paper's
+Figure 3 shows values of one subset spread over orders of magnitude. The code exposes the chain explicitly
+(`chain_decomposition(start="empty" | "singletons")`, and `greedy_selection` as a strong-heredity, exact-gain
+variant of mode interaction selection).
 
-**Local refined information** of a subset S (the per-subset "spectral line" used for event detection) is the
-top-order term of S's own marginal:
+**The two canonical values (Appendix C.1).** The paper defines two order-invariant values per subset:
 
-  RI(S) = D(P_S ‖ (P_S)_{∂S}),  where ∂S = all proper non-empty subsets of S.
+* the **marginal refined information** RI^marg_S = RI_{P(S)−S, S} = D(p_S ‖ (p_S)_{∂S}), with ∂S the proper
+  non-empty subsets of S. It equals the mutual information for |S| = 2 and vanishes iff p_S has no |S|-th-order
+  interaction. It coincides with the top-order term of Amari's hierarchical decomposition and with Schneidman et
+  al.'s connected information of top order.
+* the **conditional refined information** RI^cond_S = RI_{P([d])−{T⊇S}, S}: the gain from S once every
+  interaction not containing S is in the model. For example, it vanishes for two variables that are conditionally
+  independent given a third.
 
-It equals RI_C(S) in every chain in which, when S is added, the only interactions involving S's variables are S's
-own proper subsets. It is chain-independent and non-negative. It equals the mutual information for |S| = 2 and
-vanishes iff P_S has no |S|-th-order interaction. It also coincides with the top-order term of Amari's
-hierarchical decomposition and with Schneidman et al.'s connected information of top order.
-
-> **For discussion.** We could not access the full text of the TMLR paper from the build environment, so the
-> canonical chain and the notation should be checked against it. The implementation keeps both
-> `chain_decomposition` (any chain) and `local_ri`, so we can adopt whichever convention is canonical.
+The survey uses **RI^marg as the per-subset "spectral line"** for event detection. It is computed from the
+small sub-table of S alone, so all subsets up to order 4–5 of tens of variables can be scanned, and its estimator
+has a known χ² null (§3.2). RI^cond needs the full joint table and is reported only for small variable sets.
+`tests/test_ri_paper.py` reproduces the paper's worked examples: Figure 10 gives RI^marg_AB = 0.1308,
+RI^cond_AB = 0.0992, RI^marg_BC = 0.0316, RI^cond_BC = 0, and Figure 1 gives J = 1 bit for the 3-bit XOR.
 
 ### 3.2 Estimation and significance
 
@@ -164,15 +168,23 @@ truth (positive controls). The following events are pushed through the transient
 the training set is fit), pure synergy (an order ≥ 3 activation with no lower-order precursor), order inversion
 (a set activates before all of its subsets that eventually activate), extinction, and reactivation.
 
+Two gates keep the channel useful:
+
+* Only events whose peak RI reaches 5 × min_effect raise transients. Weaker events stay in the catalog. In the
+  first end-to-end run, this cut alerts from 22 to 7 per 8 objects, because most were weak interactions of
+  intermediate solutions flickering near the threshold.
+* Events that match a positive control's ground truth are downgraded to informational. They confirm the
+  instrument rather than surprise us.
+
 ### 3.4 Variables
 
 The survey keeps the variable layer pluggable (`VariableSet`):
 
 * **Inputs and output (positive controls).** Input coordinates are sampled independently at probe time (uniform
   bits or i.i.d. token windows), and the model's predictive distribution enters as a *soft* output column. With
-  independent inputs, the local RI of a subset that contains the output isolates the model's own interaction
+  independent inputs, the marginal RI of a subset that contains the output isolates the model's own interaction
   structure, and the ground truth is exact. For the Markov-language control with spin-coded conditional
-  log-odds Σ_L β_L ∏_{ℓ∈L} s_{t−ℓ}, the population local RI is positive exactly on the planted subsets
+  log-odds Σ_L β_L ∏_{ℓ∈L} s_{t−ℓ}, the population marginal RI is positive exactly on the planted subsets
   {lags ∈ L} ∪ {x̂} and zero on every other subset containing x̂.
 * **Binarised hidden units.** For example, ReLU on/off, or a threshold at the median. RQ0 is the question of how
   to binarise.
@@ -183,7 +195,7 @@ The survey keeps the variable layer pluggable (`VariableSet`):
 
 **Known limitations, measured rather than assumed:**
 
-* local RI is marginal-based, so it reflects the dependence structure of the probe distribution as well as the
+* RI^marg is marginal-based, so it reflects the dependence structure of the probe distribution as well as the
   model;
 * discretisation can create spurious interactions, for example even-order ones from thresholding a Gaussian;
 * chain RI is order-dependent;
@@ -308,14 +320,54 @@ Each of these is falsifiable by the catalog. Each would also give the mechanism-
 power laws, the quantization model, superposition geometry) a quantitative target: the quantization model's
 "quanta learned one at a time" corresponds directly to RI activation events.
 
-## 9. Preliminary results
+## 9. Preliminary results (pilot, 4 November 2026)
 
-*To be filled from `reports/calibration/CALIBRATION.md` and the positive-control runs (see §4).*
+These are from a **pilot calibration**, about 1/20 of the full preset: 4 minutes on 2 cores. The full preset is
+about 15 CPU-hours, i.e. 2–3 h on the Mac mini. The full report is `docs/results/calibration_pilot/CALIBRATION.md`.
+
+**Instrument error budget** (binary variables, N = 4,096 probe samples, α = 0.01; RI^marg in nats):
+
+| Quantity | Measured | Theory / target |
+|---|---|---|
+| Noise floor (99th percentile of null RI, orders 2/3/4) | 8.5e-4 / 8.4e-4 / 8.5e-4 | χ²₁: 8.1e-4 |
+| False-positive rate at α = 0.01, pooled over 48 cells | 0.90 % | 1 % |
+| Minimum detectable RI, 80 % power, one targeted subset | 1.3e-3 | 1.4e-3 |
+| Same, inside a scan of 1,000 subsets with the full detection rule | 3.2e-3 | 3.4e-3 |
+| Bias of the plug-in estimate | exactly df/2N (removed by the correction); ≤ 4 % residual | — |
+| Bootstrap 95 % CI coverage | 94 % | 95 % |
+| Onset-time error (median, in checkpoints) | 0 for ramp widths 0–8 | — |
+| Identity of planted subsets (recall / precision) | 100 % / 95 % vs population truth (85 % vs planted only) | — |
+| Chain dependence of chain RI (median spread / TC) | 2.5–2.9 % (max 16 %) | 0 for RI^marg |
+
+Two results matter for the design:
+
+* **Discretisation creates interactions (RQ0).** A Gaussian latent with only pairwise correlation ρ, thresholded
+  at the median, gives order-3 RI of exactly 0 (sign symmetry), but order-4 RI of 1.4e-3 at ρ = 0.8. That is above
+  the detection threshold. Thresholding at zero or at a quantile also creates order-3 terms (up to 1.4e-3).
+  Strongly correlated binarised units therefore produce *instrument-made* higher-order events. The survey must
+  report the discretisation and compare against this artefact table before interpreting such events.
+* **The χ² theory is accurate down to N ≈ 256.** Noise floor, power and false-positive rates follow the asymptotic
+  formulas. min_effect can therefore be set from theory and checked by calibration, rather than tuned by hand.
+
+**Positive controls with trained networks** (single seed each; in-situ RI at 30 log-spaced checkpoints):
+
+* *Sparse parity* (n = 20, k = 3, MLP width 512, SGD lr 0.05). Of 1,350 candidate subsets (all subsets up to order 4
+  containing ŷ), exactly one is detected at the end of training: the planted {x10, x12, x15, ŷ}. Its RI^marg is
+  0.688 nats (theory log 2 = 0.693). It has no lower-order precursor, i.e. it is a pure-synergy event. The onset is
+  bracketed in steps [975, 1363], *before* test accuracy reaches 90 % at step 1,538.
+* *Markov language* (window 6, β_{1} = 1.0, β_{1,3} = 0.8, MLP width 128, Adam). The pairwise term
+  {x[t−1], x̂} rises from step ≈ 14. The three-way term {x[t−1], x[t−3], x̂} activates later, bracketed in
+  [69, 96], and keeps growing until ≈ 10k steps: staged learning from low to high order, as predicted. At the end
+  only the two planted subsets are detected among 21 candidates. Their values, 0.1727 and 0.1142, match the
+  true spectrum computed from the source, 0.1728 and 0.1209. During the transition (steps ≈ 100–1,000), several
+  non-planted subsets activate and then go extinct. These are interactions of the *model's* intermediate solution,
+  not of the data, and they are exactly the kind of transient the catalog is designed to record.
 
 ## 10. Questions for discussion
 
-1. Which RI convention should the survey adopt for per-subset events: local RI, or chain RI under a canonical
-   chain? Is there a preferred chain (graded, or greedy mode-interaction selection) for the decomposition reports?
+1. The survey detects events with RI^marg (cheap and scannable, with a χ² null) and reports RI^cond only for
+   small variable sets. Is this the right division? Should onsets of RI^cond, which measures interactions given
+   all others, be tracked as a separate kind of event for small models?
 2. How should higher orders be estimated with sparse tables? Is the MAHGenTa Monte-Carlo technique appropriate for
    large variable sets, beyond exhaustive scans of small subsets?
 3. Binary versus categorical variables: should token variables stay categorical (df grows as Π(k−1)) or be

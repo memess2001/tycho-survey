@@ -51,8 +51,8 @@ ri:
   # value of calibration_file at n_probe (written by `tycho calibrate`), or 1.0e-3 without calibration. A value set
   # here, or in a region's `ri:` mapping in the sky file, overrides the calibration.
   # min_effect: 1.0e-3
-  # Null distribution of the RI test: chi2 | parametric_bootstrap.
-  null: chi2
+  # Null distribution of the RI test: chi2 | parametric_bootstrap (keep the key quoted: a bare null is YAML null).
+  "null": chi2
   # RI checkpoints per object (log-spaced; follow-ups add 30 dense points around the largest loss drop).
   n_points: 40
   # Refuse scans with more candidate subsets than max_subsets; stored curves keep the keep_top strongest subsets

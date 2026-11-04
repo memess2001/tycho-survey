@@ -37,13 +37,18 @@ Follow-up status (:func:`process_followup`)
     resume checkpoint (``data/work/<id>/followup/resume.pt``) is kept, so the next claim continues where it stopped.
     The catalog has no attempt refund for follow-ups (unlike ``mark_interrupted`` for objects), so an interrupted
     follow-up is handed back with ``Catalog.release_worker`` and an unlimited attempt budget: the interruption counts
-    as an attempt in ``followups.attempts``, but never makes the follow-up fail.
+    as an attempt in ``followups.attempts``, but never makes the follow-up fail. Infrastructure errors
+    (:data:`INFRASTRUCTURE_ERRORS`: a database locked beyond its busy timeout, a full or failing disk) are not the
+    object's fault and would otherwise fail it for good (an object is never followed up twice), so they propagate:
+    the worker hands the follow-up back and it is retried under the ``survey.max_attempts`` rule. A successful
+    follow-up removes its (then empty) work directory.
 """
 from __future__ import annotations
 
 import functools
 import logging
 import math
+import sqlite3
 import traceback
 from dataclasses import fields
 from pathlib import Path
@@ -59,8 +64,9 @@ from tycho.train.spec import ObjectSpec, RIConfig
 
 logger = logging.getLogger(__name__)
 
-__all__ = ["FOLLOWUP_KIND", "INSITU_KIND", "N_DENSE", "REPLAY_FIDELITY_TOL", "FollowupFailed", "FollowupInterrupted",
-           "calibrated_min_effect", "dense_window", "process_followup", "resolve_ri_config", "run_followup"]
+__all__ = ["FOLLOWUP_KIND", "INFRASTRUCTURE_ERRORS", "INSITU_KIND", "N_DENSE", "REPLAY_FIDELITY_TOL", "FollowupFailed",
+           "FollowupInterrupted", "calibrated_min_effect", "dense_window", "process_followup", "resolve_ri_config",
+           "run_followup"]
 
 FOLLOWUP_KIND = "followup"
 """``ri_runs.kind`` (and RI file tag) of follow-up curves."""
@@ -78,6 +84,10 @@ observed a different trajectory (other thread count, MPS, or changed code), whic
 
 WORK_SUBDIR = "followup"
 """Subdirectory of the object's work directory that holds the replay's resume checkpoint."""
+
+INFRASTRUCTURE_ERRORS: tuple[type[BaseException], ...] = (sqlite3.OperationalError, OSError)
+"""Errors that are not the observed object's fault (locked database, full disk): the job is handed back and retried
+instead of being marked failed (also used by :mod:`tycho.survey.worker`)."""
 
 _UNLIMITED_ATTEMPTS = 2 ** 31 - 1
 """Attempt budget used when handing back an interrupted follow-up (an interruption must never fail it)."""
@@ -186,8 +196,9 @@ def run_followup(catalog: Catalog, paths: Paths, object_id: str, ri_cfg: RIConfi
     """Replay a finished object with dense RI around its largest train-loss drop and record the result.
 
     Saves the RI curve, records an ``ri_runs`` row (kind :data:`FOLLOWUP_KIND`), its events and their transients
-    (module docstring). Idempotent: if the object already has a follow-up RI run, nothing new is recorded and the
-    existing run id is returned.
+    (module docstring). Idempotent: if the object already has a follow-up RI run (checked before the replay, and
+    again before recording in case another worker finished the same follow-up meanwhile), nothing new is recorded
+    and the existing run id is returned.
 
     Returns:
         The ``ri_run_id``.
@@ -197,12 +208,16 @@ def run_followup(catalog: Catalog, paths: Paths, object_id: str, ri_cfg: RIConfi
         FollowupInterrupted: ``stop_flag`` stopped the replay (resume checkpoint kept).
         FollowupFailed: the replay failed or produced no RI curve.
     """
-    from tycho.analysis.events import detect_events, find_transients  # numpy only
+    from tycho.analysis.events import detect_events, find_transients, transient_min_peak  # numpy only
     from tycho.train.replay import replay_fidelity, replay_object  # imports torch
 
     obj = catalog.get_object(object_id)
     if obj["status"] != "done":
         raise ValueError(f"object {object_id} is {obj['status']}, not done: nothing to follow up")
+    existing = _followup_run_id(catalog, object_id)
+    if existing is not None:
+        logger.warning("follow-up of %s: already recorded as ri_run %d; nothing to do", object_id, existing)
+        return existing
     spec = ObjectSpec.from_dict(obj["spec"])
     summary = obj["summary"] or {}
     window = dense_window(summary)
@@ -229,21 +244,23 @@ def run_followup(catalog: Catalog, paths: Paths, object_id: str, ri_cfg: RIConfi
                        "%.3g > %.0e); the RI curve describes a different trajectory (thread count, device or code "
                        "changed?)", object_id, fidelity, REPLAY_FIDELITY_TOL)
 
-    existing = catalog.query("SELECT ri_run_id FROM ri_runs WHERE object_id = ? AND kind = ? ORDER BY ri_run_id "
-                             "LIMIT 1", (object_id, FOLLOWUP_KIND))
-    if existing:  # e.g. a second worker replayed an object whose first worker was declared lost
+    existing = _followup_run_id(catalog, object_id)
+    if existing is not None:  # e.g. a second worker replayed an object whose first worker was declared lost
         logger.warning("follow-up of %s: already recorded as ri_run %d; not recording a duplicate", object_id,
-                       existing[0]["ri_run_id"])
-        return int(existing[0]["ri_run_id"])
+                       existing)
+        _remove_empty_work_dirs(work_dir)
+        return existing
     path = curve.save(paths.ri_path(object_id, FOLLOWUP_KIND))
     ri_run_id = catalog.add_ri_run(object_id, FOLLOWUP_KIND, path, curve)
     events = detect_events(curve, alpha=ri_cfg.alpha)
     event_ids = catalog.add_events(ri_run_id, object_id, events)
     classification = _classification_mapping(obj.get("classification"))
-    transients = [t for t in find_transients(events, summary, classification) if t.event_index is not None]
+    transients = [t for t in find_transients(events, summary, classification, min_peak=transient_min_peak(curve))
+                  if t.event_index is not None]
     catalog.add_transients(object_id, transients, event_ids)
     logger.info("follow-up of %s recorded: ri_run %d, %d subsets x %d checkpoints, %d events, %d transients",
                 object_id, ri_run_id, curve.S, curve.T, len(events), len(transients))
+    _remove_empty_work_dirs(work_dir)
     return ri_run_id
 
 
@@ -261,6 +278,8 @@ def process_followup(catalog: Catalog, paths: Paths, object_id: str, ri_cfg: RIC
         catalog.release_worker(worker_id, max_attempts=_UNLIMITED_ATTEMPTS)
         logger.info("follow-up of %s interrupted; handed back for a later resume", object_id)
         return "interrupted"
+    except INFRASTRUCTURE_ERRORS:
+        raise  # not the object's fault: the caller hands the follow-up back (module docstring)
     except Exception as exc:  # a per-object failure must never stop the worker
         error = exc.args[0] if isinstance(exc, FollowupFailed) and exc.args else traceback.format_exc()
         logger.error("follow-up of %s failed: %s", object_id, error)
@@ -271,6 +290,21 @@ def process_followup(catalog: Catalog, paths: Paths, object_id: str, ri_cfg: RIC
 
 
 # ---------------------------------------------------------------------------------------------- helpers
+def _followup_run_id(catalog: Catalog, object_id: str) -> int | None:
+    rows = catalog.query("SELECT ri_run_id FROM ri_runs WHERE object_id = ? AND kind = ? ORDER BY ri_run_id LIMIT 1",
+                         (object_id, FOLLOWUP_KIND))
+    return int(rows[0]["ri_run_id"]) if rows else None
+
+
+def _remove_empty_work_dirs(work_dir: Path) -> None:
+    """Remove the replay's work directory and the object's, if empty (the runner deletes its checkpoint when done)."""
+    for d in (work_dir, work_dir.parent):
+        try:
+            d.rmdir()
+        except OSError:
+            return
+
+
 def _finite(v: Any) -> float | None:
     if v is None or isinstance(v, (str, bytes, bool)):
         return None

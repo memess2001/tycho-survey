@@ -356,3 +356,30 @@ def test_parity_like_positive_control_end_to_end():
     found = find_transients(events, {"t_train_acc99": float(STEPS[19]), "max_train_acc": 1.0}, None)
     assert [(t.kind, t.event_index) for t in found] == [("pure_synergy", 0)]  # activation before fitting: not late
     assert "[ground truth]" in found[0].message and "x1, x3, x4, yhat" in found[0].message
+
+
+def test_min_peak_gates_event_transients():
+    """Weak events stay in the catalog but do not raise transients; strong ones still do."""
+    from tycho.analysis.events import RIEvent, find_transients
+
+    def ev(subset, kind, step, peak):
+        return RIEvent(subset=subset, subset_names=tuple(f"v{i}" for i in subset), order=len(subset), kind=kind,
+                       step=step, step_lo=step - 1, step_hi=step, ri_before=0.0, ri_after=peak, peak_ri=peak,
+                       confidence=0.99)
+
+    events = [ev((0, 1, 2), "activation", 10, 0.003), ev((0, 1, 2), "extinction", 20, 0.003),
+              ev((3, 4, 5), "activation", 30, 0.5)]
+    all_kinds = [t.kind for t in find_transients(events, {}, None)]
+    gated = find_transients(events, {}, None, min_peak=0.005)
+    assert all_kinds.count("pure_synergy") == 2 and "extinction" in all_kinds
+    assert [t.kind for t in gated] == ["pure_synergy"] and gated[0].event_index == 2
+
+
+def test_ground_truth_events_are_informational():
+    from tycho.analysis.events import RIEvent, find_transients
+
+    ev = RIEvent(subset=(0, 1, 2), subset_names=("x0", "x1", "yhat"), order=3, kind="activation", step=10,
+                 step_lo=9, step_hi=10, ri_before=0.0, ri_after=0.69, peak_ri=0.69, confidence=0.99,
+                 matches_ground_truth=True)
+    (t,) = find_transients([ev], {}, None)
+    assert t.kind == "pure_synergy" and t.severity == 1 and "expected" in t.message
