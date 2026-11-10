@@ -1,0 +1,54 @@
+<section id="roadmap" data-transition="fade" style="background:#FBFBF9;color:#1B1A33;font-family:Inter, Arial, sans-serif;padding:72px 128px">
+<h1 style="position:absolute;left:128px;top:64px;width:1664px;font-family:Inter, Arial, sans-serif;font-size:60px;font-weight:700;line-height:1.1;color:#1B1A33">v0 was a system test; next, what to observe</h1>
+<p style="position:absolute;left:210px;top:160px;width:1500px;height:64px;font-size:28px;line-height:1.35;text-align:center;color:#1B1A33;background:#EFEEEA;border:2px solid #CBCADB;border-radius:32px;padding:12px 24px"><b>v0 shows the survey runs end to end.</b> Its numbers are checks, not findings.</p>
+<x-connector x1="960" y1="226" x2="960" y2="258" head="none" style="color:#9A98B5;border-width:2px"></x-connector>
+<x-connector x1="448" y1="258" x2="1336" y2="258" head="none" style="color:#9A98B5;border-width:2px"></x-connector>
+<x-connector x1="448" y1="258" x2="448" y2="292" head="none" style="color:#9A98B5;border-width:2px"></x-connector>
+<x-connector x1="1336" y1="258" x2="1336" y2="292" head="none" style="color:#9A98B5;border-width:2px"></x-connector>
+<div style="position:absolute;left:128px;top:292px;width:640px;height:648px;display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:3px solid #A94A12;border-radius:20px;padding:26px 30px">
+<p style="font-size:24px;font-weight:700;letter-spacing:2px;color:#A94A12">V0 · SYSTEM TEST · DONE</p>
+<h3 style="font-family:Inter, Arial, sans-serif;font-size:36px;font-weight:700;color:#1B1A33">The survey runs end to end</h3>
+<ul style="font-size:25px;line-height:1.4;color:#1B1A33">
+<li>6,855 training runs in 46 min, 0 failures</li>
+<li>A first catalog (DR0), on GitHub</li>
+<li>Instrument checks pass: calibration matches theory, planted interactions found in 49 of 49 controls</li>
+</ul>
+<p style="font-size:24px;font-weight:700;color:#2E2B78;padding-top:8px;border-top:2px dashed #CBCADB">What v0 taught about choosing targets</p>
+<ul style="font-size:25px;line-height:1.4;color:#1B1A33">
+<li>Uniform inputs only re-check the instrument</li>
+<li>Hard-binned hidden units are noisy</li>
+<li>20k steps are too short for grokking</li>
+<li>Flagging needs an “unknown” exit and quotas</li>
+</ul>
+</div>
+<x-connector x1="772" y1="600" x2="876" y2="600" head="end" style="color:#A94A12;border-width:3px"></x-connector>
+<div style="position:absolute;left:880px;top:292px;width:912px;height:144px;display:flex;align-items:center;gap:24px;background:#FFFFFF;border:2px dashed #A94A12;border-radius:16px;padding:16px 24px">
+<p style="font-size:32px;font-weight:700;color:#A94A12;background:#FBE9DF;border-radius:12px;padding:8px 16px">v1</p>
+<div style="display:flex;flex-direction:column;gap:4px"><h3 style="font-family:Inter, Arial, sans-serif;font-size:30px;font-weight:700;color:#1B1A33">Sharper known-answer tasks</h3><p style="font-size:24px;line-height:1.3;color:#4B4A5E">Markov orders 2–5, parity n up to 64, grokking 50k steps with controls; better flagging</p></div>
+</div>
+<x-connector x1="1336" y1="436" x2="1336" y2="456" head="end" style="color:#9A98B5;border-width:2px"></x-connector>
+<div style="position:absolute;left:880px;top:460px;width:912px;height:144px;display:flex;align-items:center;gap:24px;background:#FFFFFF;border:2px dashed #A94A12;border-radius:16px;padding:16px 24px">
+<p style="font-size:32px;font-weight:700;color:#A94A12;background:#FBE9DF;border-radius:12px;padding:8px 16px">v2</p>
+<div style="display:flex;flex-direction:column;gap:4px"><h3 style="font-family:Inter, Arial, sans-serif;font-size:30px;font-weight:700;color:#1B1A33">Correlated inputs</h3><p style="font-size:24px;line-height:1.3;color:#4B4A5E">In-context Markov chains with RI on (step B); settle RI for correlated variables</p></div>
+</div>
+<x-connector x1="1336" y1="604" x2="1336" y2="624" head="end" style="color:#9A98B5;border-width:2px"></x-connector>
+<div style="position:absolute;left:880px;top:628px;width:912px;height:144px;display:flex;align-items:center;gap:24px;background:#FFFFFF;border:2px dashed #A94A12;border-radius:16px;padding:16px 24px">
+<p style="font-size:32px;font-weight:700;color:#A94A12;background:#FBE9DF;border-radius:12px;padding:8px 16px">v3</p>
+<div style="display:flex;flex-direction:column;gap:4px"><h3 style="font-family:Inter, Arial, sans-serif;font-size:30px;font-weight:700;color:#1B1A33">Hidden variables</h3><p style="font-size:24px;line-height:1.3;color:#4B4A5E">SAE features as RI variables (step C); grokking internals, cone effect</p></div>
+</div>
+<x-connector x1="1336" y1="772" x2="1336" y2="792" head="end" style="color:#9A98B5;border-width:2px"></x-connector>
+<div style="position:absolute;left:880px;top:796px;width:912px;height:144px;display:flex;align-items:center;gap:24px;background:#FFFFFF;border:2px dashed #A94A12;border-radius:16px;padding:16px 24px">
+<p style="font-size:32px;font-weight:700;color:#A94A12;background:#FBE9DF;border-radius:12px;padding:8px 16px">v4</p>
+<div style="display:flex;flex-direction:column;gap:4px"><h3 style="font-family:Inter, Arial, sans-serif;font-size:30px;font-weight:700;color:#1B1A33">Closer to real models</h3><p style="font-size:24px;line-height:1.3;color:#4B4A5E">Small transformers on text, and public checkpoint suites, with the same lens</p></div>
+</div>
+<p style="position:absolute;left:128px;bottom:52px;width:1664px;font-size:28px;text-align:center;color:#1B1A33"><b>The platform runs.</b> Which runs to observe, and with which variables, is the real work of v1–v4.</p>
+<aside>这一页说明第一轮 v0 的定位：它是一次系统测试，不是结果。
+左边：v0 证明巡天能从头跑到尾：6,855 次训练 46 分钟跑完、零失败；得到第一版星表 DR0，已放在 GitHub；仪器检查通过：校准和理论一致，49 个阳性对照里预埋的交互全部找到。但这些数字只是检查，不是发现，其中有的还可能是伪影。
+v0 真正有用的是它教会我们怎么选观测对象：输入均匀时只能再次检查仪器；硬分箱的隐藏单元噪声大；2 万步对 grokking 太短；挑选规则需要“未知”出口和名额分配。
+右边是接下来的观测路线，重点是选对象和改进：
+v1：把已知答案的任务做得更细：马尔可夫阶数 2 到 5、奇偶 n 到 64、grokking 训练 5 万步并配对照组，同时改进挑选规则。
+v2：相关输入：在上下文马尔可夫链上打开 RI（对应 B），同时定下相关变量时 RI 的用法。
+v3：隐变量：把 SAE 特征当作 RI 的变量（对应 C），看 grokking 的内部结构和 cone effect。
+v4：更接近真实模型：在文本上训练的小 transformer，以及公开的 checkpoint 序列，用同一把尺子。
+一句话：平台已经能跑；观测哪些训练、用什么变量，才是 v1 到 v4 真正要做的事。</aside>
+</section>
