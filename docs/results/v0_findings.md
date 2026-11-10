@@ -1,7 +1,7 @@
 # Sky v0: first-look findings (DR0, 10 November 2026)
 
 Data: `releases/DR0` (6,855 objects, 191 RI runs, 19,222 RI events), full calibration in `reports/calibration/`.
-Run on an 88-core lab server, 70 workers, about 12 h. Analysis: `python scripts/analyze_dr0.py releases/DR0`.
+Run on an 88-core lab server with 70 workers: the 6,855 training runs took 46 min; the 142 RI follow-up replays (2 every 10 min) ran for about 12 h. Analysis: `python scripts/analyze_dr0.py releases/DR0`.
 
 > **Correction (same day, after re-reading the 4 November 1-on-1 report).** Every control in v0 probes the network
 > with independent, uniform binary inputs and a soft binary output. In that regime the marginal RI of {x_S, ŷ} is a
@@ -17,7 +17,9 @@ Run on an 88-core lab server, 70 workers, about 12 h. Analysis: `python scripts/
   configuration) has an activation event on its planted subset at the planted order.
 * **Separation from spurious detections.** A control object has a median of 3 non-planted activations. Their peak RI
   has a median of 0.0036 nats, against 0.36 nats for the planted subsets: a factor of 100.
-* **Full calibration done** (preset `full`). The numbers agree with the pilot.
+* **Full calibration done** (preset `full`): noise floor 8.1–8.3e-4 (theory 8.1e-4), false positives 0.92 % at α = 0.01,
+  minimum detectable RI 1.4e-3 (theory 1.4e-3). The binarisation artefact (E6) is the known dichotomised-Gaussian
+  effect (Amari et al. 2003; Macke et al. 2009).
 
 ## 2. Promising, needs a dedicated test in v1
 
@@ -49,7 +51,7 @@ Run on an 88-core lab server, 70 workers, about 12 h. Analysis: `python scripts/
   But there are only three n values (16, 24, 32), so this is a hint, not a law.
 * **Grokking, as seen through hidden-unit interactions.**
   * Of 137 grokking objects followed up, 62 % have strong late activations (peak ≥ 0.02 nats) after the training
-    set is fit.
+    set is fit, and 59 % have one before generalisation.
   * Their onsets fall mostly before generalisation: the median onset is 0.29 × the step of 90 % test accuracy.
     This looks like interactions forming during the "hidden" phase between memorisation and generalisation.
 
