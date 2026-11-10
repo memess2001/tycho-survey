@@ -3,6 +3,14 @@
 Data: `releases/DR0` (6,855 objects, 191 RI runs, 19,222 RI events), full calibration in `reports/calibration/`.
 Run on an 88-core lab server, 70 workers, about 12 h. Analysis: `python scripts/analyze_dr0.py releases/DR0`.
 
+> **Correction (same day, after re-reading the 4 November 1-on-1 report).** Every control in v0 probes the network
+> with independent, uniform binary inputs and a soft binary output. In that regime the marginal RI of {x_S, ŷ} is a
+> function of the Fourier coefficients of the model on the subsets of S only. For a single mode it is
+> ln 2 − h((1 + ε)/2), and it is unchanged when coefficients outside S are added (checked numerically). This is
+> slide 3 of that report. So the controls verify the instrument at scale but cannot show that RI sees more than
+> Fourier analysis. "RI switches on before accuracy" is a low threshold (≈ ε = 0.045) being crossed before a high
+> one, as in Barak et al.'s hidden progress, not evidence. The Markov-language "delay" has a confound; see §2.
+
 ## 1. Solid: the instrument works on trained networks
 
 * **Positive controls: 49/49.** Every control object (28 sparse-parity and 21 Markov-language objects, 5–7 seeds per
@@ -22,11 +30,17 @@ Run on an 88-core lab server, 70 workers, about 12 h. Analysis: `python scripts/
   | {1,3}: 0.8 only | — | 14 | — |
 
   The seed ranges of different orders never overlap.
-* **A lower-order term delays a higher-order term of the same strength.** The {1,3} three-way term, at the same
-  coupling 0.8, is learned at step 14–36 when it is alone but at step 96–133 when a pairwise {1} term is present.
-  So staging is not just "higher order is intrinsically harder": structure that has already been learned shapes
-  when the next order switches on.
-* **RI leads accuracy in sparse parity.**
+* **A lower-order term seems to delay a higher-order term of the same strength, but this is confounded.** The
+  {1,3} three-way term, at the same coupling 0.8, is learned at step 14–36 alone but at step 96–133 when a pairwise
+  {1} term is present. There are two confounds:
+  * The pairwise term makes the training contexts correlated. In the chain, s(t−1)·s(t−3) = +1 in 85 % of contexts
+    (E = +0.71), against 50 % without the term. The three-way term is therefore exercised far less often in training.
+  * The final marginal RI of the three-way term differs, 0.121 vs 0.240 nats, and onsets are threshold crossings.
+
+  The effect is therefore at least partly a correlated-inputs effect, which is the open question of the PhD plan.
+  It is not yet evidence that "learned lower-order structure delays higher order".
+* **RI leads accuracy in sparse parity.** This is expected rather than evidence (see the correction above): it
+  amounts to a low threshold on the Fourier coefficient being crossed before a high one.
   * For k = 2, the planted interaction switches on 61–90 steps before test accuracy reaches 90 %, in 14 of 14 runs.
   * For k = 3, it leads in 9 of 14 runs (median lead 175–250 steps). The rest fall on the same or the next
     checkpoint, because 30 log-spaced checkpoints are too coarse there. A dense replay should settle this.
@@ -52,7 +66,26 @@ Run on an 88-core lab server, 70 workers, about 12 h. Analysis: `python scripts/
   weight decay cannot be measured (R² < 0.4).
 * **The biggest region was barely followed up.** parity-wide has 4,595 objects but only 5 RI follow-ups.
 
-## 4. Implications for sky v1
+## 4. How this relates to the PhD plan (1-on-1 report of 4 November)
+
+The plan asks where RI shows training dynamics that Fourier analysis does not. It has three branches:
+1. instrument;
+2. known-answer tasks, where finding 1 is that uniform inputs give RI = Fourier, and Step B is in-context Markov
+   chains;
+3. hidden variables, i.e. Step C with SAE features.
+
+Tycho is the engine that runs these experiments, not a separate project:
+* its calibration suite adds an error budget to branch 1 (E7 chain dependence, E6 binning artefacts);
+* v0's controls sit inside branch 2's "uniform inputs" case, where the answer was already known;
+* its grokking region touches branch 3, but with hard-binned units;
+* the catalog and empirical laws are an extra layer. They are RI-specific only where branch 3 succeeds.
+
+The next steps follow the plan:
+1. RI for correlated variables (RI^cond, baseline p(x)·u(y));
+2. Step B as a Tycho region with a pre-registered pass/fail and ≥ 10 seeds;
+3. Step C with SAE features as variables.
+
+## 5. Implications for sky v1
 
 1. Test "order sets onset time" directly in the Markov language:
    * vary the coupling strengths, add order 5, run ≥ 10 seeds;

@@ -1,0 +1,39 @@
+<section id="cover" data-transition="fade" style="background:#F5F7FA;color:#172033;font-family:'IBM Plex Sans', Arial, sans-serif;padding:88px 96px 136px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#2C46B8">WEEKLY UPDATE · 10 NOVEMBER 2026 · 2 / 3</p>
+<h1 style="font-size:64px;font-weight:600;line-height:1.1">Tycho: a calibrated survey of training dynamics, measured with refined information</h1>
+<p style="font-size:30px;color:#4A5568">Question: <b style="color:#172033">which variables start to interact, at which order, at which training step?</b></p>
+</div>
+<div style="display:flex;gap:28px;flex:1">
+<div style="flex:1;display:flex;flex-direction:column;gap:14px;background:#FFFFFF;padding:36px;border:1px solid #D6DCE6;border-radius:16px">
+<h3 style="font-size:36px;font-weight:600">The idea</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5568"><b style="color:#2C46B8">Spectrometer:</b> at one training step, sample the network’s variables (inputs, prediction, units); RI splits their dependence by interaction order.</p>
+<p style="font-size:26px;line-height:1.4;color:#4A5568"><b style="color:#C2440F">Sky survey:</b> measure thousands of runs (task, width, lr, data, weight decay, seeds) the same way. Cheap curves for all; RI for selected runs. One catalog.</p>
+<p style="font-size:26px;line-height:1.4;color:#172033">Goal: regularities that hold across configurations.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:14px;background:#FFFFFF;padding:36px;border:1px solid #D6DCE6;border-radius:16px">
+<h3 style="font-size:36px;font-weight:600">The instrument: your RI</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5568">Definition 1: RI<sub>I,S</sub> = D(p<sub>I+S</sub> ‖ p<sub>I</sub>). Events use RI<sup>marg</sup> (App. C.1; χ² null, G² = 2N·RI); RI<sup>cond</sup> for small sets.</p>
+<table style="font-size:24px;font-family:'IBM Plex Mono', 'Courier New', monospace;color:#172033">
+<tr><th style="width:50%">Fig. 10</th><th style="width:25%;text-align:right">paper</th><th style="width:25%;text-align:right">ours</th></tr>
+<tr><td>marg AB</td><td style="text-align:right">0.1308</td><td style="text-align:right">0.1308</td></tr>
+<tr><td>cond AB</td><td style="text-align:right">0.0992</td><td style="text-align:right">0.0992</td></tr>
+<tr><td>marg BC</td><td style="text-align:right">0.0316</td><td style="text-align:right">0.0316</td></tr>
+<tr><td>cond BC</td><td style="text-align:right">0.0000</td><td style="text-align:right">0.0000</td></tr>
+</table>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:14px;background:#FFFFFF;padding:36px;border:1px solid #D6DCE6;border-radius:16px">
+<h3 style="font-size:36px;font-weight:600">Calibrated first</h3>
+<table style="font-size:24px;color:#172033">
+<tr><th style="width:52%">N = 4,096, binary</th><th style="width:24%;text-align:right">meas.</th><th style="width:24%;text-align:right">theory</th></tr>
+<tr><td>Noise floor</td><td style="text-align:right">8.5e-4</td><td style="text-align:right">8.1e-4</td></tr>
+<tr><td>False pos. α=.01</td><td style="text-align:right">0.90%</td><td style="text-align:right">1%</td></tr>
+<tr><td>Min. detectable</td><td style="text-align:right">1.3e-3</td><td style="text-align:right">1.4e-3</td></tr>
+<tr><td>Onset error</td><td style="text-align:right">0 ckpt</td><td style="text-align:right">—</td></tr>
+</table>
+<p style="font-size:26px;line-height:1.4;color:#4A5568"><b style="color:#C2440F">Finding:</b> binarising a pairwise-only Gaussian creates order-4 RI (1.4e-3 at ρ = 0.8), above threshold.</p>
+</div>
+</div>
+<p style="position:absolute;left:96px;bottom:56px;width:1728px;font-size:24px;color:#4A5568"><b style="color:#172033">This week:</b> built the 24×7 platform (654 tests) · aligned RI with the paper · full calibration · first survey, 6,855 runs on the 88-core lab server</p>
+<aside>第一张：问题是什么（哪些变量、几阶、第几步开始交互）；两个比喻；RI 按您论文实现、图 10 数值复现；先校准：噪声底、误报率、最小可检测量都和 χ² 理论一致；二值化会制造假的 4 阶交互（RQ0）。底部一行是本周做的四件事。</aside>
+</section>
