@@ -1,0 +1,23 @@
+<section id="tasks" data-transition="fade" style="background:#F5F7FA;color:#172033;font-family:'IBM Plex Sans', Arial, sans-serif;padding:72px 96px 128px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:10px">
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:24px;letter-spacing:2px;color:#2C46B8">WEEKLY UPDATE · 10 NOVEMBER 2026 · 2 / 4 · WHAT THE FIRST SURVEY OBSERVED</p>
+<h1 style="font-size:56px;font-weight:600;line-height:1.1">Five small tasks whose answers are known</h1>
+<p style="font-size:28px;color:#4A5568">Every model has 120 to 36,000 parameters, and one training run takes 10–90 s on one CPU core.</p>
+</div>
+<table style="font-size:24px;color:#172033">
+<tr><th style="width:15%">Task</th><th style="width:31%">What the network learns</th><th style="width:28%">Model and training</th><th style="width:8%;text-align:right">Runs</th><th style="width:18%">Why it is in the sky</th></tr>
+<tr><td><b>Sparse parity</b></td><td>Label = XOR of k = 2–3 hidden bits among n = 16–32 random bits</td><td>1-layer MLP, 0.6k–18k params; SGD, 20–30k steps</td><td style="text-align:right">4,623</td><td>Known answer; long plateau, then sudden learning</td></tr>
+<tr style="background:#EEF1F6"><td><b>Markov language</b></td><td>Binary tokens; the next token depends on past tokens with planted orders 2–4</td><td>1-layer MLP, 1.2k params; Adam, 15k steps</td><td style="text-align:right">21</td><td>Known answer, with tokens as variables</td></tr>
+<tr><td><b>Modular addition</b></td><td>(a + b) mod p, p = 23 or 47; 30–70 % of all pairs used for training</td><td>1-layer MLP, 4.5k–36k params; AdamW, 20k steps</td><td style="text-align:right">2,166</td><td>Grokking</td></tr>
+<tr style="background:#EEF1F6"><td><b>In-context Markov chains</b></td><td>48-token sequences of 3 symbols, each with its own random transition table</td><td>2-layer attention-only transformer, 3k–10k params; 6k steps</td><td style="text-align:right">21</td><td>Staged learning: unigram, then bigram (step B)</td></tr>
+<tr><td><b>Toy superposition</b></td><td>20 sparse features squeezed into 5 hidden dimensions</td><td>Linear map + ReLU, 120 params; Adam, 8k steps</td><td style="text-align:right">24</td><td>Geometry of features</td></tr>
+</table>
+<p style="position:absolute;left:96px;bottom:56px;width:1728px;font-size:24px;color:#4A5568">For scale: GPT-2 small has 124 million parameters. These tasks are small enough to run thousands of times, and their structure is known, so the instrument can be checked.</p>
+<aside>这一页介绍第一轮巡天观测的五种任务，都是小模型，参数量从 120 到 3.6 万，每次训练在一个 CPU 核上 10 到 90 秒。
+稀疏奇偶：输入是 16 到 32 个随机比特，标签是其中 2 到 3 个隐藏比特的异或；单层 MLP；一共 4,623 次训练。它的答案已知，而且典型现象是长时间平台期后突然学会。
+马尔可夫语言：二值 token 序列，下一个 token 依赖前面 token 的方式是我预先设定的（2 到 4 阶）；21 次。这是用 token 当变量的阳性对照。
+模加法：(a + b) mod p，p 是 23 或 47，用 30% 到 70% 的组合训练；2,166 次。用来观察 grokking。
+上下文马尔可夫链：每条 48 个 token 的序列都有自己的随机转移表；两层只含注意力的 transformer；21 次。用来观察先学 unigram、再学 bigram 的分阶段学习，也就是计划里的 B。
+叠加态玩具模型：20 个稀疏特征压进 5 维；120 个参数；24 次。用来观察特征的几何结构。
+作为对比，GPT-2 small 有 1.24 亿参数。这些任务足够小，可以跑几千次，而且结构已知，适合检查仪器。</aside>
+</section>
