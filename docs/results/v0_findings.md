@@ -66,24 +66,14 @@ Run on an 88-core lab server, 70 workers, about 12 h. Analysis: `python scripts/
   weight decay cannot be measured (R² < 0.4).
 * **The biggest region was barely followed up.** parity-wide has 4,595 objects but only 5 RI follow-ups.
 
-## 4. How this relates to the PhD plan (1-on-1 report of 4 November)
+## 4. How the survey relates to the 4 November plan
 
-The plan asks where RI shows training dynamics that Fourier analysis does not. It has three branches:
-1. instrument;
-2. known-answer tasks, where finding 1 is that uniform inputs give RI = Fourier, and Step B is in-context Markov
-   chains;
-3. hidden variables, i.e. Step C with SAE features.
-
-Tycho is the engine that runs these experiments, not a separate project:
-* its calibration suite adds an error budget to branch 1 (E7 chain dependence, E6 binning artefacts);
-* v0's controls sit inside branch 2's "uniform inputs" case, where the answer was already known;
-* its grokking region touches branch 3, but with hard-binned units;
-* the catalog and empirical laws are an extra layer. They are RI-specific only where branch 3 succeeds.
-
-The next steps follow the plan:
-1. RI for correlated variables (RI^cond, baseline p(x)·u(y));
-2. Step B as a Tycho region with a pre-registered pass/fail and ≥ 10 seeds;
-3. Step C with SAE features as variables.
+The survey is the research program. The 4 November plan was provisional and covers only its first two stages:
+the instrument (RI code; open questions on ordering and comparing related variables) and the choice of targets
+(the lesson that on simple inputs RI adds nothing new over standard tools, and the candidate targets B, in-context
+Markov chains, and C, hidden features). This week built and ran all five stages once: instrument with calibration,
+targets (sky v0), observation (6,855 runs), catalog (DR0), and first hints of patterns, none RI-specific yet.
+Next: return to stage 2 with that lesson, and aim the survey where RI can add something (B and C).
 
 ## 5. Implications for sky v1
 
