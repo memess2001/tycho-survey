@@ -58,5 +58,9 @@ launchd (`ops/install_macmini.sh --dry-run` shows what it would do); see [docs/O
   transients, data releases, the agent).
 * [docs/SPEC.md](docs/SPEC.md): the implementation contract between modules.
 * [docs/OPS_MACMINI.md](docs/OPS_MACMINI.md): running Tycho 24×7 on a Mac mini, and the failure playbook.
+* [docs/OPS_LINUX.md](docs/OPS_LINUX.md): running it on a Linux server (start, stop, switching to sky v1).
+* [docs/results/v0_findings.md](docs/results/v0_findings.md): what sky v0 (a system test) showed, and its problems.
+* [docs/results/v1_preregistration.md](docs/results/v1_preregistration.md): sky v1's design, the criteria fixed before
+  the run, and its run-time estimate.
 
 Tests: `python -m pytest -q` (add `--runslow` for the slow ones).

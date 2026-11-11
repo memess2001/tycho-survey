@@ -35,6 +35,11 @@ class RICurve:
         n_eff: (T,) effective sample sizes.
         ground_truth: optional list of ``{"subset": [names...], "order": k, ...}``.
         meta: alpha, min_effect, max_order, null, object_id, kind, task, ...
+        fourier: optional (S, T) Fourier (Walsh) baseline, laid out like ``ri``: the empirical Walsh coefficient
+            ``f̂(S \\ {output})`` of the model's soft binary output at each checkpoint, NaN where undefined (subset
+            without the output, non-binary column, no soft binary output). See :mod:`tycho.ri.fourier`; the runner
+            records the output column's name (None if the task has none) in ``meta["fourier_output"]``. None when
+            the curve was built without it (files written before the baseline existed).
     """
 
     steps: np.ndarray
@@ -47,6 +52,7 @@ class RICurve:
     n_eff: np.ndarray
     ground_truth: list[dict] | None = None
     meta: dict = field(default_factory=dict)
+    fourier: np.ndarray | None = None
 
     def __post_init__(self) -> None:
         self.steps = np.asarray(self.steps, dtype=np.int64).reshape(-1)
@@ -60,6 +66,13 @@ class RICurve:
             if arr.shape != (S, T):
                 raise ValueError(f"{name} must have shape {(S, T)}, got {arr.shape}")
             setattr(self, name, arr)
+        if self.fourier is not None:
+            arr = np.asarray(self.fourier, dtype=np.float64)
+            if arr.size == 0:
+                arr = arr.reshape(S, T)
+            if arr.shape != (S, T):
+                raise ValueError(f"fourier must have shape {(S, T)}, got {arr.shape}")
+            self.fourier = arr
         self.n_eff = np.asarray(self.n_eff, dtype=np.float64).reshape(-1)
         if self.n_eff.shape != (T,):
             raise ValueError(f"n_eff must have shape {(T,)}, got {self.n_eff.shape}")
@@ -119,15 +132,24 @@ class RICurve:
                    ri=z, ri_plugin=z.copy(), p=z.copy(), q=z.copy(), n_eff=np.zeros(0),
                    ground_truth=ground_truth, meta=dict(meta or {}))
 
-    def append(self, step: int, scan: Any) -> "RICurve":
+    def append(self, step: int, scan: Any, fourier: np.ndarray | None = None) -> "RICurve":
         """Return a new curve with one more checkpoint taken from a ``ScanResult``-like object.
 
         ``scan`` must expose ``subsets`` (identical to ``self.subsets``), ``estimates`` (objects with
-        ``ri_corrected``, ``ri_plugin``, ``p_value``, ``n_eff``) and ``q_values``.
+        ``ri_corrected``, ``ri_plugin``, ``p_value``, ``n_eff``) and ``q_values``. ``fourier`` is this checkpoint's
+        (S,) Walsh coefficients (:func:`tycho.ri.fourier.walsh_coefficients` of the scan's subsets). The curve keeps
+        ``fourier = None`` while no checkpoint has one; otherwise checkpoints without it get a NaN column.
         """
         subs = [tuple(int(i) for i in s) for s in scan.subsets]
         if subs != self.subsets:
             raise ValueError("scan subsets differ from curve subsets")
+        four = self.fourier
+        if fourier is not None or four is not None:
+            col = np.full(self.S, np.nan) if fourier is None else np.asarray(fourier, dtype=np.float64).reshape(-1)
+            if col.shape != (self.S,):
+                raise ValueError(f"fourier must have shape {(self.S,)}, got {col.shape}")
+            prev = np.full((self.S, self.T), np.nan) if four is None else four
+            four = np.hstack([prev, col[:, None]])
         ri = np.asarray([e.ri_corrected for e in scan.estimates], dtype=np.float64)[:, None]
         rp = np.asarray([e.ri_plugin for e in scan.estimates], dtype=np.float64)[:, None]
         p = np.asarray([e.p_value for e in scan.estimates], dtype=np.float64)[:, None]
@@ -136,17 +158,21 @@ class RICurve:
         return RICurve(steps=np.append(self.steps, int(step)), names=self.names, subsets=self.subsets,
                        ri=np.hstack([self.ri, ri]), ri_plugin=np.hstack([self.ri_plugin, rp]),
                        p=np.hstack([self.p, p]), q=np.hstack([self.q, q]), n_eff=np.append(self.n_eff, n_eff),
-                       ground_truth=self.ground_truth, meta=dict(self.meta))
+                       ground_truth=self.ground_truth, meta=dict(self.meta), fourier=four)
 
     @classmethod
     def from_scans(cls, steps: Sequence[int], scans: Sequence[Any], *, names: Sequence[str] | None = None,
-                   ground_truth=None, meta: dict | None = None) -> "RICurve":
+                   ground_truth=None, meta: dict | None = None,
+                   fourier: Sequence[np.ndarray | None] | None = None) -> "RICurve":
+        """Curve of ``scans`` at ``steps``; ``fourier`` optionally gives each scan's (S,) Walsh coefficients."""
         if not scans:
             raise ValueError("need at least one scan")
+        if fourier is not None and len(fourier) != len(scans):
+            raise ValueError("fourier needs one entry per scan")
         names = list(names if names is not None else scans[0].names)
         curve = cls.empty(names, scans[0].subsets, ground_truth=ground_truth, meta=meta)
-        for st, sc in zip(steps, scans):
-            curve = curve.append(int(st), sc)
+        for i, (st, sc) in enumerate(zip(steps, scans)):
+            curve = curve.append(int(st), sc, None if fourier is None else fourier[i])
         return curve
 
     def prune(self, keep_top: int = 200, alpha: float | None = None, min_effect: float | None = None) -> "RICurve":
@@ -165,7 +191,8 @@ class RICurve:
         meta["n_candidates"] = int(meta.get("n_candidates", self.S))
         return RICurve(steps=self.steps, names=self.names, subsets=[self.subsets[i] for i in idx],
                        ri=self.ri[idx], ri_plugin=self.ri_plugin[idx], p=self.p[idx], q=self.q[idx],
-                       n_eff=self.n_eff, ground_truth=self.ground_truth, meta=meta)
+                       n_eff=self.n_eff, ground_truth=self.ground_truth, meta=meta,
+                       fourier=None if self.fourier is None else self.fourier[idx])
 
     # ------------------------------------------------------------------ persistence
     def save(self, path: Path | str) -> Path:
@@ -176,8 +203,9 @@ class RICurve:
         header = json.dumps({"names": self.names, "ground_truth": self.ground_truth, "meta": self.meta},
                             default=_json_default)
         tmp = path.with_suffix(".tmp.npz")
+        extra = {} if self.fourier is None else {"fourier": self.fourier}  # optional array: absent = None on load
         np.savez_compressed(tmp, steps=self.steps, ri=self.ri, ri_plugin=self.ri_plugin, p=self.p, q=self.q,
-                            n_eff=self.n_eff, subsets_len=lens, subsets_flat=flat, header=np.array(header))
+                            n_eff=self.n_eff, subsets_len=lens, subsets_flat=flat, header=np.array(header), **extra)
         tmp.replace(path)
         return path
 
@@ -193,4 +221,5 @@ class RICurve:
                 pos += ln
             return cls(steps=z["steps"], names=header["names"], subsets=subsets, ri=z["ri"],
                        ri_plugin=z["ri_plugin"], p=z["p"], q=z["q"], n_eff=z["n_eff"],
-                       ground_truth=header.get("ground_truth"), meta=header.get("meta") or {})
+                       ground_truth=header.get("ground_truth"), meta=header.get("meta") or {},
+                       fourier=z["fourier"] if "fourier" in z.files else None)

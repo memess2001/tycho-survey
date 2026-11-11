@@ -79,6 +79,8 @@ Next: return to stage 2 with that lesson, and aim the survey where RI can add so
 
 ## 5. Implications for sky v1
 
+All four are implemented in sky v1; see [v1_preregistration.md](v1_preregistration.md).
+
 1. Test "order sets onset time" directly in the Markov language:
    * vary the coupling strengths, add order 5, run ≥ 10 seeds;
    * include the "higher-order term alone vs with lower-order terms" comparison;

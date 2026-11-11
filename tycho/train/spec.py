@@ -56,6 +56,10 @@ class RIConfig:
     n_points: int = 40
     max_subsets: int = 50_000
     keep_top: int = 200
+    # calibration.json that min_effect came from (set by tycho.survey.followup.resolve_ri_config, never from a config
+    # file). When set, the runner re-reads the calibrated threshold at the scan's actual number of probe rows, which
+    # differs from n_probe for tasks that probe a fixed input set (modular addition probes all p^2 pairs).
+    min_effect_calibration: str | None = None
 
     @classmethod
     def from_dict(cls, d: dict | None) -> "RIConfig":

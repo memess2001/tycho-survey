@@ -33,6 +33,7 @@ the commands that need them, so ``tycho survey status`` is quick.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import logging
 import logging.handlers
@@ -685,6 +686,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     except KeyboardInterrupt:
         print("tycho: interrupted", file=sys.stderr)
         return EXIT_INTERRUPTED
+    except BrokenPipeError:  # e.g. `tycho survey status | head -6`: the reader stopped reading, which is fine
+        with contextlib.suppress(OSError):
+            os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        return 0
     except Exception:  # the traceback goes to stderr and logs/cli.log
         logger.error("tycho %s failed", args.command, exc_info=True)
         return EXIT_FAILURE

@@ -601,12 +601,13 @@ class Catalog:
     def region_objects(self, region: str) -> list[dict[str, Any]]:
         """All objects of a region in insertion order, with what the scheduler needs to aggregate them by point:
         object_id, seed, status, sky_version, spec_json, source, random_control, created_at, finished_at,
-        t_test_acc90, final_test_acc, diverged (summary columns; None without a summary), label (latest
+        t_test_acc90, final_test_acc, diverged (summary columns; None without a summary), summary_json (the full
+        summary as JSON text, None without one), label (latest
         classification or None), has_followup (0/1), n_transients, max_severity and transient_kinds (sorted list)."""
         with self._read() as conn:
             rows = conn.execute(
                 "SELECT o.object_id, o.seed, o.status, o.sky_version, o.spec_json, o.source, o.random_control, "
-                "o.created_at, o.finished_at, s.t_test_acc90, s.final_test_acc, s.diverged, "
+                "o.created_at, o.finished_at, s.t_test_acc90, s.final_test_acc, s.diverged, s.json AS summary_json, "
                 "(SELECT c.label FROM classifications c WHERE c.object_id = o.object_id ORDER BY c.id DESC LIMIT 1) "
                 "AS label, EXISTS (SELECT 1 FROM followups f WHERE f.object_id = o.object_id) AS has_followup, "
                 "(SELECT COUNT(*) FROM transients t WHERE t.object_id = o.object_id) AS n_transients, "

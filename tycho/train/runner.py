@@ -65,6 +65,7 @@ import tycho
 from tycho.analysis.ricurve import RICurve
 from tycho.analysis.summarize import summarize
 from tycho.ri.estimators import ri_scan
+from tycho.ri.fourier import walsh_coefficients, walsh_output
 from tycho.tasks import make_task
 from tycho.tasks.base import numpy_rng, torch_generator
 from tycho.train.device import pick_device
@@ -285,7 +286,8 @@ class _Run:
         if self.curve is None:
             return None
         cfg = self.ri_cfg
-        return self.curve.prune(cfg.keep_top, alpha=cfg.alpha, min_effect=cfg.min_effect)
+        return self.curve.prune(cfg.keep_top, alpha=cfg.alpha,
+                                min_effect=float(self.curve.meta.get("min_effect", cfg.min_effect)))
 
     def result(self, status: str, *, error: str | None = None) -> RunResult:
         lc = self.light_curve()
@@ -308,7 +310,8 @@ class _Run:
                      "ri_plugin": torch.from_numpy(c.ri_plugin.copy()), "p": torch.from_numpy(c.p.copy()),
                      "q": torch.from_numpy(c.q.copy()), "n_eff": torch.from_numpy(c.n_eff.copy()),
                      "ground_truth": json.dumps(c.ground_truth, default=_json_default),
-                     "meta": json.dumps(c.meta, default=_json_default)}
+                     "meta": json.dumps(c.meta, default=_json_default),
+                     "fourier": None if c.fourier is None else torch.from_numpy(c.fourier.copy())}
         state = {"format": RESUME_FORMAT, "fingerprint": self.fingerprint, "step": self.step,
                  "next_idx": self.next_idx, "model": self.model.state_dict(), "optimizer": self.opt.state_dict(),
                  "gen_data": self.gen.get_state(), "torch_rng": torch.get_rng_state(),
@@ -355,7 +358,8 @@ class _Run:
             self.curve = RICurve(steps=c["steps"].numpy(), names=c["names"], subsets=[tuple(s) for s in c["subsets"]],
                                  ri=c["ri"].numpy(), ri_plugin=c["ri_plugin"].numpy(), p=c["p"].numpy(),
                                  q=c["q"].numpy(), n_eff=c["n_eff"].numpy(), ground_truth=json.loads(c["ground_truth"]),
-                                 meta=json.loads(c["meta"]))
+                                 meta=json.loads(c["meta"]),
+                                 fourier=None if c.get("fourier") is None else c["fourier"].numpy())
         logger.info("%s: resumed at step %d of %d", self.object_id, self.step, self.total)
         return True
 
@@ -412,6 +416,30 @@ class _Run:
         self.rows.append(row)
         self.last_grad_norm = self.last_update_norm = _NAN
 
+    def scan_min_effect(self, n_rows: int) -> float:
+        """The detection threshold of this object's RI scans: the curve's (fixed at its first scan), else
+        ``ri.min_effect``, re-read from its calibration at ``n_rows`` probe rows when it came from a calibration file
+        and ``n_rows`` differs from ``n_probe`` (tasks that probe a fixed input set, such as all p^2 pairs)."""
+        cfg = self.ri_cfg
+        if self.curve is not None and "min_effect" in self.curve.meta:
+            return float(self.curve.meta["min_effect"])
+        if not cfg.min_effect_calibration or n_rows == int(cfg.n_probe) or n_rows < 1:
+            return float(cfg.min_effect)
+        try:
+            from tycho.calibration.report import recommended_min_effect  # lazy: only for calibrated scans
+
+            value = float(recommended_min_effect(cfg.min_effect_calibration, n_rows))
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            logger.warning("%s: calibration %s unusable at n=%d (%s); min_effect stays %.3g", self.object_id,
+                           cfg.min_effect_calibration, n_rows, exc, cfg.min_effect)
+            return float(cfg.min_effect)
+        if not (math.isfinite(value) and value >= 0):
+            return float(cfg.min_effect)
+        if value != cfg.min_effect:
+            logger.info("%s: min_effect %.3g nats at the scan's %d probe rows (%.3g at n_probe=%d)", self.object_id,
+                        value, n_rows, cfg.min_effect, cfg.n_probe)
+        return value
+
     def observe_ri(self, step: int) -> None:
         cfg = self.ri_cfg
         was_training = self.model.training
@@ -423,15 +451,21 @@ class _Run:
             self.model.train(was_training)
         if self.ri_frozen is None and vs.meta.get("frozen") is not None:
             self.ri_frozen = dict(vs.meta["frozen"])
-        scan = ri_scan(vs, max_order=self.max_order, alpha=cfg.alpha, min_effect=cfg.min_effect, null=cfg.null,
+        n_rows = int(vs.X.shape[0])
+        min_effect = self.scan_min_effect(n_rows)
+        scan = ri_scan(vs, max_order=self.max_order, alpha=cfg.alpha, min_effect=min_effect, null=cfg.null,
                        max_subsets=cfg.max_subsets, rng=numpy_rng(self.spec.seed, "ri-scan", step))
+        # Fourier baseline on the same probe rows: Walsh coefficient f̂(S \ {output}) of the soft binary output
+        # (all NaN when the task has none, e.g. modular_addition's hard "correct" column); see tycho.ri.fourier
+        fourier = walsh_coefficients(vs, scan.subsets)
+        out_col = walsh_output(vs)
         if self.curve is None:
-            meta = {"alpha": cfg.alpha, "min_effect": cfg.min_effect, "max_order": self.max_order, "null": cfg.null,
-                    "n_probe": cfg.n_probe, "object_id": self.object_id, "kind": self.ri_kind,
+            meta = {"alpha": cfg.alpha, "min_effect": min_effect, "min_effect_n": n_rows, "max_order": self.max_order,
+                    "null": cfg.null, "n_probe": cfg.n_probe, "object_id": self.object_id, "kind": self.ri_kind,
                     "task": self.spec.task, "seed": int(self.spec.seed), "variables": dict(vs.meta),
-                    **self.ri_extra_meta}
+                    "fourier_output": None if out_col is None else vs.names[out_col], **self.ri_extra_meta}
             self.curve = RICurve.empty(scan.names, scan.subsets, ground_truth=vs.ground_truth, meta=meta)
-        self.curve = self.curve.append(step, scan)
+        self.curve = self.curve.append(step, scan, fourier)
 
     def observe(self, step: int) -> None:
         """Light-curve row (evaluation steps) and RI scan (RI steps) at a checkpoint step. Non-finite parameters

@@ -92,7 +92,8 @@ instead of being marked failed (also used by :mod:`tycho.survey.worker`)."""
 _UNLIMITED_ATTEMPTS = 2 ** 31 - 1
 """Attempt budget used when handing back an interrupted follow-up (an interruption must never fail it)."""
 
-_RI_FIELDS = frozenset(f.name for f in fields(RIConfig))
+_RI_FIELDS = frozenset(f.name for f in fields(RIConfig)) - {"min_effect_calibration"}
+"""RIConfig fields a config file may set (``min_effect_calibration`` is set by :func:`resolve_ri_config` only)."""
 
 
 class FollowupInterrupted(RuntimeError):
@@ -118,12 +119,13 @@ def resolve_ri_config(cfg: Mapping[str, Any], region: Region | None = None, *, r
         calibrated = calibrated_min_effect(cfg, root, n_probe)
         if calibrated is not None:
             settings["min_effect"] = calibrated
+            settings["min_effect_calibration"] = str(calibration_path(cfg, root))
     settings["enabled"] = bool(enabled)
     return RIConfig.from_dict(settings)
 
 
-def calibrated_min_effect(cfg: Mapping[str, Any], root: Path | str | None, n_probe: int) -> float | None:
-    """The calibrated min_effect (nats) at ``n_probe`` samples, or None without a usable calibration file."""
+def calibration_path(cfg: Mapping[str, Any], root: Path | str | None) -> Path | None:
+    """The configured calibration file (``ri.calibration_file``, relative to ``root``), or None when unset."""
     rel = (cfg.get("ri") or {}).get("calibration_file")
     if not rel:
         return None
@@ -132,11 +134,22 @@ def calibrated_min_effect(cfg: Mapping[str, Any], root: Path | str | None, n_pro
         if root is None:
             return None
         path = Path(root) / path
+    return path
+
+
+def calibrated_min_effect(cfg: Mapping[str, Any], root: Path | str | None, n_probe: int) -> float | None:
+    """The calibrated min_effect (nats) at ``n_probe`` samples, or None without a usable calibration file."""
+    path = calibration_path(cfg, root)
+    return None if path is None else calibrated_min_effect_at(path, n_probe)
+
+
+def calibrated_min_effect_at(path: Path | str, n: int) -> float | None:
+    """The calibrated min_effect (nats) of calibration file ``path`` at ``n`` samples, or None if it is unusable."""
     try:
-        stat = path.stat()
+        stat = Path(path).stat()
     except OSError:
         return None
-    return _calibrated_cached(str(path), stat.st_mtime_ns, stat.st_size, int(n_probe))
+    return _calibrated_cached(str(path), stat.st_mtime_ns, stat.st_size, int(n))
 
 
 @functools.lru_cache(maxsize=32)

@@ -15,6 +15,19 @@ the positions to the first ``n_train``), with input the window ``x[t-1] … x[t-
 window as ±1 floats in lag order; the transformer (``model = "transformer"``, a :class:`~tycho.models.TinyGPT` with
 ``d_model``, ``n_layer``, ``n_head``) reads token ids in temporal order and predicts at the last position.
 
+Training contexts
+-----------------
+``train_context = "chain"`` (default) gives the corpus windows above. With ``train_context = "iid"`` every example's
+window ``x[t-1] … x[t-W]`` is drawn i.i.d. uniform (independent fair bits) and its target x_t from the same
+conditional σ(2h): ``n_tokens − W`` training examples (as many as the chain corpus yields) and ``test_size`` test
+examples are generated from ``data_seed``, and ``n_train`` restricts training to the first ``n_train`` of them. The
+test split, and hence ``kl_true``, follows ``train_context``; the conditional, the ground truth and
+:meth:`~MarkovLanguage.true_variables` do not depend on it. Why: in the chain the couplings also shape the context
+distribution. A pairwise coupling {1} next to {1,3} makes ``s_{t−1} s_{t−3} = +1`` in about 85 % of the contexts
+(50 % without it), so the three-way term changes the prediction less often and is learned later. iid contexts keep
+the conditional and remove these correlations, so comparing chain and iid for the same couplings separates the
+two effects.
+
 RI variables and why the probe contexts are uniform
 ---------------------------------------------------
 :meth:`MarkovLanguage.ri_variables` returns the window variables ``x[t-1] … x[t-W]`` (code 1 = token 1 = spin +1)
@@ -45,7 +58,9 @@ of ``logit P(y = +1 | s_A)`` on the full set A is non-zero. Consequences:
 
 With ``ri_context = "chain"`` probe windows are random windows of the training corpus. The context variables are
 then correlated through the source and the local RI of subsets containing xhat mixes the model's structure with
-those correlations (use it to see the model on its own data distribution).
+those correlations (use it to see the model on its own data distribution). With ``train_context = "iid"`` the
+probe windows are still drawn from the training examples, which are then uniform: ``"chain"`` probes have the same
+distribution as ``"uniform"`` ones (but are resampled from the finite training set, with another random stream).
 
 Extra light-curve metric
 ------------------------
@@ -67,7 +82,7 @@ from tycho.models.transformer import TinyGPT
 from tycho.ri.variables import VariableSet
 from tycho.tasks.base import Task, logit_margin, model_device, numpy_rng, softmax_np, torch_generator
 
-__all__ = ["BURN_IN", "MODELS", "RI_CONTEXTS", "MarkovLanguage", "parse_couplings"]
+__all__ = ["BURN_IN", "MODELS", "RI_CONTEXTS", "TRAIN_CONTEXTS", "MarkovLanguage", "parse_couplings"]
 
 #: Tokens generated and discarded before a corpus starts (the chain forgets its uniform initial window).
 BURN_IN = 1000
@@ -75,6 +90,8 @@ BURN_IN = 1000
 MODELS = ("mlp", "transformer")
 #: Probe-context distributions of the RI variables (see the module docstring).
 RI_CONTEXTS = ("uniform", "chain")
+#: Context distributions of the training and test examples (see the module docstring).
+TRAIN_CONTEXTS = ("chain", "iid")
 
 Coupling = tuple[int, ...]
 
@@ -150,6 +167,14 @@ def _generate(p_table: np.ndarray, window: int, n: int, rng: np.random.Generator
     return np.frombuffer(out, dtype=np.uint8, offset=BURN_IN).copy()
 
 
+def _iid_examples(p_table: np.ndarray, window: int, n: int, rng: np.random.Generator) -> tuple[np.ndarray, np.ndarray]:
+    """``n`` examples with i.i.d. uniform lag-order windows ``(n, W)`` and targets drawn from ``p_table`` (uint8)."""
+    lag = rng.integers(0, 2, size=(n, window), dtype=np.uint8)
+    codes = (lag.astype(np.int64) << np.arange(window)[None, :]).sum(axis=1)
+    targets = (rng.random(n) < p_table[codes]).astype(np.uint8)
+    return lag, targets
+
+
 def _lag_windows(seq: np.ndarray, window: int) -> np.ndarray:
     """Lag-order windows ``(len(seq) − W, W)``: row i, column ℓ−1 = ``seq[W + i − ℓ]``; targets are ``seq[W:]``."""
     temporal = np.lib.stride_tricks.sliding_window_view(seq, window)[:-1]
@@ -165,7 +190,7 @@ class MarkovLanguage(Task):
     def defaults(cls) -> dict:
         return {"window": 6, "couplings": {"1": 1.0, "1,3": 0.8}, "bias": 0.0, "n_tokens": 200_000, "width": 128,
                 "depth": 1, "act": "relu", "model": "mlp", "d_model": 32, "n_layer": 2, "n_head": 2,
-                "data_seed": 0, "n_train": None, "test_size": 4096, "ri_context": "uniform"}
+                "data_seed": 0, "n_train": None, "test_size": 4096, "ri_context": "uniform", "train_context": "chain"}
 
     def __init__(self, cfg: dict | None, seed: int) -> None:
         super().__init__(cfg, seed)
@@ -178,10 +203,13 @@ class MarkovLanguage(Task):
         self.n_tokens, self.test_size, self.data_seed = int(c["n_tokens"]), int(c["test_size"]), int(c["data_seed"])
         self.n_train = None if c["n_train"] is None else int(c["n_train"])
         self.model_kind, self.ri_context = str(c["model"]), str(c["ri_context"])
+        self.train_context = str(c["train_context"])
         if self.model_kind not in MODELS:
             raise ValueError(f"model must be one of {MODELS}, got {self.model_kind!r}")
         if self.ri_context not in RI_CONTEXTS:
             raise ValueError(f"ri_context must be one of {RI_CONTEXTS}, got {self.ri_context!r}")
+        if self.train_context not in TRAIN_CONTEXTS:
+            raise ValueError(f"train_context must be one of {TRAIN_CONTEXTS}, got {self.train_context!r}")
         if self.n_tokens <= self.window:
             raise ValueError(f"n_tokens must exceed window, got {self.n_tokens}")
         if self.n_train is not None and self.n_train < 1:
@@ -205,22 +233,30 @@ class MarkovLanguage(Task):
             return bits.to(torch.float32).mul_(2.0).sub_(1.0)
         return bits.flip(1).contiguous()
 
+    def _examples(self, n_tokens: int, stream: str) -> tuple[np.ndarray, np.ndarray]:
+        """``n_tokens − W`` examples: lag windows ``(n, W)`` and targets (uint8), per ``train_context``.
+
+        ``"chain"``: the windows of a corpus of ``n_tokens`` chain tokens; ``"iid"``: uniform windows with targets
+        from the true conditional. ``stream`` names the ``data_seed`` stream (``"iid"`` is appended for iid data).
+        """
+        if self.train_context == "iid":
+            return _iid_examples(self.p_table, self.window, n_tokens - self.window,
+                                 numpy_rng(self.data_seed, stream, "iid"))
+        seq = _generate(self.p_table, self.window, n_tokens, numpy_rng(self.data_seed, stream))
+        return _lag_windows(seq, self.window), seq[self.window:]
+
     @cached_property
     def _corpus(self) -> dict[str, Any]:
         """Training corpus: lag windows (uint8), model inputs, targets, and the number of training positions."""
-        seq = _generate(self.p_table, self.window, self.n_tokens, numpy_rng(self.data_seed, "markov_lang/corpus"))
-        lag = _lag_windows(seq, self.window)
+        lag, targets = self._examples(self.n_tokens, "markov_lang/corpus")
         n_pos = lag.shape[0] if self.n_train is None else min(self.n_train, lag.shape[0])
-        return {"lag": lag, "inputs": self._model_inputs(lag), "targets": torch.as_tensor(seq[self.window:],
-                                                                                          dtype=torch.long),
+        return {"lag": lag, "inputs": self._model_inputs(lag), "targets": torch.as_tensor(targets, dtype=torch.long),
                 "n_pos": n_pos}
 
     @cached_property
     def _test(self) -> dict[str, Any]:
-        seq = _generate(self.p_table, self.window, self.test_size + self.window,
-                        numpy_rng(self.data_seed, "markov_lang/test"))
-        lag = _lag_windows(seq, self.window)
-        return {"inputs": self._model_inputs(lag), "targets": torch.as_tensor(seq[self.window:], dtype=torch.long),
+        lag, targets = self._examples(self.test_size + self.window, "markov_lang/test")
+        return {"inputs": self._model_inputs(lag), "targets": torch.as_tensor(targets, dtype=torch.long),
                 "p_true": self.true_conditional(lag)}
 
     # ------------------------------------------------------------------------------------------ data

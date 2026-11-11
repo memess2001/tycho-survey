@@ -51,18 +51,38 @@ Refinement (:meth:`Scheduler.refine`)
     "refine"`` and ``priority = region.priority × refine_priority_boost``; regions are refined in priority order.
 
 Follow-up selection (:meth:`Scheduler.select_followups`)
-    Candidates are done, non-diverged objects without a follow-up row, in regions with ``ri_policy = "followup"``
-    (``always`` regions are observed in situ, ``never`` regions not at all). Priority order: unknown class (latest label
-    "unknown") > transient-bearing (most severe first) > boundary members (all done seeds of points in boundary pairs,
-    round-robin over points by seed rank so every boundary point gets one replay before any gets two) > random
-    controls; oldest first within a class. Each object is selected at most once, and selections are recorded with
-    ``Catalog.request_followup`` (requested_by "scheduler", priority :data:`FOLLOWUP_PRIORITY`), which also makes
-    "never twice" hold across calls and restarts. At most ``followups_per_day`` scheduler requests are made per 24 h.
+    Candidates are done, non-diverged objects of the current sky version without a follow-up row, in regions with
+    ``ri_policy = "followup"`` (``always`` regions are observed in situ, ``never`` regions not at all). Selection
+    order (sky v1; in v0 every follow-up went to "grokking"-labelled objects because the label counted as a
+    transient, which left no controls):
+
+    1. unknown class (latest label "unknown"), oldest first;
+    2. RI-based transients, most severe first. Photometric transient kinds (:data:`PHOTOMETRIC_TRANSIENTS`:
+       grokking, loss_spike, unknown_class) do not count: they restate the light curve, which every object has;
+    3. everything else, region by region by stride scheduling (the next pick comes from the region with the fewest
+       follow-ups so far, counting earlier calls, per unit of region priority). Within a region four streams take
+       turns, the first turn rotating with the region's follow-up count so that small calls stay fair:
+
+       * anomaly: objects whose light curve is unlike the rest of their (region, label) group
+         (:func:`tycho.analysis.anomaly.anomaly_scores` ≥ :data:`tycho.analysis.anomaly.THRESHOLD`), highest first.
+         This is the survey's "unknown" exit for curves the classifier labels but that do not fit the label;
+       * matched: points whose done seeds carry two or more labels (same configuration, different outcome, e.g.
+         grokking and memorization). Each such point contributes one seed per label, so the RI curves of the
+         different outcomes form matched controls; every matched point gets its k-th set before any its (k+1)-th;
+       * boundary: all done seeds of points in boundary pairs, round-robin over points by seed rank;
+       * stratified: the region's labels take turns, the label with the fewest follow-ups first; within a label
+         random-control objects first, then a fixed pseudo-random order (sha256 of sky version, region, object id).
+
+    Each object is selected at most once, and selections are recorded with ``Catalog.request_followup``
+    (requested_by "scheduler", priority :data:`FOLLOWUP_PRIORITY` of the stream), which also makes "never twice"
+    hold across calls and restarts. At most ``followups_per_day`` scheduler requests are made per 24 h.
 """
 from __future__ import annotations
 
 import copy
 import hashlib
+import itertools
+import json
 import logging
 import math
 import statistics
@@ -72,6 +92,8 @@ from typing import Any, Iterator, Mapping, Sequence
 
 import numpy as np
 
+from tycho.analysis.anomaly import THRESHOLD as ANOMALY_THRESHOLD, anomaly_scores
+from tycho.analysis.classify import LABELS
 from tycho.survey.catalog import Catalog
 from tycho.survey.sky import Knob, Region, Sky, point_key
 from tycho.train.spec import ObjectSpec
@@ -95,9 +117,15 @@ REQUESTER = "scheduler"
 DEPTH_META_PREFIX = "scheduler/refine_depth/"
 """Meta key prefix of midpoint depths: ``<prefix><region>/<point_key>`` → depth (decimal text)."""
 
-FOLLOWUP_PRIORITY: dict[str, float] = {"unknown_class": 4.0, "transient": 3.0, "boundary": 2.0,
-                                       "random_control": 1.0}
+FOLLOWUP_PRIORITY: dict[str, float] = {"unknown_class": 4.0, "transient": 3.0, "anomaly": 2.5, "matched": 2.0,
+                                       "boundary": 2.0, "stratified": 1.5, "random_control": 1.5}
 """Follow-up priority by selection class (higher is claimed first by ``Catalog.claim_followup``)."""
+
+PHOTOMETRIC_TRANSIENTS = frozenset({"grokking", "loss_spike", "unknown_class"})
+"""Transient kinds derived from the light curve alone; they do not raise follow-up priority."""
+
+REGION_STREAMS = ("anomaly", "matched", "boundary", "stratified")
+"""Per-region follow-up streams, in turn order (see Follow-up selection)."""
 
 _SECONDS_PER_DAY = 86_400.0
 
@@ -461,11 +489,13 @@ class Scheduler:
 
     def _followup_candidates(self) -> Iterator[tuple[str, str, str]]:
         """(category, object_id, reason) in selection order; may repeat an object across categories."""
-        unknown, transient, random_control, boundary = [], [], [], []
+        unknown, transient = [], []
+        streams: list[tuple[Region, int, Iterator[tuple[str, str, str]]]] = []
+        followed: dict[str, int] = {}
         for region_rank, region in enumerate(self.sky.regions):
             if region.ri_policy != "followup":
                 continue
-            rows = self.catalog.region_objects(region.name)
+            rows = [r for r in self.catalog.region_objects(region.name) if r["sky_version"] == self.sky.version]
             eligible = {r["object_id"] for r in rows
                         if r["status"] == "done" and not r["has_followup"] and r["diverged"] != 1}
             for r in rows:
@@ -474,25 +504,139 @@ class Scheduler:
                 age = (r["finished_at"] if r["finished_at"] is not None else math.inf, r["object_id"])
                 if r["label"] == "unknown":
                     unknown.append((age, r["object_id"], "unknown_class: light curve matched no known class"))
-                if r["n_transients"]:
-                    reason = f"transient: {', '.join(r['transient_kinds'])} (max severity {r['max_severity']})"
+                kinds = [k for k in r["transient_kinds"] if k not in PHOTOMETRIC_TRANSIENTS]
+                if kinds:
+                    reason = f"transient: {', '.join(kinds)} (max severity {r['max_severity']})"
                     transient.append(((-(r["max_severity"] or 0), *age), r["object_id"], reason))
-                if r["random_control"]:
-                    random_control.append((age, r["object_id"], "random_control: uniform control sample"))
-            for bi, bd in enumerate(self._boundaries(region, self._observe(region, rows))):
-                reason = f"boundary along {bd.knob.name}: {bd.reason}"
-                for side, p in enumerate((bd.a, bd.b)):
-                    # ranks count seeds already followed up, so across calls every boundary point gets its k-th
-                    # replay before any point gets its (k+1)-th
-                    members = sorted((r for r in p.done if r["object_id"] in eligible or r["has_followup"]),
-                                     key=lambda r: r["seed"])
-                    for rank, r in enumerate(members):
-                        if r["object_id"] in eligible:
-                            boundary.append(((rank, region_rank, bi, side), r["object_id"], reason))
-        for category, items in (("unknown_class", unknown), ("transient", transient), ("boundary", boundary),
-                                ("random_control", random_control)):
+            followed[region.name] = sum(1 for r in rows if r["has_followup"])
+            streams.append((region, region_rank, self._region_stream(region, rows, eligible, followed[region.name])))
+        for category, items in (("unknown_class", unknown), ("transient", transient)):
             for _, oid, reason in sorted(items, key=lambda item: item[0]):
                 yield category, oid, reason
+        picked: dict[str, int] = defaultdict(int)
+        while streams:
+            i = min(range(len(streams)), key=lambda j: ((followed[streams[j][0].name] + picked[streams[j][0].name])
+                                                        / streams[j][0].priority, streams[j][1]))
+            region, _, stream = streams[i]
+            item = next(stream, None)
+            if item is None:
+                streams.pop(i)
+                continue
+            picked[region.name] += 1
+            yield item
+
+    def _region_stream(self, region: Region, rows: Sequence[dict[str, Any]], eligible: set[str],
+                       n_followed: int) -> Iterator[tuple[str, str, str]]:
+        """The region's anomaly, matched, boundary and stratified streams, taking turns (first turn rotating with
+        ``n_followed``); an object is yielded at most once."""
+        points = self._observe(region, rows)
+        subs = {"anomaly": self._anomaly_stream(region, rows, eligible),
+                "matched": self._matched_stream(region, points, eligible),
+                "boundary": self._boundary_stream(region, points, eligible),
+                "stratified": self._stratified_stream(region, rows, eligible)}
+        start = n_followed % len(REGION_STREAMS)
+        order = [subs[name] for name in REGION_STREAMS[start:] + REGION_STREAMS[:start]]
+        seen: set[str] = set()
+        while order:
+            for it in list(order):
+                for item in it:
+                    if item[1] not in seen:
+                        seen.add(item[1])
+                        yield item
+                        break
+                else:
+                    order.remove(it)
+
+    def _anomaly_stream(self, region: Region, rows: Sequence[dict[str, Any]],
+                        eligible: set[str]) -> Iterator[tuple[str, str, str]]:
+        by_label: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for r in rows:
+            if r["status"] == "done" and r["label"] is not None and r["diverged"] != 1:
+                by_label[r["label"]].append(r)
+        found = []
+        for label, members in by_label.items():
+            summaries = [_summary_of(r) for r in members]
+            for r, score in zip(members, anomaly_scores(summaries)):
+                if score is not None and score[0] >= ANOMALY_THRESHOLD and r["object_id"] in eligible:
+                    found.append((-score[0], r["object_id"], label, score))
+        for _, oid, label, (z, feature) in sorted(found):
+            yield "anomaly", oid, f"anomaly: unlike the other {label} objects of {region.name} ({feature}, z = {z:.1f})"
+
+    def _matched_stream(self, region: Region, points: Mapping[str, _Point],
+                        eligible: set[str]) -> Iterator[tuple[str, str, str]]:
+        items = []
+        for key, p in points.items():
+            labelled = [r for r in p.done if r["label"] is not None and r["diverged"] != 1]
+            labels = sorted({r["label"] for r in labelled}, key=_label_rank)
+            if len(labels) < 2:
+                continue
+            point_rank = _hash_int(self.sky.version, region.name, "matched", key)
+            for label_rank, label in enumerate(labels):
+                members = sorted((r for r in labelled if r["label"] == label
+                                  and (r["object_id"] in eligible or r["has_followup"])), key=lambda r: r["seed"])
+                for rank, r in enumerate(members):
+                    if r["object_id"] in eligible:
+                        reason = (f"matched: labels {', '.join(labels)} at one configuration of {region.name}; "
+                                  f"this seed {label}")
+                        items.append(((rank, point_rank, label_rank), r["object_id"], reason))
+        for _, oid, reason in sorted(items):
+            yield "matched", oid, reason
+
+    def _boundary_stream(self, region: Region, points: Mapping[str, _Point],
+                         eligible: set[str]) -> Iterator[tuple[str, str, str]]:
+        items = []
+        for bi, bd in enumerate(self._boundaries(region, points)):
+            reason = f"boundary along {bd.knob.name}: {bd.reason}"
+            for side, p in enumerate((bd.a, bd.b)):
+                # ranks count seeds already followed up, so across calls every boundary point gets its k-th
+                # replay before any point gets its (k+1)-th
+                members = sorted((r for r in p.done if r["object_id"] in eligible or r["has_followup"]),
+                                 key=lambda r: r["seed"])
+                for rank, r in enumerate(members):
+                    if r["object_id"] in eligible:
+                        items.append(((rank, bi, side), r["object_id"], reason))
+        for _, oid, reason in sorted(items):
+            yield "boundary", oid, reason
+
+    def _stratified_stream(self, region: Region, rows: Sequence[dict[str, Any]],
+                           eligible: set[str]) -> Iterator[tuple[str, str, str]]:
+        queues: dict[str, list[tuple[tuple[int, int], str]]] = defaultdict(list)
+        followed: Counter[str] = Counter()
+        for r in rows:
+            if r["status"] != "done" or r["label"] is None or r["diverged"] == 1:
+                continue
+            if r["has_followup"]:
+                followed[r["label"]] += 1
+            elif r["object_id"] in eligible:
+                order = (0 if r["random_control"] else 1, _hash_int(self.sky.version, region.name, r["object_id"]))
+                queues[r["label"]].append((order, r["object_id"]))
+        labels = sorted(queues, key=lambda lab: (followed[lab], _label_rank(lab)))
+        iters = [iter(sorted(queues[lab])) for lab in labels]
+        for items in itertools.zip_longest(*iters):
+            for lab, item in zip(labels, items):
+                if item is None:
+                    continue
+                (control, _), oid = item
+                if control == 0:
+                    yield "random_control", oid, f"random_control: uniform control sample ({lab})"
+                else:
+                    yield "stratified", oid, f"stratified: {lab} objects of {region.name} take turns with other labels"
+
+
+def _summary_of(row: Mapping[str, Any]) -> dict[str, Any] | None:
+    """The light-curve summary of a ``Catalog.region_objects`` row (None without one)."""
+    text = row.get("summary_json")
+    if not text:
+        return None
+    try:
+        out = json.loads(text)
+    except (TypeError, ValueError):
+        return None
+    return out if isinstance(out, dict) else None
+
+
+def _label_rank(label: str) -> tuple[int, str]:
+    return (LABELS.index(label) if label in LABELS else len(LABELS), label)
 
 
 def _difference(a: _Point, b: _Point) -> str:

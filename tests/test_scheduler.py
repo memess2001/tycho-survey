@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import math
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -439,9 +440,11 @@ def followup_sky(cat, sky, clock):
                        random_control=True, clock=clock)
     ids["ctrl"] = observe(cat, sky, "ctrl", {"width": 8}, [0], label="unknown", clock=clock)  # ri_policy always
     assert cat.request_followup(ids["R"][0], "already requested by the agent", requested_by="agent")
-    expected = [ids["U"], ids["UT"], ids["T3"], ids["T1"],
-                ids["lo"][0], ids["mid"][0], ids["lo"][1], ids["mid"][1], ids["lo"][2], ids["mid"][2],
-                ids["R"][1], ids["R"][2]]
+    # unknown (oldest first), RI transients (T1's loss_spike is photometric and does not count), then the line and
+    # aux regions by stride scheduling, each alternating its boundary / stratified (random controls first) streams
+    expected = [ids["U"], ids["UT"], ids["T3"],
+                ids["lo"][0], ids["T1"], ids["lo"][1], ids["mid"][0], ids["R"][2], ids["mid"][1], ids["lo"][2],
+                ids["mid"][2], ids["R"][1]]
     return ids, expected
 
 
@@ -456,12 +459,15 @@ def test_select_followups_priority_order_and_dedup(cat, sky, followup_sky):
     reasons = dict(selected)
     assert reasons[ids["U"]].startswith("unknown_class")
     assert reasons[ids["T3"]] == "transient: late_activation (max severity 3)"
+    assert not reasons[ids["T1"]].startswith("transient")  # loss_spike is photometric
     assert reasons[ids["lo"][0]].startswith("boundary along train.lr: majority labels no_learning vs grokking")
     assert reasons[ids["R"][1]].startswith("random_control")
     rows = {r["object_id"]: r for r in cat.query("SELECT * FROM followups")}
     assert rows[ids["U"]]["priority"] == FOLLOWUP_PRIORITY["unknown_class"]
-    assert rows[ids["T1"]]["priority"] == FOLLOWUP_PRIORITY["transient"]
+    assert rows[ids["T3"]]["priority"] == FOLLOWUP_PRIORITY["transient"]
+    assert rows[ids["T1"]]["priority"] == FOLLOWUP_PRIORITY["stratified"]
     assert rows[ids["mid"][2]]["priority"] == FOLLOWUP_PRIORITY["boundary"]
+    assert rows[ids["R"][1]]["priority"] == FOLLOWUP_PRIORITY["random_control"]
     assert rows[ids["R"][2]]["requested_by"] == "scheduler" and rows[ids["R"][2]]["status"] == "requested"
     assert sch.select_followups(100) == []  # never twice
     assert Scheduler(cat, sky).select_followups(100) == []  # not even after a restart
@@ -470,9 +476,93 @@ def test_select_followups_priority_order_and_dedup(cat, sky, followup_sky):
 def test_select_followups_respects_n_and_the_daily_budget(cat, sky, clock, followup_sky):
     _, expected = followup_sky
     sch = Scheduler(cat, sky, SchedulerPolicy(followups_per_day=5))
-    assert [oid for oid, _ in sch.select_followups(3)] == expected[:3]
-    assert [oid for oid, _ in sch.select_followups(3)] == expected[3:5]  # budget: 5 per 24 h
+    first = [oid for oid, _ in sch.select_followups(3)]
+    assert first == expected[:3]  # unknown and transient classes come first in every call
+    second = [oid for oid, _ in sch.select_followups(3)]
+    assert len(second) == 2  # budget: 5 per 24 h
     assert sch.select_followups(3) == []
     clock.t += 86_401  # the earlier requests are now more than 24 h old
-    assert [oid for oid, _ in sch.select_followups(100)] == expected[5:10]
+    third = [oid for oid, _ in sch.select_followups(100)]
+    assert len(third) == 5
+    picked = first + second + third
+    assert len(set(picked)) == len(picked) and set(picked) <= set(expected)  # never twice, only candidates
     assert sch.select_followups(0) == []
+
+
+# ---------------------------------------------------------------------------------------------- sky v1 follow-ups
+def finish_with(cat: Catalog, oid: str, label: str, **summary) -> None:
+    base = {"t_test_acc90": 1000.0, "t_train_acc90": 500.0, "final_train_acc": 1.0, "final_test_acc": 0.95,
+            "final_train_loss": 0.01, "final_test_loss": 0.1, "plateau_logfrac": 0.2, "n_drops": 1, "test_bump": 0.0,
+            "steps_total": 10_000, "diverged": False}
+    base.update(summary)
+    cat.mark_done(RunResult(object_id=oid, status="done", summary=base, light_curve={"step": np.arange(3)}),
+                  f"data/lightcurves/{oid}.npz")
+    cat.add_classification(oid, Classification(label=label), "rules-v1")
+
+
+def test_grokking_label_alone_does_not_win_followups(cat, sky):
+    """v0: every follow-up went to grokking objects because the label counted as a transient. Now labels take
+    turns, so smooth objects of the region are followed up too."""
+    for lr, label in ((0.001, "grokking"), (0.01, "grokking"), (0.1, "smooth")):
+        for mode in ("a", "b"):
+            specs = [sky.make_spec("line", {"train.lr": lr, "mode": mode}, i) for i in range(3)]
+            cat.add_objects(specs, region="line", source="coarse", random_control_frac=0.0)
+            for spec in specs:
+                finish_with(cat, spec.object_id(), label)
+                cat.add_transients(spec.object_id(), [Transient(kind="grokking", severity=1, message="g")]
+                                   if label == "grokking" else [], [])
+    picks = Scheduler(cat, sky).select_followups(4)
+    labels = {cat.query("SELECT label FROM classifications WHERE object_id = ? ORDER BY id DESC LIMIT 1",
+                        (oid,))[0]["label"] for oid, _ in picks}
+    assert labels == {"grokking", "smooth"}
+    assert not any(reason.startswith("transient") for _, reason in picks)
+
+
+def test_matched_sets_follow_up_every_outcome_of_a_mixed_point(cat, sky):
+    specs = [sky.make_spec("aux", {}, i) for i in range(5)]
+    cat.add_objects(specs, region="aux", source="coarse", random_control_frac=0.0)
+    labels = ["grokking", "grokking", "memorization", "grokking", "memorization"]
+    for spec, label in zip(specs, labels):
+        finish_with(cat, spec.object_id(), label)
+    picks = Scheduler(cat, sky).select_followups(100)
+    matched = [oid for oid, reason in picks if reason.startswith("matched")]
+    # the first matched set is the lowest seed of each label, labels in classifier order: seed 2 (memorization),
+    # seed 0 (grokking)
+    assert matched[:2] == [specs[2].object_id(), specs[0].object_id()]
+    assert "labels memorization, grokking" in dict(picks)[matched[0]]
+
+
+def test_anomalous_light_curves_are_the_unknown_exit(cat, sky):
+    specs = [sky.make_spec("aux", {}, i) for i in range(30)]
+    cat.add_objects(specs, region="aux", source="coarse", random_control_frac=0.0)
+    rng = np.random.default_rng(0)
+    for i, spec in enumerate(specs):
+        loss = 100.0 if i == 17 else float(0.1 * (1 + 0.05 * rng.standard_normal()))
+        finish_with(cat, spec.object_id(), "smooth", final_test_loss=loss)
+    picks = Scheduler(cat, sky).select_followups(1)
+    assert picks[0][0] == specs[17].object_id()
+    assert picks[0][1].startswith("anomaly: unlike the other smooth objects of aux (log_final_test_loss")
+
+
+def test_regions_share_followups_by_priority(cat):
+    sky = Sky.from_dict({"version": "share", "regions": [
+        {"name": "big", "task": "toy", "seeds": 40, "priority": 3.0, "ri_policy": "followup", "knobs": {}},
+        {"name": "small", "task": "toy2", "seeds": 40, "priority": 1.0, "ri_policy": "followup", "knobs": {}}]})
+    for region in ("big", "small"):
+        specs = [sky.make_spec(region, {}, i) for i in range(40)]
+        cat.add_objects(specs, region=region, source="coarse", random_control_frac=0.0)
+        for spec in specs:
+            finish_with(cat, spec.object_id(), "smooth")
+    picks = Scheduler(cat, sky).select_followups(40)
+    regions = Counter(cat.query("SELECT region FROM objects WHERE object_id = ?", (oid,))[0]["region"]
+                      for oid, _ in picks)
+    assert regions == {"big": 30, "small": 10}
+
+
+def test_followups_ignore_other_sky_versions(cat, sky):
+    old = Sky.from_dict({**TEST_SKY, "version": "older"})
+    specs = [old.make_spec("aux", {}, i) for i in range(3)]
+    cat.add_objects(specs, region="aux", source="coarse", random_control_frac=0.0)
+    for spec in specs:
+        finish_with(cat, spec.object_id(), "unknown")
+    assert Scheduler(cat, sky).select_followups(10) == []

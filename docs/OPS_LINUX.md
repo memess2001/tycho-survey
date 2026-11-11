@@ -1,0 +1,47 @@
+# Running the survey on a Linux server
+
+The survey root is the repository checkout (`~/tycho-survey`), with its own virtual environment in `.venv`
+installed in editable mode (`.venv/bin/pip install -e .`), so `git pull` updates the code the daemon runs.
+
+## Start, check, stop
+
+```bash
+cd ~/tycho-survey
+bash ops/linux/start_survey.sh          # starts the daemon in the background
+.venv/bin/tycho survey status | head -8 # progress
+bash ops/linux/stop_survey.sh           # graceful stop
+```
+
+`start_survey.sh` starts the daemon with `setsid`. It has no controlling terminal, so `exit`, a closed laptop or a
+dropped VPN/SSH connection do not stop it. Output goes to `logs/daemon.out`, and the survey log is `logs/survey.log`.
+The script refuses to start a second daemon. It also refuses when the venv runs `tycho` from another directory,
+because pulled code would then not be used.
+
+`stop_survey.sh` sends SIGTERM to the daemon. Running objects write a checkpoint and resume on the next start, and
+nothing in `data/` is lost. A stopped daemon leaves every result on disk.
+
+## Switching to sky v1
+
+```bash
+cd ~/tycho-survey
+git pull
+bash ops/linux/start_v1.sh
+```
+
+`start_v1.sh` refuses to run while a daemon is running. It then sets two keys in `tycho.yaml`, keeping its
+comments, and starts the daemon:
+
+* `survey.sky: configs/sky_v1.yaml`
+* `scheduler.followups_per_day: 10000`
+
+Sky v0 objects stay in the catalog, and the scheduler only works on the current sky. To change other settings by
+hand, use `.venv/bin/python scripts/set_config.py section.key=value`.
+
+## Data releases
+
+```bash
+.venv/bin/tycho release --tag DR1
+git add -f releases/DR1 && git commit -m "DR1" && git push
+```
+
+A release contains every sky version in the catalog, listed in its README.

@@ -52,7 +52,9 @@ def same_curve(a, b) -> bool:
         return a is b
     return (np.array_equal(a.steps, b.steps) and a.subsets == b.subsets and a.names == b.names
             and all(np.array_equal(getattr(a, k), getattr(b, k), equal_nan=True)
-                    for k in ("ri", "ri_plugin", "p", "q", "n_eff")) and a.meta == b.meta)
+                    for k in ("ri", "ri_plugin", "p", "q", "n_eff")) and a.meta == b.meta
+            and (a.fourier is None) == (b.fourier is None)
+            and (a.fourier is None or np.array_equal(a.fourier, b.fourier, equal_nan=True)))
 
 
 @pytest.fixture(scope="module")

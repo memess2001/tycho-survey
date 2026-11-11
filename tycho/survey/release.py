@@ -428,7 +428,9 @@ with tarfile.open("lightcurves.tar.gz") as tar:
 ```
 
 RI curves load with `tycho.analysis.ricurve.RICurve.load(path)` after extraction (arrays `steps`, `ri`,
-`ri_plugin`, `p`, `q`, `n_eff` and a JSON header with the subsets' variable names).
+`ri_plugin`, `p`, `q`, `n_eff` and a JSON header with the subsets' variable names). Curves from sky v1 on also hold
+`fourier`: the Walsh coefficient of the model's soft binary output on each subset's inputs, on the same probe rows
+and checkpoints (NaN where undefined; absent in older curves).
 
 ## Units and conventions
 
