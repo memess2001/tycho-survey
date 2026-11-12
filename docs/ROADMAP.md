@@ -21,7 +21,7 @@ gates before it can say anything useful about language models:
 |---|---|---|---|
 | v0 | system test: the platform runs end to end | done; DR0 | [v0_findings.md](results/v0_findings.md) |
 | v1 | sharper known-answer tasks with uniform probes (gate 1) | done; DR1 | [v1_preregistration.md](results/v1_preregistration.md), [v1_results.md](results/v1_results.md) |
-| v2 | gate 2: θ vs η with referees. Part A: correlated inputs and constructed cases (CPU). Part B: induction heads in small transformers (GPU) | design draft | [v2_design_draft.md](results/v2_design_draft.md) |
+| v2 | gate 2: θ vs η with referees. Part A: correlated inputs and constructed cases (CPU). Part B: induction heads in small transformers (pilot on the CPU server, then the GPU servers) | design draft | [v2_design_draft.md](results/v2_design_draft.md) |
 | v3 | depends on gate 2. Candidates: transformers at several sizes, Pythia checkpoints across scale, SAE features as variables | open | |
 | v4 | closer to real models: text-trained transformers, own GPT-2-small runs, pre-trained open models (gates 3 to 5) | open | |
 
@@ -55,6 +55,9 @@ and public checkpoint suites.
    change with scale, or a mechanism, not a specific number or trick.
 5. Induction heads give a known answer inside a transformer: a known mechanism, a reproducible phase change, existing
    measures and an ablation referee. It is the most direct step from toy MLPs toward language models.
+
+**Order of work** (decided the same day): the CPU server first, for Part A and a Part B pilot on the smallest
+transformers; then the GPU servers, for Part B at larger sizes.
 
 **Discussion.** [notes/discussion_2026-11-12_after_v1.md](../notes/discussion_2026-11-12_after_v1.md) (in
 Chinese). **Pending:** discussion with Prof. Sugiyama, especially the choice between marginal and conditional RI

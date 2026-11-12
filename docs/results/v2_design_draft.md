@@ -113,7 +113,7 @@ Questions: the false-interaction rate of each measure against the planted mechan
 * A dense replay of the Markov order-4 and order-5 objects (v1 Q5).
 * Re-specified system checks 9 and 10 (a minimum prefix size; anomaly groups by configuration).
 
-## 5. Part B: induction heads in small transformers (GPU servers)
+## 5. Part B: induction heads in small transformers (CPU pilot, then GPU servers)
 
 **Why induction heads.** An induction head attends to the token after the previous occurrence of the current token
 and copies it. It meets all three needs of gate 2 at once:
@@ -152,12 +152,15 @@ warm-up.
   and does it come earlier than moment-based and loss-based progress measures, by a pre-registered lead?
 * B3: how does that onset scale with d_model, heads and repeat fraction? (Scale is a knob from the start; §6.)
 
-**Compute.** Minutes per run on one GPU, with several runs sharing a GPU. That is a few hundred runs per day on the
-A100 server; the actual rate will be measured.
+**Compute: CPU first, then GPU.** The smallest models (2-layer attention-only, d_model 32 to 64, under about 1M
+parameters) train on the CPU server; the run rate will be measured. That is where the transformer task, the
+variables and the controls are first built and checked, in a pilot of the smallest sizes. The GPU servers take over
+for the larger sizes of the scale knob and longer contexts. There a run takes minutes on one GPU, and several runs
+share a GPU.
 
 **Engineering before Part B.**
-* GPU workers in the scheduler: device assignment and several small jobs per GPU;
-* RI scans on the GPU;
+* for the GPU stage only: GPU workers in the scheduler (device assignment, several small jobs per GPU) and RI scans
+  on the GPU;
 * a transformer task module and data generators;
 * a variable-extraction layer that maps a model and its data to binary variables;
 * moment baselines under the data distribution.
@@ -183,11 +186,15 @@ A100 server; the actual rate will be measured.
 
 ## 8. Order of work
 
+The CPU server comes first, the GPU servers after it.
+
 1. A3 (stored data). It informs the thresholds and cases of A0 and A1.
-2. A0 and A1: definitions, calibration under correlated probes, constructed cases (instrument checks).
-3. The v2 pre-registration (criteria, referees, margins), before any v2 data.
-4. A2 on the CPU server; in parallel, once the engineering is done, Part B on the GPU servers.
-5. Analysis with independent verification, as for v1.
+2. A0 and A1: definitions, calibration under correlated probes, constructed cases (instrument checks). CPU.
+3. The Part A pre-registration (criteria, referees, margins), before any Part A data. Then A2. CPU.
+4. The Part B pilot on the smallest models: transformer task module, variable extraction, controls. CPU.
+5. The Part B pre-registration. Pilot results are disclosed in it, as v1's Amendment 1 disclosed its pilots.
+6. The Part B survey at the larger sizes, after GPU workers are added to the scheduler. GPU.
+7. Analysis with independent verification, as for v1.
 
 ## 9. Questions for discussion
 
