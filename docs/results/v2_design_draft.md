@@ -89,9 +89,11 @@ questions, which is expected; it calibrates, it does not pass the gate. The othe
 * Marginal and conditional RI are both computed, side by side, and the referees decide between them (decided 12
   November; see ROADMAP.md). Conditional RI needs the full table over the variables it conditions on, so it is
   limited to about 16 to 20 binary variables, or to a chosen conditioning set.
-* Storage: for every kept subset, the model's mean output per cell of the subset (for small inputs, the output on
-  every distinct probe pattern) and the mean output f(∅). Then θ and η coefficients are both exact. A3 showed that
-  rebuilding them from stored coefficients fails exactly where the two views diverge.
+* Storage and estimators: store the mean output f(∅) with the Fourier rows, and compute the η coefficient on
+  uniform cells (or centred) rather than as the raw sample average. Keep the probes deterministic, so exact tables
+  can always be reconstructed. For correlated probes, also store each kept subset's per-cell counts and output sums.
+  A3 showed that a naive rebuild fails exactly where the two views diverge, while an exact reconstruction from
+  regenerated probes works.
 * Probe distribution: uniform, data, or both.
 * Calibration under correlated probes. The v0 calibration (noise floor, false positives, min_effect) assumed
   independent uniform probes, so it has to be redone with correlated nulls (new calibration experiments E7 onward).

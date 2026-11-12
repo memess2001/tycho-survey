@@ -33,12 +33,16 @@ gates before it can say anything useful about language models:
   cancelled. v2 does not wait for it. Both marginal and conditional RI are computed side by side, and the gate-2
   referees decide between them. The other open questions in v2_design_draft.md §9 stay open, and their answers can
   still change the v2 pre-registration before it is written.
-* **A3 result** ([v2_a3_stored_data.md](results/v2_a3_stored_data.md)). In DR1 the θ and η views agree almost
-  everywhere. They diverge only where the output is saturated and lower-order coefficients are large together,
-  which happens in one configuration ({1}:1.0 + {1,2,3}:1.0, chain). Rebuilding θ coefficients from the stored
-  data fails in exactly those cases.
-* **Consequences for v2 Part A.** Saturation and lower-order strength become crossed knobs. Exact per-cell outputs
-  and the mean output are stored. That one DR1 cell is the first A2 experiment, with an ablation referee.
+* **A3 result** ([v2_a3_stored_data.md](results/v2_a3_stored_data.md); independently verified). In DR1 the θ and η
+  views agree almost everywhere. They diverge only where the output is saturated and lower-order coefficients are
+  large together. Every real divergence, in both directions, is in one configuration ({1}:1.0 + {1,2,3}:1.0,
+  chain). A naive rebuild of θ from stored coefficients fails there. An exact reconstruction from regenerated
+  probes works. The parity θ-only flags were artefacts of the uncentred η estimator.
+* **Consequences for v2 Part A.**
+  * Saturation and lower-order strength become crossed knobs.
+  * f(∅) is stored, and the η coefficient is computed on uniform cells; per-cell counts and sums are stored for
+    correlated probes.
+  * That one DR1 cell is the first A2 experiment, with an ablation referee.
 
 ### 12 November 2026: v2 retargeted to gate 2; small transformers moved forward
 
