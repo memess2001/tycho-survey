@@ -357,192 +357,758 @@
   }
  },
  "share_by_checkpoint": {
-  "step": [
-   0,
-   1,
-   2,
-   3,
-   4,
-   5,
-   6,
-   7,
-   8,
-   10,
-   11,
-   12,
-   14,
-   16,
-   19,
-   21,
-   25,
-   28,
-   33,
-   37,
-   43,
-   49,
-   57,
-   75,
-   86,
-   99,
-   131,
-   150,
-   173,
-   228,
-   263,
-   302,
-   399,
-   458,
-   606,
-   696,
-   800,
-   1057,
-   1215,
-   1397,
-   1845,
-   2121,
-   2438,
-   3221,
-   3702,
-   4256,
-   5623,
-   6463,
-   7429,
-   9815,
-   11281,
-   12967,
-   17132,
-   19692,
-   22634,
-   29905,
-   34373,
-   39510,
-   52200,
-   60000
-  ],
-  "eta_only": [
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   1.6e-05,
-   0.0,
-   3.1e-05,
-   0.0,
-   3.1e-05,
-   1.6e-05,
-   3.1e-05,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0
-  ],
-  "theta_only": [
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0,
-   0.0
-  ]
+  "markov-v1": {
+   "step": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    12,
+    14,
+    15,
+    18,
+    20,
+    23,
+    26,
+    30,
+    34,
+    39,
+    44,
+    50,
+    57,
+    65,
+    74,
+    96,
+    110,
+    125,
+    162,
+    185,
+    211,
+    273,
+    312,
+    405,
+    461,
+    525,
+    682,
+    777,
+    885,
+    1149,
+    1309,
+    1492,
+    1936,
+    2206,
+    2514,
+    3264,
+    3718,
+    4237,
+    5500,
+    6267,
+    7140,
+    9270,
+    10562,
+    12034,
+    15623,
+    17800,
+    20282,
+    26330,
+    30000
+   ],
+   "eta_only": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.00013,
+    0.0,
+    0.00026,
+    0.0,
+    0.00026,
+    0.00013,
+    0.00026,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "theta_only": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "parity-k2": {
+   "step": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    10,
+    11,
+    12,
+    14,
+    16,
+    18,
+    20,
+    23,
+    26,
+    30,
+    33,
+    38,
+    43,
+    49,
+    55,
+    63,
+    71,
+    80,
+    91,
+    103,
+    133,
+    151,
+    171,
+    219,
+    249,
+    319,
+    362,
+    410,
+    527,
+    598,
+    678,
+    871,
+    987,
+    1119,
+    1438,
+    1630,
+    1848,
+    2374,
+    2691,
+    3051,
+    3920,
+    4443,
+    5037,
+    6472,
+    7336,
+    8316,
+    10686,
+    12113,
+    13731,
+    17644,
+    20000
+   ],
+   "eta_only": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "theta_only": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "parity-k3": {
+   "step": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    11,
+    12,
+    14,
+    16,
+    19,
+    21,
+    25,
+    28,
+    33,
+    37,
+    43,
+    49,
+    57,
+    75,
+    86,
+    99,
+    131,
+    150,
+    173,
+    228,
+    263,
+    302,
+    399,
+    458,
+    606,
+    696,
+    800,
+    1057,
+    1215,
+    1397,
+    1845,
+    2121,
+    2438,
+    3221,
+    3702,
+    4256,
+    5623,
+    6463,
+    7429,
+    9815,
+    11281,
+    12967,
+    17132,
+    19692,
+    22634,
+    29905,
+    34373,
+    39510,
+    52200,
+    60000
+   ],
+   "eta_only": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "theta_only": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "parity-k4": {
+   "step": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    10,
+    11,
+    13,
+    15,
+    18,
+    20,
+    24,
+    28,
+    32,
+    37,
+    43,
+    59,
+    68,
+    79,
+    107,
+    125,
+    145,
+    196,
+    228,
+    266,
+    359,
+    418,
+    486,
+    657,
+    764,
+    1033,
+    1201,
+    1396,
+    1888,
+    2195,
+    2553,
+    3452,
+    4014,
+    4668,
+    6312,
+    7340,
+    8535,
+    11541,
+    13421,
+    15606,
+    21102,
+    24539,
+    28534,
+    38584,
+    44867,
+    52174,
+    70549,
+    82037,
+    95396,
+    128994,
+    150000
+   ],
+   "eta_only": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "theta_only": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  }
  },
  "exemplars": {
   "eta_only|markov-v1": [
@@ -926,7 +1492,8 @@
      "{x[t-2],x[t-3]}": 0.1494,
      "{x[t-1],x[t-2],x[t-3]}": 0.3471
     },
-    "max_abs_mean": 0.9862
+    "max_abs_mean": 0.9862,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -967,7 +1534,8 @@
      "{x[t-2],x[t-3]}": -0.099,
      "{x[t-1],x[t-2],x[t-3]}": 0.3012
     },
-    "max_abs_mean": 0.9479
+    "max_abs_mean": 0.9479,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1008,7 +1576,8 @@
      "{x[t-2],x[t-3]}": -0.0363,
      "{x[t-1],x[t-2],x[t-3]}": 0.3147
     },
-    "max_abs_mean": 0.9547
+    "max_abs_mean": 0.9547,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1049,7 +1618,8 @@
      "{x[t-2],x[t-3]}": -0.1131,
      "{x[t-1],x[t-2],x[t-3]}": 0.1331
     },
-    "max_abs_mean": 0.9827
+    "max_abs_mean": 0.9827,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1081,16 +1651,9 @@
      "{x[t-2],x[t-3]}": -0.0238,
      "{x[t-1],x[t-2],x[t-3]}": 0.1435
     },
-    "theta_w": {
-     "{x[t-1]}": 2.2794,
-     "{x[t-2]}": -1.4501,
-     "{x[t-3]}": 1.5751,
-     "{x[t-1],x[t-2]}": 1.1219,
-     "{x[t-1],x[t-3]}": -1.1539,
-     "{x[t-2],x[t-3]}": 1.0445,
-     "{x[t-1],x[t-2],x[t-3]}": -0.9345
-    },
-    "max_abs_mean": 1.0071
+    "theta_w": null,
+    "max_abs_mean": 1.0071,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1122,16 +1685,9 @@
      "{x[t-2],x[t-3]}": 0.0173,
      "{x[t-1],x[t-2],x[t-3]}": 0.1413
     },
-    "theta_w": {
-     "{x[t-1]}": 3.5677,
-     "{x[t-2]}": -2.6667,
-     "{x[t-3]}": 0.378,
-     "{x[t-1],x[t-2]}": -0.1074,
-     "{x[t-1],x[t-3]}": -2.2594,
-     "{x[t-2],x[t-3]}": 2.2144,
-     "{x[t-1],x[t-2],x[t-3]}": 0.2204
-    },
-    "max_abs_mean": 1.0158
+    "theta_w": null,
+    "max_abs_mean": 1.0158,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1172,7 +1728,8 @@
      "{x[t-2],x[t-3]}": 0.1665,
      "{x[t-1],x[t-2],x[t-3]}": 0.0273
     },
-    "max_abs_mean": 0.9965
+    "max_abs_mean": 0.9965,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1204,16 +1761,9 @@
      "{x[t-2],x[t-3]}": 0.0111,
      "{x[t-1],x[t-2],x[t-3]}": 0.1337
     },
-    "theta_w": {
-     "{x[t-1]}": 2.3922,
-     "{x[t-2]}": -1.4037,
-     "{x[t-3]}": 1.5848,
-     "{x[t-1],x[t-2]}": -1.0351,
-     "{x[t-1],x[t-3]}": 1.2115,
-     "{x[t-2],x[t-3]}": -1.042,
-     "{x[t-1],x[t-2],x[t-3]}": -0.8861
-    },
-    "max_abs_mean": 1.0003
+    "theta_w": null,
+    "max_abs_mean": 1.0003,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1254,7 +1804,8 @@
      "{x[t-2],x[t-3]}": -0.1426,
      "{x[t-1],x[t-2],x[t-3]}": 0.0699
     },
-    "max_abs_mean": 0.9938
+    "max_abs_mean": 0.9938,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1286,16 +1837,9 @@
      "{x[t-2],x[t-3]}": -0.0227,
      "{x[t-1],x[t-2],x[t-3]}": 0.1245
     },
-    "theta_w": {
-     "{x[t-1]}": 2.3519,
-     "{x[t-2]}": -1.4143,
-     "{x[t-3]}": 1.5157,
-     "{x[t-1],x[t-2]}": 1.0969,
-     "{x[t-1],x[t-3]}": -1.2131,
-     "{x[t-2],x[t-3]}": 1.0419,
-     "{x[t-1],x[t-2],x[t-3]}": -0.9016
-    },
-    "max_abs_mean": 1.011
+    "theta_w": null,
+    "max_abs_mean": 1.011,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1336,7 +1880,8 @@
      "{x[t-2],x[t-3]}": -0.0745,
      "{x[t-1],x[t-2],x[t-3]}": 0.1308
     },
-    "max_abs_mean": 0.9759
+    "max_abs_mean": 0.9759,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1377,7 +1922,8 @@
      "{x[t-2],x[t-3]}": 0.0937,
      "{x[t-1],x[t-2],x[t-3]}": 0.3057
     },
-    "max_abs_mean": 0.9744
+    "max_abs_mean": 0.9744,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1418,7 +1964,8 @@
      "{x[t-3],x[t-4]}": 0.1075,
      "{x[t-1],x[t-3],x[t-4]}": -0.0704
     },
-    "max_abs_mean": 0.9785
+    "max_abs_mean": 0.9785,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1459,7 +2006,8 @@
      "{x[t-3],x[t-4]}": -0.0918,
      "{x[t-1],x[t-3],x[t-4]}": 0.0423
     },
-    "max_abs_mean": 0.9932
+    "max_abs_mean": 0.9932,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1500,7 +2048,8 @@
      "{x[t-3],x[t-4]}": -0.075,
      "{x[t-1],x[t-3],x[t-4]}": -0.1475
     },
-    "max_abs_mean": 0.9492
+    "max_abs_mean": 0.9492,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1541,7 +2090,8 @@
      "{x[t-3],x[t-4]}": -0.0404,
      "{x[t-1],x[t-3],x[t-4]}": 0.0154
     },
-    "max_abs_mean": 0.967
+    "max_abs_mean": 0.967,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1582,7 +2132,8 @@
      "{x[t-3],x[t-4]}": -0.0192,
      "{x[t-1],x[t-3],x[t-4]}": -0.04
     },
-    "max_abs_mean": 0.9605
+    "max_abs_mean": 0.9605,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1623,7 +2174,8 @@
      "{x[t-3],x[t-4]}": 0.129,
      "{x[t-1],x[t-3],x[t-4]}": -0.1081
     },
-    "max_abs_mean": 0.9822
+    "max_abs_mean": 0.9822,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1664,7 +2216,8 @@
      "{x[t-3],x[t-4]}": -0.02,
      "{x[t-1],x[t-3],x[t-4]}": -0.0826
     },
-    "max_abs_mean": 0.9473
+    "max_abs_mean": 0.9473,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1705,7 +2258,8 @@
      "{x[t-3],x[t-4]}": 0.0998,
      "{x[t-1],x[t-3],x[t-4]}": -0.0319
     },
-    "max_abs_mean": 0.9662
+    "max_abs_mean": 0.9662,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1746,7 +2300,8 @@
      "{x[t-3],x[t-4]}": 0.0131,
      "{x[t-1],x[t-3],x[t-4]}": -0.0278
     },
-    "max_abs_mean": 0.9645
+    "max_abs_mean": 0.9645,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1778,16 +2333,9 @@
      "{x[t-3],x[t-4]}": -0.0179,
      "{x[t-1],x[t-3],x[t-4]}": -0.0915
     },
-    "theta_w": {
-     "{x[t-1]}": 2.1785,
-     "{x[t-3]}": 1.4978,
-     "{x[t-4]}": 1.3787,
-     "{x[t-1],x[t-3]}": 1.1784,
-     "{x[t-1],x[t-4]}": 1.1923,
-     "{x[t-3],x[t-4]}": 1.1052,
-     "{x[t-1],x[t-3],x[t-4]}": 1.0208
-    },
-    "max_abs_mean": 1.0189
+    "theta_w": null,
+    "max_abs_mean": 1.0189,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1819,16 +2367,9 @@
      "{x[t-3],x[t-4]}": 0.0102,
      "{x[t-1],x[t-3],x[t-4]}": -0.0887
     },
-    "theta_w": {
-     "{x[t-1]}": 2.3182,
-     "{x[t-3]}": 1.4913,
-     "{x[t-4]}": 1.4195,
-     "{x[t-1],x[t-3]}": -1.0628,
-     "{x[t-1],x[t-4]}": -1.207,
-     "{x[t-3],x[t-4]}": -1.0919,
-     "{x[t-1],x[t-3],x[t-4]}": 1.0038
-    },
-    "max_abs_mean": 1.0102
+    "theta_w": null,
+    "max_abs_mean": 1.0102,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1860,16 +2401,9 @@
      "{x[t-2],x[t-4]}": 0.0284,
      "{x[t-1],x[t-2],x[t-4]}": 0.088
     },
-    "theta_w": {
-     "{x[t-1]}": 2.4222,
-     "{x[t-2]}": -1.6756,
-     "{x[t-4]}": -0.8392,
-     "{x[t-1],x[t-2]}": -1.0064,
-     "{x[t-1],x[t-4]}": -1.3119,
-     "{x[t-2],x[t-4]}": 1.3211,
-     "{x[t-1],x[t-2],x[t-4]}": 1.1322
-    },
-    "max_abs_mean": 1.0033
+    "theta_w": null,
+    "max_abs_mean": 1.0033,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1910,7 +2444,8 @@
      "{x[t-2],x[t-4]}": 0.0603,
      "{x[t-1],x[t-2],x[t-4]}": 0.0919
     },
-    "max_abs_mean": 0.9726
+    "max_abs_mean": 0.9726,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1951,7 +2486,8 @@
      "{x[t-2],x[t-4]}": 0.0575,
      "{x[t-1],x[t-2],x[t-4]}": 0.0567
     },
-    "max_abs_mean": 0.9685
+    "max_abs_mean": 0.9685,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -1992,7 +2528,8 @@
      "{x[t-3],x[t-4]}": -0.0339,
      "{x[t-1],x[t-3],x[t-4]}": -0.055
     },
-    "max_abs_mean": 0.9497
+    "max_abs_mean": 0.9497,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2033,7 +2570,8 @@
      "{x[t-2],x[t-4]}": -0.068,
      "{x[t-1],x[t-2],x[t-4]}": 0.1597
     },
-    "max_abs_mean": 0.968
+    "max_abs_mean": 0.968,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2074,7 +2612,8 @@
      "{x[t-2],x[t-4]}": -0.1178,
      "{x[t-1],x[t-2],x[t-4]}": 0.0927
     },
-    "max_abs_mean": 0.9707
+    "max_abs_mean": 0.9707,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2115,7 +2654,8 @@
      "{x[t-2],x[t-4]}": -0.0095,
      "{x[t-1],x[t-2],x[t-4]}": 0.0436
     },
-    "max_abs_mean": 0.9444
+    "max_abs_mean": 0.9444,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2156,7 +2696,8 @@
      "{x[t-2],x[t-4]}": -0.0201,
      "{x[t-1],x[t-2],x[t-4]}": 0.024
     },
-    "max_abs_mean": 0.9535
+    "max_abs_mean": 0.9535,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2197,7 +2738,8 @@
      "{x[t-2],x[t-4]}": 0.1609,
      "{x[t-1],x[t-2],x[t-4]}": -0.0179
     },
-    "max_abs_mean": 0.9889
+    "max_abs_mean": 0.9889,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2224,12 +2766,9 @@
      "{x[t-3]}": 0.1852,
      "{x[t-1],x[t-3]}": -0.0793
     },
-    "theta_w": {
-     "{x[t-1]}": 3.3202,
-     "{x[t-3]}": 2.6726,
-     "{x[t-1],x[t-3]}": -2.4164
-    },
-    "max_abs_mean": 1.0144
+    "theta_w": null,
+    "max_abs_mean": 1.0144,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2270,7 +2809,8 @@
      "{x[t-2],x[t-4]}": 0.0488,
      "{x[t-1],x[t-2],x[t-4]}": 0.1355
     },
-    "max_abs_mean": 0.9651
+    "max_abs_mean": 0.9651,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2311,7 +2851,8 @@
      "{x[t-2],x[t-4]}": -0.0029,
      "{x[t-1],x[t-2],x[t-4]}": 0.069
     },
-    "max_abs_mean": 0.9658
+    "max_abs_mean": 0.9658,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2352,7 +2893,8 @@
      "{x[t-2],x[t-4]}": 0.0858,
      "{x[t-1],x[t-2],x[t-4]}": 0.047
     },
-    "max_abs_mean": 0.9708
+    "max_abs_mean": 0.9708,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2384,7 +2926,8 @@
      "{x[t-2]}": -0.6032,
      "{x[t-1],x[t-2]}": 0.3712
     },
-    "max_abs_mean": 0.987
+    "max_abs_mean": 0.987,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2416,16 +2959,9 @@
      "{x[t-2],x[t-4]}": 0.0177,
      "{x[t-1],x[t-2],x[t-4]}": 0.0695
     },
-    "theta_w": {
-     "{x[t-1]}": 2.2689,
-     "{x[t-2]}": -1.4051,
-     "{x[t-4]}": 1.4211,
-     "{x[t-1],x[t-2]}": 1.0787,
-     "{x[t-1],x[t-4]}": -1.2282,
-     "{x[t-2],x[t-4]}": 1.1691,
-     "{x[t-1],x[t-2],x[t-4]}": -1.0249
-    },
-    "max_abs_mean": 1.0227
+    "theta_w": null,
+    "max_abs_mean": 1.0227,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2457,7 +2993,8 @@
      "{x[t-2]}": -0.2937,
      "{x[t-1],x[t-2]}": 0.075
     },
-    "max_abs_mean": 0.8952
+    "max_abs_mean": 0.8952,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2489,7 +3026,8 @@
      "{x[t-3]}": 0.3994,
      "{x[t-1],x[t-3]}": -0.0439
     },
-    "max_abs_mean": 0.9161
+    "max_abs_mean": 0.9161,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2521,7 +3059,8 @@
      "{x[t-3]}": 0.2771,
      "{x[t-1],x[t-3]}": 0.1063
     },
-    "max_abs_mean": 0.8864
+    "max_abs_mean": 0.8864,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2553,7 +3092,8 @@
      "{x[t-3]}": 0.3587,
      "{x[t-1],x[t-3]}": -0.1263
     },
-    "max_abs_mean": 0.9182
+    "max_abs_mean": 0.9182,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2585,7 +3125,8 @@
      "{x[t-3]}": 0.2589,
      "{x[t-1],x[t-3]}": 0.008
     },
-    "max_abs_mean": 0.8536
+    "max_abs_mean": 0.8536,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2617,7 +3158,8 @@
      "{x[t-2]}": -0.2741,
      "{x[t-1],x[t-2]}": 0.0604
     },
-    "max_abs_mean": 0.8841
+    "max_abs_mean": 0.8841,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2644,7 +3186,8 @@
     "theta_w": {
      "{x1}": 0.0186
     },
-    "max_abs_mean": 0.0186
+    "max_abs_mean": 0.0186,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2671,7 +3214,8 @@
     "theta_w": {
      "{x15}": 0.043
     },
-    "max_abs_mean": 0.043
+    "max_abs_mean": 0.043,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2698,7 +3242,8 @@
     "theta_w": {
      "{x9}": -0.0423
     },
-    "max_abs_mean": 0.0423
+    "max_abs_mean": 0.0423,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2725,7 +3270,8 @@
     "theta_w": {
      "{x26}": 0.0264
     },
-    "max_abs_mean": 0.0264
+    "max_abs_mean": 0.0264,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2757,7 +3303,8 @@
      "{x[t-5]}": 0.0315,
      "{x[t-1],x[t-5]}": -0.06
     },
-    "max_abs_mean": 0.742
+    "max_abs_mean": 0.742,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2784,7 +3331,8 @@
     "theta_w": {
      "{x1}": -0.0381
     },
-    "max_abs_mean": 0.0381
+    "max_abs_mean": 0.0381,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2811,7 +3359,8 @@
     "theta_w": {
      "{x6}": 0.0447
     },
-    "max_abs_mean": 0.0447
+    "max_abs_mean": 0.0447,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2838,7 +3387,8 @@
     "theta_w": {
      "{x4}": -0.0429
     },
-    "max_abs_mean": 0.0429
+    "max_abs_mean": 0.0429,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2870,7 +3420,8 @@
      "{x[t-4]}": 0.287,
      "{x[t-1],x[t-4]}": -0.0723
     },
-    "max_abs_mean": 0.8404
+    "max_abs_mean": 0.8404,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2902,7 +3453,8 @@
      "{x[t-2]}": -0.1821,
      "{x[t-1],x[t-2]}": 0.0828
     },
-    "max_abs_mean": 0.8098
+    "max_abs_mean": 0.8098,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2929,7 +3481,8 @@
     "theta_w": {
      "{x7}": -0.0383
     },
-    "max_abs_mean": 0.0382
+    "max_abs_mean": 0.0382,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2961,7 +3514,8 @@
      "{x[t-3]}": 0.0247,
      "{x[t-1],x[t-3]}": 0.0629
     },
-    "max_abs_mean": 0.6202
+    "max_abs_mean": 0.6202,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -2988,7 +3542,8 @@
     "theta_w": {
      "{x17}": -0.0435
     },
-    "max_abs_mean": 0.0435
+    "max_abs_mean": 0.0435,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3015,7 +3570,8 @@
     "theta_w": {
      "{x1}": 0.0338
     },
-    "max_abs_mean": 0.0338
+    "max_abs_mean": 0.0338,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3042,7 +3598,8 @@
     "theta_w": {
      "{x11}": 0.0444
     },
-    "max_abs_mean": 0.0444
+    "max_abs_mean": 0.0444,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3069,7 +3626,8 @@
     "theta_w": {
      "{x0}": 0.0417
     },
-    "max_abs_mean": 0.0417
+    "max_abs_mean": 0.0417,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3096,7 +3654,8 @@
     "theta_w": {
      "{x28}": 0.0409
     },
-    "max_abs_mean": 0.0408
+    "max_abs_mean": 0.0408,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3123,7 +3682,8 @@
     "theta_w": {
      "{x23}": 0.0383
     },
-    "max_abs_mean": 0.0382
+    "max_abs_mean": 0.0382,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3150,7 +3710,8 @@
     "theta_w": {
      "{x30}": 0.0368
     },
-    "max_abs_mean": 0.0368
+    "max_abs_mean": 0.0368,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3177,7 +3738,8 @@
     "theta_w": {
      "{x2}": 0.0393
     },
-    "max_abs_mean": 0.0392
+    "max_abs_mean": 0.0392,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3204,7 +3766,8 @@
     "theta_w": {
      "{x28}": 0.0431
     },
-    "max_abs_mean": 0.0431
+    "max_abs_mean": 0.0431,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3231,7 +3794,8 @@
     "theta_w": {
      "{x2}": 0.0424
     },
-    "max_abs_mean": 0.0424
+    "max_abs_mean": 0.0424,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3258,7 +3822,8 @@
     "theta_w": {
      "{x13}": 0.0432
     },
-    "max_abs_mean": 0.0432
+    "max_abs_mean": 0.0432,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3285,7 +3850,8 @@
     "theta_w": {
      "{x11}": 0.0434
     },
-    "max_abs_mean": 0.0433
+    "max_abs_mean": 0.0433,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3312,7 +3878,8 @@
     "theta_w": {
      "{x6}": -0.0419
     },
-    "max_abs_mean": 0.0419
+    "max_abs_mean": 0.0419,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3339,7 +3906,8 @@
     "theta_w": {
      "{x18}": -0.0427
     },
-    "max_abs_mean": 0.0427
+    "max_abs_mean": 0.0427,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3366,7 +3934,8 @@
     "theta_w": {
      "{x49}": -0.0418
     },
-    "max_abs_mean": 0.0418
+    "max_abs_mean": 0.0418,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3393,7 +3962,8 @@
     "theta_w": {
      "{x8}": -0.0414
     },
-    "max_abs_mean": 0.0413
+    "max_abs_mean": 0.0413,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3420,7 +3990,8 @@
     "theta_w": {
      "{x15}": 0.0412
     },
-    "max_abs_mean": 0.0412
+    "max_abs_mean": 0.0412,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3447,7 +4018,8 @@
     "theta_w": {
      "{x6}": 0.0434
     },
-    "max_abs_mean": 0.0434
+    "max_abs_mean": 0.0434,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3474,7 +4046,8 @@
     "theta_w": {
      "{x4}": 0.0444
     },
-    "max_abs_mean": 0.0444
+    "max_abs_mean": 0.0444,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3501,7 +4074,8 @@
     "theta_w": {
      "{x4}": -0.0431
     },
-    "max_abs_mean": 0.0431
+    "max_abs_mean": 0.0431,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3528,7 +4102,8 @@
     "theta_w": {
      "{x30}": -0.0437
     },
-    "max_abs_mean": 0.0437
+    "max_abs_mean": 0.0437,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3555,7 +4130,8 @@
     "theta_w": {
      "{x15}": -0.043
     },
-    "max_abs_mean": 0.0429
+    "max_abs_mean": 0.0429,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3587,7 +4163,8 @@
      "{x[t-4]}": 0.0982,
      "{x[t-1],x[t-4]}": 0.064
     },
-    "max_abs_mean": 0.6568
+    "max_abs_mean": 0.6568,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   },
   {
@@ -3614,7 +4191,8 @@
     "theta_w": {
      "{x20}": -0.0441
     },
-    "max_abs_mean": 0.0441
+    "max_abs_mean": 0.0441,
+    "note": "approximate (uniform cells, f(\u2205) = 0); exact values in a3_exact_reconstruction.json"
    }
   }
  ],
@@ -3747,8 +4325,8 @@
    ],
    "step": 4,
    "implied_abs_f0_this_pair": 0.8318381522958844,
-   "implied_abs_f0_other_pairs_median": 0.6940236402514977,
-   "n_other_pairs": 4
+   "implied_abs_f0_other_pairs_median": 0.6675768218690645,
+   "n_other_pairs": 5
   },
   {
    "object_id": "f651d17351101f04",
@@ -3759,8 +4337,8 @@
    ],
    "step": 107,
    "implied_abs_f0_this_pair": 0.8318351559753545,
-   "implied_abs_f0_other_pairs_median": 0.5557517333090656,
-   "n_other_pairs": 5
+   "implied_abs_f0_other_pairs_median": 0.5261907014719038,
+   "n_other_pairs": 8
   },
   {
    "object_id": "509103f82a7e6dea",
@@ -3771,8 +4349,8 @@
    ],
    "step": 7,
    "implied_abs_f0_this_pair": 0.9156639203962744,
-   "implied_abs_f0_other_pairs_median": 0.5715468565338675,
-   "n_other_pairs": 2
+   "implied_abs_f0_other_pairs_median": 0.5399695396744104,
+   "n_other_pairs": 3
   },
   {
    "object_id": "d957e1423c8e30ff",
@@ -3783,8 +4361,8 @@
    ],
    "step": 3,
    "implied_abs_f0_this_pair": 0.8407986800420069,
-   "implied_abs_f0_other_pairs_median": 0.6964584617041332,
-   "n_other_pairs": 1
+   "implied_abs_f0_other_pairs_median": 0.0,
+   "n_other_pairs": 3
   },
   {
    "object_id": "215e74fe1caca742",
@@ -3795,8 +4373,8 @@
    ],
    "step": 57,
    "implied_abs_f0_this_pair": 0.7966111443955974,
-   "implied_abs_f0_other_pairs_median": 0.5832840176542387,
-   "n_other_pairs": 3
+   "implied_abs_f0_other_pairs_median": 0.47419414308694413,
+   "n_other_pairs": 4
   },
   {
    "object_id": "3f76895eb9c20030",
@@ -3819,8 +4397,8 @@
    ],
    "step": 7,
    "implied_abs_f0_this_pair": 0.818363915223767,
-   "implied_abs_f0_other_pairs_median": 0.579543823064564,
-   "n_other_pairs": 4
+   "implied_abs_f0_other_pairs_median": 0.5680885602921679,
+   "n_other_pairs": 5
   },
   {
    "object_id": "8a45e01594e9b057",
@@ -3831,8 +4409,8 @@
    ],
    "step": 24,
    "implied_abs_f0_this_pair": 0.7787471900163323,
-   "implied_abs_f0_other_pairs_median": 0.5766372104886097,
-   "n_other_pairs": 7
+   "implied_abs_f0_other_pairs_median": 0.5367127555994138,
+   "n_other_pairs": 10
   },
   {
    "object_id": "84452a34734d2ec0",
@@ -3843,8 +4421,8 @@
    ],
    "step": 8,
    "implied_abs_f0_this_pair": 0.8448564314789919,
-   "implied_abs_f0_other_pairs_median": 0.44103423771027417,
-   "n_other_pairs": 7
+   "implied_abs_f0_other_pairs_median": 0.19681554666785106,
+   "n_other_pairs": 11
   },
   {
    "object_id": "388f91e26e11afc6",
@@ -3855,8 +4433,8 @@
    ],
    "step": 4,
    "implied_abs_f0_this_pair": 0.7655982564312123,
-   "implied_abs_f0_other_pairs_median": 0.4862065615494601,
-   "n_other_pairs": 4
+   "implied_abs_f0_other_pairs_median": 0.312382130155452,
+   "n_other_pairs": 7
   },
   {
    "object_id": "ff47471e25f214bd",
@@ -3879,8 +4457,8 @@
    ],
    "step": 75,
    "implied_abs_f0_this_pair": 0.7892019122119385,
-   "implied_abs_f0_other_pairs_median": 0.557548561660097,
-   "n_other_pairs": 3
+   "implied_abs_f0_other_pairs_median": 0.0,
+   "n_other_pairs": 8
   },
   {
    "object_id": "31887270fb21da6e",
@@ -3891,8 +4469,8 @@
    ],
    "step": 43,
    "implied_abs_f0_this_pair": 0.8081038452748268,
-   "implied_abs_f0_other_pairs_median": 0.3833280815166741,
-   "n_other_pairs": 6
+   "implied_abs_f0_other_pairs_median": 0.3561422703376974,
+   "n_other_pairs": 8
   },
   {
    "object_id": "509103f82a7e6dea",
@@ -3903,8 +4481,8 @@
    ],
    "step": 125,
    "implied_abs_f0_this_pair": 0.8154585222331996,
-   "implied_abs_f0_other_pairs_median": 0.5974564346028772,
-   "n_other_pairs": 5
+   "implied_abs_f0_other_pairs_median": 0.5741614828947943,
+   "n_other_pairs": 6
   },
   {
    "object_id": "8a45e01594e9b057",
@@ -3915,8 +4493,8 @@
    ],
    "step": 68,
    "implied_abs_f0_this_pair": 0.7958172261123917,
-   "implied_abs_f0_other_pairs_median": 0.5305852096785066,
-   "n_other_pairs": 5
+   "implied_abs_f0_other_pairs_median": 0.24001085820423895,
+   "n_other_pairs": 9
   },
   {
    "object_id": "3b963caba34fadb8",
@@ -3939,8 +4517,8 @@
    ],
    "step": 23,
    "implied_abs_f0_this_pair": 0.7670023960745025,
-   "implied_abs_f0_other_pairs_median": 0.48877563696648385,
-   "n_other_pairs": 5
+   "implied_abs_f0_other_pairs_median": 0.28030452469189926,
+   "n_other_pairs": 9
   },
   {
    "object_id": "2ed722ea1644ad3f",
@@ -3951,8 +4529,8 @@
    ],
    "step": 24,
    "implied_abs_f0_this_pair": 0.7607721875010067,
-   "implied_abs_f0_other_pairs_median": 0.6034538362710216,
-   "n_other_pairs": 8
+   "implied_abs_f0_other_pairs_median": 0.5798414291412264,
+   "n_other_pairs": 10
   },
   {
    "object_id": "b70383f78e8fd884",
@@ -3963,8 +4541,8 @@
    ],
    "step": 399,
    "implied_abs_f0_this_pair": 0.7595499691030503,
-   "implied_abs_f0_other_pairs_median": 0.5161960419911014,
-   "n_other_pairs": 5
+   "implied_abs_f0_other_pairs_median": 0.3866113595772529,
+   "n_other_pairs": 8
   },
   {
    "object_id": "f651d17351101f04",
@@ -3975,8 +4553,8 @@
    ],
    "step": 107,
    "implied_abs_f0_this_pair": 0.7704037765274963,
-   "implied_abs_f0_other_pairs_median": 0.5557517333090656,
-   "n_other_pairs": 5
+   "implied_abs_f0_other_pairs_median": 0.5261907014719038,
+   "n_other_pairs": 8
   },
   {
    "object_id": "ee22129994281d8f",
@@ -3987,8 +4565,8 @@
    ],
    "step": 57,
    "implied_abs_f0_this_pair": 0.76184121847236,
-   "implied_abs_f0_other_pairs_median": 0.491992261777766,
-   "n_other_pairs": 5
+   "implied_abs_f0_other_pairs_median": 0.3321574896992321,
+   "n_other_pairs": 8
   },
   {
    "object_id": "b4ce85c349c7f758",
@@ -3999,8 +4577,8 @@
    ],
    "step": 151,
    "implied_abs_f0_this_pair": 0.7665026675140887,
-   "implied_abs_f0_other_pairs_median": 0.4628408876895743,
-   "n_other_pairs": 5
+   "implied_abs_f0_other_pairs_median": 0.0,
+   "n_other_pairs": 12
   },
   {
    "object_id": "06ae8cffddf3fc8b",
@@ -4023,8 +4601,8 @@
    ],
    "step": 6,
    "implied_abs_f0_this_pair": 0.7588532328885804,
-   "implied_abs_f0_other_pairs_median": 0.5720729945681151,
-   "n_other_pairs": 7
+   "implied_abs_f0_other_pairs_median": 0.5539710677801406,
+   "n_other_pairs": 9
   },
   {
    "object_id": "2ed722ea1644ad3f",
@@ -4035,8 +4613,8 @@
    ],
    "step": 15,
    "implied_abs_f0_this_pair": 0.7387532609511827,
-   "implied_abs_f0_other_pairs_median": 0.5180747045620866,
-   "n_other_pairs": 3
+   "implied_abs_f0_other_pairs_median": 0.45301662273583065,
+   "n_other_pairs": 5
   },
   {
    "object_id": "ff47471e25f214bd",
@@ -4047,8 +4625,8 @@
    ],
    "step": 4,
    "implied_abs_f0_this_pair": 0.7310338249715234,
-   "implied_abs_f0_other_pairs_median": 0.47816516660480685,
-   "n_other_pairs": 2
+   "implied_abs_f0_other_pairs_median": 0.44781148983539676,
+   "n_other_pairs": 3
   },
   {
    "object_id": "4dc946280e199d56",
@@ -4059,8 +4637,8 @@
    ],
    "step": 2,
    "implied_abs_f0_this_pair": 0.7342821780543562,
-   "implied_abs_f0_other_pairs_median": 0.5261211179365841,
-   "n_other_pairs": 5
+   "implied_abs_f0_other_pairs_median": 0.4300793112528188,
+   "n_other_pairs": 6
   },
   {
    "object_id": "fd82a780f3d6773d",
@@ -4071,8 +4649,8 @@
    ],
    "step": 23,
    "implied_abs_f0_this_pair": 0.7292946625510781,
-   "implied_abs_f0_other_pairs_median": 0.6693285441132621,
-   "n_other_pairs": 6
+   "implied_abs_f0_other_pairs_median": 0.5851645968633923,
+   "n_other_pairs": 8
   },
   {
    "object_id": "fcc23cb13d15701a",
@@ -4095,8 +4673,8 @@
    ],
    "step": 5,
    "implied_abs_f0_this_pair": 0.7218476177405397,
-   "implied_abs_f0_other_pairs_median": null,
-   "n_other_pairs": 0
+   "implied_abs_f0_other_pairs_median": 0.0,
+   "n_other_pairs": 1
   }
  ],
  "rebuild_worst": [

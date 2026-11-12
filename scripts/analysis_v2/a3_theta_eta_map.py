@@ -14,16 +14,19 @@ so the local RI of A ∪ {out} is a function of the coefficients f(B), B ⊆ A. 
 * ``ri_plugin``: the stored plug-in RI (what the instrument measured);
 * ``R(f)``: the single-mode value ln 2 − h((1 + |f(A)|)/2), the RI the subset would have if its top coefficient were
   the only one (the η view expressed in nats);
-* ``rebuilt``: the local RI of the table rebuilt from all stored f(B), B ⊆ A, with f(∅) = 0 (the mean output is not
-  stored; it is 0 in the population for these tasks). Only for subsets whose every sub-subset is stored.
+* ``rebuilt``: the local RI of the table rebuilt from all stored f(B), B ⊆ A, assuming exactly uniform probe cells and
+  a mean output f(∅) = 0 (f(∅) is not stored). Only for subsets whose every sub-subset is stored. Both assumptions
+  fail near saturation (the trained models' f(∅) is not 0, and the probe cells are a few per cent unbalanced), so
+  the rebuild is only an approximation; ``a3_exact_reconstruction.py`` regenerates the probes and is exact.
 
 A disagreement is classified at each checkpoint, with m = the curve's min_effect (0.001 nats here):
 
 * η-only: R(f) ≥ 10 m while ri_plugin < m (a large top coefficient, no top-order log-linear term);
 * θ-only: ri_plugin ≥ 10 m while R(f) < m (a top-order term with a small top coefficient).
 
-The rebuild checks that the stored RI and coefficients are consistent, and with the lower-order coefficients set
-to 0 it reduces to R(f), so the gap ri_plugin − R(f) is the contribution of the lower-order coefficients.
+With the lower-order coefficients set to 0 the rebuild reduces to R(f). The gap ri_plugin − R(f) therefore combines
+the lower-order coefficients with the effects of f(∅) and of unbalanced probe cells; for pairs it consists of those
+effects only.
 
 Run from the repository root after extracting DR1 into work/dr1 (scripts/analysis_v1/README.md):
 ``PYTHONPATH=. python scripts/analysis_v2/a3_theta_eta_map.py``. Writes ``docs/results/v2_analysis/a3_theta_eta_map.json``.
@@ -101,12 +104,18 @@ def theta_eta_profile(c: RICurve, row: int, t: int) -> dict | None:
     mean = np.clip(chi @ f, -1 + 1e-9, 1 - 1e-9)
     w = chi.T @ np.arctanh(mean) / 2 ** m
     lab = ["{" + ",".join(c.names[A[b]] for b in B) + "}" for B in Bs]
+    max_abs = float(np.abs(chi @ f).max())
     return {"eta_f": {k: round(float(v), 4) for k, v in zip(lab, f)},
-            "theta_w": {k: round(float(v), 4) for k, v in zip(lab, w)},
-            "max_abs_mean": round(float(np.abs(chi @ f).max()), 4)}
+            # invalid where the approximate cell means leave [-1, 1]: atanh is then only the clip value
+            "theta_w": ({k: round(float(v), 4) for k, v in zip(lab, w)} if max_abs < 1 else None),
+            "max_abs_mean": round(max_abs, 4),
+            "note": "approximate (uniform cells, f(∅) = 0); exact values in a3_exact_reconstruction.json"}
 
 
 def relation(names_set: frozenset, gts: list[frozenset]) -> str:
+    """Relation to the ground-truth sets, by priority: planted, inside a planted set, containing one, other. A subset
+    that is inside one planted set and contains another (e.g. {x[t-1], x[t-2], xhat} with planted {x[t-1], xhat} and
+    {x[t-1], x[t-2], x[t-3], xhat}) is labelled inside_planted."""
     if any(names_set == g for g in gts):
         return "planted"
     if any(names_set < g for g in gts):
@@ -323,7 +332,9 @@ def main(argv: list[str] | None = None) -> int:
     def implied_f0(fi, target):
         g = lambda f0: mi_pair(f0, fi) - target  # noqa: E731
         hi = 1 - abs(fi) - 1e-9
-        if not (g(0.0) < 0 < g(hi)):
+        if g(0.0) >= 0:
+            return 0.0  # the MI at f(∅) = 0 already reaches the stored value
+        if g(hi) <= 0:
             return math.nan
         lo_, hi_ = 0.0, hi
         for _ in range(80):
@@ -362,14 +373,16 @@ def main(argv: list[str] | None = None) -> int:
             g = g.reindex(g[key].abs().sort_values(ascending=False).index)
             ex[f"{kind}|{reg}"] = g.head(8).to_dict(orient="records")
     # by step: share of eta-only points per checkpoint index (pooled over regions)
-    by_t = d.groupby("t").agg(step=("step", "median"), eta_only=("eta_only", "mean"), theta_only=("theta_only", "mean"))
+    by_t = d.groupby(["region", "t"]).agg(step=("step", "median"), eta_only=("eta_only", "mean"),
+                                           theta_only=("theta_only", "mean"))
     result = {
         "description": __doc__.split("\n\n")[0],
         "thresholds": {"strong_multiple_of_min_effect": STRONG, "min_effect_values": sorted(set(d.min_effect))},
         "summary": summary,
         "markov_cells": markov_cells,
-        "share_by_checkpoint": {"step": by_t.step.astype(int).tolist(), "eta_only": by_t.eta_only.round(6).tolist(),
-                                "theta_only": by_t.theta_only.round(6).tolist()},
+        "share_by_checkpoint": {reg: {"step": g.step.astype(int).tolist(), "eta_only": g.eta_only.round(6).tolist(),
+                                      "theta_only": g.theta_only.round(6).tolist()}
+                                for reg, g in by_t.reset_index().groupby("region")},
         "exemplars": ex,
         "threshold_sweep": sweep,
         "cases_2x": cases2,
