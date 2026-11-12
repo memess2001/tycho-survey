@@ -32,6 +32,10 @@ Run on an 88-core lab server with 70 workers: the 6,855 training runs took 46 mi
   | {1,3}: 0.8 only | — | 14 | — |
 
   The seed ranges of different orders never overlap.
+
+  *Correction (12 November 2026, from the v1 analysis):* the 14 for "{1,3}: 0.8 only" is the median first activation
+  of any order-3 subset in those runs. For the planted subset {x[t−1], x[t−3], x̂} the median is 26 (range 14–36),
+  so the delay ratio below is 133 / 26 ≈ 5.1. See [v1_results.md](v1_results.md).
 * **A lower-order term seems to delay a higher-order term of the same strength, but this is confounded.** The
   {1,3} three-way term, at the same coupling 0.8, is learned at step 14–36 alone but at step 96–133 when a pairwise
   {1} term is present. There are two confounds:
