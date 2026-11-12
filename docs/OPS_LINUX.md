@@ -43,8 +43,13 @@ hand, use `.venv/bin/python scripts/set_config.py section.key=value`.
 ## Data releases
 
 ```bash
-.venv/bin/tycho release --tag DR1
-git add -f releases/DR1 && git commit -m "DR1" && git push
+cd ~/tycho-survey
+bash ops/linux/stop_survey.sh                          # optional; a release is a consistent snapshot either way
+.venv/bin/tycho release --tag DR1 --sky-version sky-v1  # DR1 = sky v1 only (DR0 already holds sky v0)
+du -sh releases/DR1 && ls -la releases/DR1
+git add -f releases/DR1 && git commit -m "DR1: sky v1 data release" && git push
 ```
 
-A release contains every sky version in the catalog, listed in its README.
+Without `--sky-version` a release contains every sky version in the catalog. Archives over 90 MB are split into
+`<name>.part001.tar.gz`, ... so that every file stays under GitHub's 100 MB limit; the release README explains how
+to extract them.

@@ -169,3 +169,70 @@ def test_missing_light_curve_file_is_reported_not_fatal(pd, env):
     objects = pd.read_parquet(target / "objects.parquet").set_index("object_id")
     assert pd.isna(objects.loc[done[1], "lightcurve_file"]) and objects["lightcurve_file"].notna().sum() == 4
     assert "1 missing on disk" in (target / "README.md").read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------------------------- sky v1 additions
+def test_large_archives_are_split_into_complete_parts(tmp_path):
+    from tycho.survey import release as rel
+
+    rng = np.random.default_rng(0)
+    members = []
+    for i in range(7):
+        src = tmp_path / f"m{i}.bin"
+        src.write_bytes(rng.bytes(30_000))  # incompressible
+        members.append((f"ricurves/m{i}.npz", src))
+    names = rel._tar(tmp_path / "ricurves.tar.gz", members, part_bytes=70_000)
+    assert names == ["ricurves.part001.tar.gz", "ricurves.part002.tar.gz", "ricurves.part003.tar.gz"]
+    got = {}
+    for name in names:
+        assert (tmp_path / name).stat().st_size < 70_000 + 40_000  # over the limit by at most one member
+        with tarfile.open(tmp_path / name) as tar:
+            for m in tar.getmembers():
+                got[m.name] = tar.extractfile(m).read()
+    assert got == {m: src.read_bytes() for m, src in members}
+    assert not (tmp_path / "ricurves.tar.gz").exists()
+    # a small archive keeps its plain name, and building it twice gives identical bytes
+    assert rel._tar(tmp_path / "small.tar.gz", members[:1]) == ["small.tar.gz"]
+    first = sha256(tmp_path / "small.tar.gz")
+    rel._tar(tmp_path / "small.tar.gz", members[:1])
+    assert sha256(tmp_path / "small.tar.gz") == first
+
+
+def test_split_release_verifies_and_documents_its_parts(env, monkeypatch):
+    from tycho.survey import release as rel
+
+    paths, catalog, done = env
+    monkeypatch.setattr(rel, "ARCHIVE_PART_BYTES", 1)  # every member in its own part
+    target = make_release(catalog, paths, "DRS", cfg=load_config(paths.root))
+    parts = sorted(p.name for p in target.glob("lightcurves.part*.tar.gz"))
+    assert len(parts) >= 2 and not (target / "lightcurves.tar.gz").exists()
+    assert verify_release(target) == []
+    readme = (target / "README.md").read_text(encoding="utf-8")
+    assert parts[0] in readme and "split into" in readme
+    members = set()
+    for name in parts:
+        with tarfile.open(target / name) as tar:
+            members |= set(tar.getnames())
+    assert members == {f"lightcurves/{oid}.npz" for oid in done}
+
+
+def test_release_restricted_to_sky_versions(env, pd):
+    import sqlite3
+
+    paths, catalog, done = env
+    moved = sorted(done)[:3]
+    conn = sqlite3.connect(paths.db)
+    conn.executemany("UPDATE objects SET sky_version = 'sky-other' WHERE object_id = ?", [(o,) for o in moved])
+    conn.commit()
+    conn.close()
+    cfg = load_config(paths.root)
+    only = make_release(catalog, paths, "ONLY", cfg=cfg, sky_versions=["sky-other"])
+    objects = pd.read_parquet(only / "objects.parquet")
+    assert sorted(objects["object_id"]) == moved and set(objects["sky_version"]) == {"sky-other"}
+    runs = pd.read_parquet(only / "ri_runs.parquet")
+    assert set(runs["object_id"]) <= set(moved)
+    rest = make_release(catalog, paths, "REST", cfg=cfg)
+    assert len(pd.read_parquet(rest / "objects.parquet")) == len(done)  # the catalog itself is untouched
+    with pytest.raises(ValueError):
+        make_release(catalog, paths, "NONE", cfg=cfg, sky_versions=["no-such-sky"])
+    assert not (paths.releases / "NONE").exists()

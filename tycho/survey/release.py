@@ -12,11 +12,17 @@ SDSS data releases, so that others can look for their own empirical laws in the 
 ``transients.parquet/.csv`` alerts raised from events, photometry and classification
 ``lightcurves.tar.gz``      ``lightcurves/<object_id>.npz`` (``np.load``; keys in the datasheet)
 ``ricurves.tar.gz``         ``ricurves/<object_id>_<kind>_<ri_run_id>.npz`` (``tycho.analysis.ricurve.RICurve.load``)
+                            An archive larger than :data:`ARCHIVE_PART_BYTES` is split into
+                            ``<name>.part001.tar.gz``, ``<name>.part002.tar.gz``, ... (each a complete tar.gz), so
+                            that every file fits GitHub's 100 MB limit; extract all parts into one directory.
 ``sky.yaml``                the sky definition (regions, knobs) in use when the release was made
 ``calibration.json``        the instrument's error budget (if the survey was calibrated)
 ``README.md``               the datasheet: contents, schema with units, provenance, licence (CC-BY-4.0), how to verify
 ``MANIFEST.sha256``         SHA-256 of every other file, in ``sha256sum`` format
 ==========================  ===========================================================================================
+
+Selection: ``sky_versions`` (CLI ``--sky-version``, repeatable) restricts a release to objects of those sky versions
+(and their runs, events and transients), e.g. DR1 = sky v1 only, since DR0 already holds sky v0.
 
 Consistency: the tables are read from an online backup of the catalog taken at the start, so a release made while
 the daemon is running is one consistent snapshot. Only done objects are released (queued and running objects are
@@ -63,6 +69,10 @@ LICENSE = "CC-BY-4.0"
 LICENSE_URL = "https://creativecommons.org/licenses/by/4.0/"
 
 MANIFEST = "MANIFEST.sha256"
+
+ARCHIVE_PART_BYTES = 90_000_000
+"""Compressed size after which an archive continues in a new part (GitHub refuses files over 100 MB; a part can
+exceed this by at most one member)."""
 """Checksum file (``sha256sum -c`` / ``shasum -a 256 -c`` format)."""
 
 TAG_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
@@ -131,11 +141,13 @@ TRANSIENT_COLUMNS: dict[str, str] = {
 # ---------------------------------------------------------------------------------------------- public API
 def make_release(catalog: Catalog, paths: Paths, tag: str, *, include_lightcurves: bool = True,
                  include_ri_curves: bool = True, overwrite: bool = False,
-                 cfg: Mapping[str, Any] | None = None) -> Path:
+                 cfg: Mapping[str, Any] | None = None, sky_versions: Sequence[str] | None = None) -> Path:
     """Write the data release ``releases/<tag>/`` (see the module docstring) and return its directory.
+    ``sky_versions`` restricts it to objects of those sky versions (None: all).
 
     Raises:
-        ValueError: an invalid tag. FileExistsError: the release exists and ``overwrite`` is false.
+        ValueError: an invalid tag, or no done object of the requested sky versions. FileExistsError: the release
+        exists and ``overwrite`` is false.
     """
     if not isinstance(tag, str) or not TAG_PATTERN.match(tag):
         raise ValueError(f"invalid release tag {tag!r}: letters, digits, '.', '_' and '-' (at most 64 characters)")
@@ -151,6 +163,8 @@ def make_release(catalog: Catalog, paths: Paths, tag: str, *, include_lightcurve
     try:
         snapshot_path = work / ".catalog-snapshot.sqlite"
         catalog.backup(snapshot_path)
+        if sky_versions:
+            _restrict_snapshot(snapshot_path, list(sky_versions))
         with Catalog(snapshot_path, root=catalog.root) as snapshot:
             _build(snapshot, paths, cfg, tag, work, include_lightcurves=include_lightcurves,
                    include_ri_curves=include_ri_curves)
@@ -165,6 +179,25 @@ def make_release(catalog: Catalog, paths: Paths, tag: str, *, include_lightcurve
         raise
     logger.info("data release %s written to %s", tag, target)
     return target
+
+
+def _restrict_snapshot(snapshot_path: Path, sky_versions: list[str]) -> None:
+    """Keep only objects of ``sky_versions`` in the release: every table is read through done objects, so marking
+    the others "failed" in the temporary snapshot (never in the catalog) excludes them and their runs, events and
+    transients."""
+    import sqlite3
+
+    marks = ",".join("?" * len(sky_versions))
+    conn = sqlite3.connect(snapshot_path)
+    try:
+        kept = conn.execute(f"SELECT COUNT(*) FROM objects WHERE status = 'done' AND sky_version IN ({marks})",
+                            sky_versions).fetchone()[0]
+        if not kept:
+            raise ValueError(f"no done objects of sky version(s) {', '.join(sky_versions)}")
+        conn.execute(f"UPDATE objects SET status = 'failed' WHERE sky_version NOT IN ({marks})", sky_versions)
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def verify_release(release_dir: Path | str) -> list[str]:
@@ -211,6 +244,8 @@ def _build(snapshot: Catalog, paths: Paths, cfg: Mapping[str, Any], tag: str, wo
     transients["event_id"] = pd.to_numeric(transients["event_id"]).astype("Int64")
 
     missing_lc = missing_ri = 0
+    lc_files: list[str] = []
+    ri_files: list[str] = []
     lc_members: list[tuple[str, Path]] = []
     if include_lightcurves:
         for oid, stored in zip(objects["object_id"], objects.pop("lightcurve_path")):
@@ -223,7 +258,7 @@ def _build(snapshot: Catalog, paths: Paths, cfg: Mapping[str, Any], tag: str, wo
         present = {m for m, _ in lc_members}
         objects["lightcurve_file"] = [f"lightcurves/{oid}.npz" if f"lightcurves/{oid}.npz" in present else None
                                       for oid in objects["object_id"]]
-        _tar(work / "lightcurves.tar.gz", lc_members)
+        lc_files = _tar(work / "lightcurves.tar.gz", lc_members)
     else:
         objects.pop("lightcurve_path")
         objects["lightcurve_file"] = None
@@ -240,7 +275,7 @@ def _build(snapshot: Catalog, paths: Paths, cfg: Mapping[str, Any], tag: str, wo
             files.append(None)
     runs["ricurve_file"] = files
     if include_ri_curves:
-        _tar(work / "ricurves.tar.gz", ri_members)
+        ri_files = _tar(work / "ricurves.tar.gz", ri_members)
     objects = objects[[c for c in objects.columns if c != "lightcurve_file"] + ["lightcurve_file"]]
 
     for name, df in (("objects", objects), ("ri_runs", runs), ("ri_events", events), ("transients", transients)):
@@ -265,6 +300,7 @@ def _build(snapshot: Catalog, paths: Paths, cfg: Mapping[str, Any], tag: str, wo
     readme = _datasheet(tag, snapshot, objects, runs, events, transients, released=len(released),
                         lightcurves=len(lc_members) if include_lightcurves else None, missing_lc=missing_lc,
                         ricurves=len(ri_members) if include_ri_curves else None, missing_ri=missing_ri,
+                        lc_files=lc_files, ri_files=ri_files,
                         sky=sky_path.name if sky_path.is_file() else None, calibrated=cal_path is not None, work=work)
     (work / "README.md").write_text(readme, encoding="utf-8")
 
@@ -323,17 +359,38 @@ def _objects_table(snapshot: Catalog) -> pd.DataFrame:
     return df
 
 
-def _tar(path: Path, members: Iterable[tuple[str, Path]]) -> None:
-    """Reproducible .tar.gz: sorted members, zero mtimes/owners, gzip header without timestamp or name."""
-    with open(path, "wb") as raw, gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz, \
-            tarfile.open(fileobj=gz, mode="w", format=tarfile.PAX_FORMAT) as tar:
-        for member, src in sorted(members):
-            data = src.read_bytes()
-            info = tarfile.TarInfo(member)
-            info.size, info.mtime, info.mode = len(data), 0, 0o644
-            info.uid = info.gid = 0
-            info.uname = info.gname = ""
-            tar.addfile(info, io.BytesIO(data))
+def _tar(path: Path, members: Iterable[tuple[str, Path]], *, part_bytes: int | None = None) -> list[str]:
+    """Reproducible .tar.gz: sorted members, zero mtimes/owners, gzip header without timestamp or name. When the
+    compressed size passes ``part_bytes`` (default :data:`ARCHIVE_PART_BYTES`) the archive continues in a new part:
+    ``<stem>.part001.tar.gz``, ... (each a complete archive); one part keeps the plain name. Returns the file names."""
+    limit = ARCHIVE_PART_BYTES if part_bytes is None else int(part_bytes)
+    stem = path.name[: -len(".tar.gz")] if path.name.endswith(".tar.gz") else path.name
+    ordered = sorted(members)
+    written: list[Path] = []
+    i = 0
+    while True:
+        part = path.parent / f"{stem}.part{len(written) + 1:03d}.tar.gz"
+        with open(part, "wb") as raw, gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as gz, \
+                tarfile.open(fileobj=gz, mode="w", format=tarfile.PAX_FORMAT) as tar:
+            while i < len(ordered):
+                member, src = ordered[i]
+                data = src.read_bytes()
+                info = tarfile.TarInfo(member)
+                info.size, info.mtime, info.mode = len(data), 0, 0o644
+                info.uid = info.gid = 0
+                info.uname = info.gname = ""
+                tar.addfile(info, io.BytesIO(data))
+                i += 1
+                gz.flush()
+                if raw.tell() >= limit and i < len(ordered):
+                    break
+        written.append(part)
+        if i >= len(ordered):
+            break
+    if len(written) == 1:
+        written[0].replace(path)
+        return [path.name]
+    return [p.name for p in written]
 
 
 def _sha256(path: Path) -> str:
@@ -366,7 +423,9 @@ def _columns_table(columns: Mapping[str, str], df: pd.DataFrame) -> str:
 
 def _datasheet(tag: str, snapshot: Catalog, objects: pd.DataFrame, runs: pd.DataFrame, events: pd.DataFrame,
                transients: pd.DataFrame, *, released: int, lightcurves: int | None, missing_lc: int,
-               ricurves: int | None, missing_ri: int, sky: str | None, calibrated: bool, work: Path) -> str:
+               ricurves: int | None, missing_ri: int, sky: str | None, calibrated: bool, work: Path,
+               lc_files: Sequence[str] = ("lightcurves.tar.gz",),
+               ri_files: Sequence[str] = ("ricurves.tar.gz",)) -> str:
     from tycho.survey.worker import code_version  # git describe of the releasing code
 
     created = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -376,11 +435,13 @@ def _datasheet(tag: str, snapshot: Catalog, objects: pd.DataFrame, runs: pd.Data
              ("ri_events.parquet / ri_events.csv", "RI events"),
              ("transients.parquet / transients.csv", "transients")]
     if lightcurves is not None:
-        files.append(("lightcurves.tar.gz", f"{lightcurves} light curves (`lightcurves/<object_id>.npz`)"
-                      + (f"; {missing_lc} missing on disk" if missing_lc else "")))
+        files.append((" / ".join(lc_files), f"{lightcurves} light curves (`lightcurves/<object_id>.npz`)"
+                      + (f"; {missing_lc} missing on disk" if missing_lc else "")
+                      + (f"; split into {len(lc_files)} parts" if len(lc_files) > 1 else "")))
     if ricurves is not None:
-        files.append(("ricurves.tar.gz", f"{ricurves} RI curves (`ricurves/<object_id>_<kind>_<ri_run_id>.npz`)"
-                      + (f"; {missing_ri} missing on disk" if missing_ri else "")))
+        files.append((" / ".join(ri_files), f"{ricurves} RI curves (`ricurves/<object_id>_<kind>_<ri_run_id>.npz`)"
+                      + (f"; {missing_ri} missing on disk" if missing_ri else "")
+                      + (f"; split into {len(ri_files)} parts" if len(ri_files) > 1 else "")))
     if sky:
         files.append(("sky.yaml", f"the sky definition (copied from `{sky}`)"))
     if calibrated:
@@ -415,16 +476,29 @@ step), events and transients.
 {file_lines}
 
 Verify the release with `shasum -a 256 -c {MANIFEST}` (macOS) or `sha256sum -c {MANIFEST}` (Linux).
+Archives larger than {ARCHIVE_PART_BYTES // 1_000_000} MB are split into parts (`<name>.part001.tar.gz`, ...), each a
+complete tar.gz, so that every file stays under GitHub's 100 MB limit. Extract all parts into one directory:
+`for f in lightcurves*.tar.gz ricurves*.tar.gz; do tar -xzf "$f"; done`.
 
 ## Loading
 
 ```python
-import pandas as pd, numpy as np, tarfile
+import glob, io, tarfile
+import numpy as np, pandas as pd
 objects = pd.read_parquet("objects.parquet")
 events = pd.read_parquet("ri_events.parquet")
-with tarfile.open("lightcurves.tar.gz") as tar:
-    lc = np.load(tar.extractfile(f"lightcurves/{{objects.object_id[0]}}.npz"))
-    train_loss = lc["train_loss"]          # aligned with lc["step"]
+
+def member(name, pattern):  # works whether or not the archive was split into parts
+    for part in sorted(glob.glob(pattern)):
+        with tarfile.open(part) as tar:
+            try:
+                return io.BytesIO(tar.extractfile(name).read())
+            except KeyError:
+                continue
+    raise KeyError(name)
+
+lc = np.load(member(objects.lightcurve_file[0], "lightcurves*.tar.gz"))
+train_loss = lc["train_loss"]          # aligned with lc["step"]
 ```
 
 RI curves load with `tycho.analysis.ricurve.RICurve.load(path)` after extraction (arrays `steps`, `ri`,

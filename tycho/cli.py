@@ -536,7 +536,7 @@ def cmd_release(args: argparse.Namespace, paths: Paths) -> int:
     with _catalog(paths, cfg) as catalog:
         try:
             target = make_release(catalog, paths, args.tag, include_lightcurves=not args.no_lightcurves,
-                                  overwrite=args.overwrite, cfg=cfg)
+                                  overwrite=args.overwrite, cfg=cfg, sky_versions=args.sky_versions)
         except (ValueError, FileExistsError) as exc:
             raise CLIError(str(exc)) from exc
     problems = verify_release(target)
@@ -636,6 +636,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--tag", required=True, help="release tag, e.g. DR1")
     s.add_argument("--no-lightcurves", action="store_true", help="leave out the light-curve archive")
     s.add_argument("--overwrite", action="store_true", help="replace an existing release with this tag")
+    s.add_argument("--sky-version", action="append", dest="sky_versions", metavar="VERSION",
+                   help="only objects of this sky version (repeatable; default: all), e.g. --sky-version sky-v1")
     s.set_defaults(func=cmd_release)
 
     s = sub.add_parser("dashboard", help="regenerate reports/dashboard.html")
