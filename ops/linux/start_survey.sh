@@ -12,9 +12,12 @@ if [ ! -x "$TYCHO" ]; then
   echo "No $TYCHO. Create the venv first: python3 -m venv .venv && .venv/bin/pip install -e ." >&2
   exit 1
 fi
-PKG="$("$PY" -c 'import tycho, os; print(os.path.dirname(os.path.dirname(os.path.abspath(tycho.__file__))))')"
-if [ "$PKG" != "$ROOT" ]; then
-  echo "The venv runs tycho from $PKG, not from this checkout ($ROOT): code pulled with git would not be used." >&2
+# Import tycho the way the console script does (not from the current directory, which Python would put first) and
+# compare physical paths, so a non-editable install is caught and a symlinked checkout is not refused.
+ROOT_REAL="$(pwd -P)"
+PKG="$(cd / && "$PY" -c 'import tycho, os; print(os.path.dirname(os.path.dirname(os.path.realpath(tycho.__file__))))')"
+if [ "$PKG" != "$ROOT_REAL" ]; then
+  echo "The venv runs tycho from $PKG, not from this checkout ($ROOT_REAL): code pulled with git would not be used." >&2
   echo "Fix: .venv/bin/pip install -e . --no-deps   (then run this script again)" >&2
   exit 1
 fi

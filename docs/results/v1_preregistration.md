@@ -97,3 +97,111 @@ On 70 workers this is about **30 minutes** of compute. The longest single runs t
 start as grokking objects finish and are requested at up to 70 per 10 minutes. Expected wall-clock time is
 **1 to 2 hours** if the server is otherwise idle. Other users' jobs on the shared server stretch this
 proportionally.
+
+## Amendment 1 (12 November 2026: after the launch, before anyone read v1 data)
+
+Sky v1 was launched on the server on 12 November at about 15:10 JST. While it ran, an independent audit examined
+commit f977553: five auditors, and a separate skeptic who tried to refute each finding. Its evidence came from
+three sources: DR0 (v0 data), synthetic catalogs, and pilot runs of v1 objects in another machine. It did not use the
+server catalog. Nobody has read v1 data from the server before this amendment.
+
+Some pilot runs preview results. Those previews are disclosed below where they bear on a question, so this
+amendment is not blind to them. The criteria above stay as written and are reported literally. Where this amendment
+changes a definition, both results are reported and the amended one decides. None of the changes needs a rerun:
+every series they use is stored. That includes the RI, p-value, q-value and Fourier rows of every ground-truth
+subset at every checkpoint, the curve metadata, labels and follow-up records.
+
+**A. Check 2 (parity, RI onset vs Fourier onset).**
+* The problem: the Fourier onset above crosses a bare threshold ε = 0.0447 (RI = min_effect = 0.001). An RI
+  activation also needs three other things:
+  * a Benjamini–Hochberg q ≤ 0.01 over all scanned subsets;
+  * bias correction;
+  * two consecutive checkpoints.
+
+  At 4,096 probe rows the q-value is the binding condition. It needs RI ≥ 0.0019 to 0.0033 nats, depending on the
+  number of candidates, which is |f̂| ≥ 0.062 to 0.081.
+* The effect: for k = 2 the coefficient grows gradually, so the RI onset trails the bare Fourier onset by 2 to 5
+  checkpoints. Pilot runs agreed within one checkpoint in 6 of 18 and 2 of 21. For k = 3 the coefficient jumps
+  within one checkpoint, and 9 of 9 agreed.
+* Amended definition: the Fourier onset uses the same gate as the RI event. It is the first of two consecutive
+  checkpoints where R = ln 2 − h((1 + |f̂|)/2) satisfies both conditions below, where m = `meta["n_candidates"]`
+  and N = `meta["min_effect_n"]`:
+  * R − 1/(2N) ≥ min_effect;
+  * min(1, m · χ²₁.sf(2NR)) ≤ α (a conservative stand-in for that subset's BH q-value).
+
+  Pilot runs then agreed in 11 of 12.
+
+**B. Check 3 (Markov, non-planted subsets).**
+* The problem: chain-trained models really do learn non-planted interactions for a while, because the chain makes
+  unplanted lags informative. For {1,2,3}, s_t correlates with s_{t−4}. In pilot runs (x[t−4], x̂) reached
+  0.16 nats before the planted term activated, then decayed to 0. With {1}:1.0, pairs (x[t−2], x̂) and (x[t−3], x̂)
+  peaked at 0.012 to 0.023 nats and vanished by step 500. iid-trained twins stayed below 0.005.
+* Amended criterion: at the end of training, the largest non-planted RI over the last five checkpoints is
+  ≤ 10 × min_effect in ≥ 95 % of runs, in both contexts.
+* The peak version is also reported literally. These transient chain-induced interactions are reported as a result:
+  they also delay the planted term in chain runs ({1,2,3}:1.0 onset at steps 162 to 273 with chain contexts against
+  96 to 125 with iid), which matters for questions 5 and 6.
+
+**C. Onsets (questions 4 to 6).**
+* The problem: the untrained network already shows small significant pair RI (up to 0.009 nats) from its random
+  initial weights. This is sometimes on the planted pair with the wrong sign, which RI cannot see.
+* Amended definition: an onset is the first activation event that is not left-censored (it does not start at the
+  first checkpoint) and at which the Fourier coefficient has the sign of its final value.
+* Order-2 Markov onsets (1 to 8 steps) are at the scale of that initial offset. They are reported as ≤ 8 steps.
+  Question 5's non-overlap criterion is evaluated as written and also for orders 3 to 5.
+
+**D. Question 5, preview (no change to the criterion).**
+* What the pilots showed: at β = 1.0, seeds 0 to 3 put the onsets of orders 4 and 5 on the same checkpoints (96, 110,
+  125). There the 60-point grid has gaps of 1.14 to 1.3 times.
+* What follows: the registered "supported" criterion is therefore unlikely to be met for orders 4 and 5. That would
+  be a resolution limit, not evidence that their onsets are equal. A dense replay of these objects is the follow-up.
+
+**E. Question 6 (is the delay a context effect?).**
+* The problem: R mixes the delay with effect size. With {1}:1.0 present, the population coefficient of the {1,3}
+  term under uniform probes falls from 0.664 to 0.375, while an onset is the crossing of one fixed threshold.
+* Added definition, which decides: the onset is the planted coefficient, with the planted sign, reaching 25 % of its
+  population value. The population value is computed from the couplings, not from the run's final value.
+* The registered R is reported next to it, as is R at 10 % and 50 %.
+* Preview: in pilot runs R_iid > 1 under every definition (1.5 to 3.2), and R_chain was larger (2.9 to 6.1).
+
+**F. Question 7 (grokking controls).**
+* The problem: in modular addition, seeds at one configuration disagree only where the 90 % test-accuracy crossing
+  falls near the end of the budget. In DR0 the 126 non-grokking seeds at such configurations were smooth or
+  plateau_drop, with test accuracy 0.66 to 0.88: the same generalising phase, never memorization. On the v1 grid,
+  DR0 had no configuration where grokking and another label met.
+* Amended analysis:
+  1. The same-configuration comparison is kept, but its controls are called near-grokking, and each control's final
+     test accuracy is reported.
+  2. A second comparison is added and labelled as confounded by configuration: memorization objects at the
+     neighbouring grid point across a boundary, matched on width and learning rate.
+  3. A confidence interval that includes 0 with few configurations is reported as inconclusive, with the counts. It
+     is not read as "a property of the label-selected sample".
+* Sample: with 10,000 follow-ups per day every grokking-v1 object can be followed up, and the analysis uses all of
+  them. A matched set counts as complete only when every label's follow-up is done; failed follow-ups are listed
+  with their error.
+
+**G. Question 8 (baseline).** "866 of 2,166" mixed two counts. 866 memorization labels were in all v0 regions; the
+grokking region had 742 of 2,166 (34 %). The like-for-like baseline is the v0 objects on the v1 grid points: 93 of
+145 memorization (64 %), on 31 of the 36 points, at 20k steps. The comparison is made point by point.
+
+**H. Check 9 (follow-up balance).**
+* Expected result: it can fail by design when one label dominates the region. The matched and boundary streams make
+  about two thirds of the picks and do not look at labels.
+* How it is reported: literally, over the request order (`followups.rowid`), with this as a declared deviation.
+
+**I. Check 10 (anomaly rate).**
+* The problem: the scheduler scores only grokking-v1, so nothing is recorded for the other regions. The rate also
+  differs a lot by group: on DR0 it is 1.1 % overall but 0 to 10 % by group.
+* How it is evaluated: offline on the final catalog for every v1 (region, label) group. The per-group result is
+  reported literally, with the overall rate next to it as a declared deviation.
+
+**J. What the stored Fourier baseline can show.** After pruning, Fourier rows exist only for subsets kept by RI:
+every subset ever detected, the 200 strongest, and the ground truth. The baseline can compare RI and Fourier on
+those subsets, but it cannot show a subset that Fourier flags and RI does not. With uniform probes the two are
+equivalent anyway.
+
+**K. Resources.**
+* Memory: peak memory per worker on the largest parity objects was measured at 0.5 to 0.7 GB, not the 0.13 GB
+  estimated above.
+* Workers: the daemon runs 86 workers (the default, cores minus two), not 70.
+* Combined: up to about 40 GB if all 60 large parity objects run at once.

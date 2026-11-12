@@ -94,3 +94,30 @@ def test_sky_v1_loads_and_every_point_builds_its_task():
             make_task(spec.task, spec.task_cfg, spec.seed)
     assert total == 680
     assert {r.name for r in sky.regions if r.ri_policy == "followup"} == {"grokking-v1"}
+
+
+def test_set_config_refuses_layouts_it_would_corrupt(tmp_path):
+    """A flow-style section is not matched by the line editor; appending a second block would silently drop
+    n_workers (YAML keeps the last duplicate key), so the script must refuse and leave the file unchanged."""
+    text = "survey: {sky: configs/sky_v0.yaml, n_workers: 70}\nscheduler:\n  followups_per_day: 200\n"
+    (tmp_path / "tycho.yaml").write_text(text, encoding="utf-8")
+    mod = _set_config()
+    assert mod.main(["--root", str(tmp_path), "survey.sky=configs/sky_v1.yaml"]) == 1
+    assert (tmp_path / "tycho.yaml").read_text(encoding="utf-8") == text
+    (tmp_path / "tycho.yaml").write_text("survey: [unclosed\n", encoding="utf-8")
+    assert mod.main(["--root", str(tmp_path), "survey.sky=x"]) == 1
+
+
+def test_sky_regions_cannot_set_the_calibration_path():
+    from tycho.survey.followup import resolve_ri_config
+    from tycho.survey.sky import Sky
+
+    region = {"name": "r", "task": "sparse_parity", "seeds": 1, "ri_policy": "always",
+              "ri": {"min_effect": 0.005, "min_effect_calibration": "/x/calibration.json"}, "knobs": {}}
+    with pytest.raises(ValueError):
+        Sky.from_dict({"version": "t", "regions": [region]})
+    ok = Sky.from_dict({"version": "t", "regions": [{**region, "ri": {"min_effect": 0.005}}]})
+    reg = ok.region("r")
+    reg.ri["min_effect_calibration"] = "/x/calibration.json"  # even if it got in, it is ignored
+    ri = resolve_ri_config({"ri": {}}, reg, root=None)
+    assert ri.min_effect == pytest.approx(0.005) and ri.min_effect_calibration is None

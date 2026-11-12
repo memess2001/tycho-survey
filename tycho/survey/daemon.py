@@ -170,7 +170,8 @@ class SurveyLock:
             holder = fh.read().strip() or "unknown"
             fh.close()
             raise SurveyLockError(f"another survey daemon (pid {holder}) is running on {self.path.parent.parent}; "
-                                  f"stop it first (launchctl bootout gui/$UID/com.tycho.survey)") from None
+                                  f"stop it first (Linux: bash ops/linux/stop_survey.sh; Mac mini: "
+                                  f"launchctl bootout gui/$UID/com.tycho.survey)") from None
         fh.seek(0)
         fh.truncate()
         fh.write(f"{os.getpid()}\n")

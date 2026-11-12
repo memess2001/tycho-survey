@@ -71,7 +71,9 @@ _REGION_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 _KNOB_NAME = re.compile(r"^(train\.)?[A-Za-z_][A-Za-z0-9_]*$")
 _TRAIN_FIELDS: frozenset[str] = frozenset(f.name for f in fields(TrainConfig))
 _TRAIN_TYPES: dict[str, Any] = typing.get_type_hints(TrainConfig)
-_RI_FIELDS: frozenset[str] = frozenset(f.name for f in fields(RIConfig))
+_RI_FIELDS: frozenset[str] = frozenset(f.name for f in fields(RIConfig)) - {"min_effect_calibration"}
+"""RIConfig fields a region's ``ri`` mapping may set (``min_effect_calibration`` is set by
+``tycho.survey.followup.resolve_ri_config`` only)."""
 _SKY_KEYS = frozenset({"version", "description", "regions"})
 _REGION_KEYS = frozenset({"name", "task", "seeds", "priority", "ri_policy", "ri", "fixed", "train", "knobs",
                           "description"})

@@ -18,7 +18,11 @@ Times that were never reached (a run that never hit 90 % test accuracy) are set 
 "never" counts as later than any observed time but stays finite.
 
 The score is a triage heuristic like the classifier's own score, not a probability. :data:`THRESHOLD` was chosen on
-DR0 (sky v0) so that about 1 % of each large group is flagged.
+DR0 (sky v0) so that about 1 % of all scored objects are flagged (73 of 6,624). The rate differs a lot between groups:
+0 % in most, up to about 10 % in small or bimodal ones, where a censored time or a feature with MAD 0 dominates.
+
+The scheduler scores only regions with ``ri_policy = "followup"``; other regions are scored offline at analysis
+time with :func:`anomaly_scores` on the final catalog.
 """
 from __future__ import annotations
 

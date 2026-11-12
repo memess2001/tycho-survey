@@ -111,7 +111,7 @@ def resolve_ri_config(cfg: Mapping[str, Any], region: Region | None = None, *, r
     ``min_effect`` precedence. ``root`` locates ``tycho.yaml`` and a relative calibration file."""
     ri_section = dict(cfg.get("ri") or {})
     settings = {k: v for k, v in ri_section.items() if k in _RI_FIELDS}
-    region_ri = dict(region.ri) if region is not None else {}
+    region_ri = {k: v for k, v in (region.ri if region is not None else {}).items() if k in _RI_FIELDS}
     settings.update(region_ri)
     explicit = "min_effect" in region_ri or _explicit_min_effect(ri_section, root)
     if not explicit:

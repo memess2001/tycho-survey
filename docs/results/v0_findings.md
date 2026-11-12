@@ -64,7 +64,7 @@ Run on an 88-core lab server with 70 workers: the 6,855 training runs took 46 mi
   0.005 nats, near the floor. Calibration E6 shows that binarised correlated units create spurious interactions.
   The transient channel therefore produced 6,791 transients, almost all from this region.
 * **Training budget censors grokking.** Grokking delays cluster at 15–19k of the 20k steps. Some "memorization"
-  objects (866) are probably grokking that had not happened yet. For the same reason, scaling of the delay with
+  objects (742 in the grokking region; 866 in all regions) are probably grokking that had not happened yet. For the same reason, scaling of the delay with
   weight decay cannot be measured (R² < 0.4).
 * **The biggest region was barely followed up.** parity-wide has 4,595 objects but only 5 RI follow-ups.
 

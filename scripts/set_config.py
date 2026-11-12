@@ -4,14 +4,19 @@ section.key=value ...`` (for example ``survey.sky=configs/sky_v1.yaml scheduler.
 Only two-level keys (``section.key``) are supported, which covers every setting of tycho.yaml. A key's existing line
 ``  key: old`` inside its ``section:`` block is rewritten; a missing key is added at the end of the block, and a
 missing section is appended. Values are written as given (YAML parses them). The result must load with
-:func:`tycho.config.load_config`, otherwise the file is left unchanged.
+:func:`tycho.config.load_config` and, apart from the assigned keys, parse to exactly what the file held before (this
+catches shapes the line editing cannot handle, such as a flow-style ``survey: {...}`` section); otherwise the file is
+left unchanged.
 """
 from __future__ import annotations
 
 import argparse
+import copy
 import re
 import sys
 from pathlib import Path
+
+import yaml
 
 
 def set_key(text: str, section: str, key: str, value: str) -> str:
@@ -34,6 +39,20 @@ def set_key(text: str, section: str, key: str, value: str) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _without(doc: object, assigned: list[tuple[str, str]]) -> object:
+    """``doc`` with the assigned keys removed (and sections that become empty because of it)."""
+    if not isinstance(doc, dict):
+        return doc
+    out = copy.deepcopy(doc)
+    for section, key in assigned:
+        sec = out.get(section)
+        if isinstance(sec, dict):
+            sec.pop(key, None)
+            if not sec:
+                out.pop(section)
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--root", default=".", help="survey root (default: current directory)")
@@ -44,7 +63,16 @@ def main(argv: list[str] | None = None) -> int:
         print(f"no {path}", file=sys.stderr)
         return 1
     original = path.read_text(encoding="utf-8")
+    try:
+        before = yaml.safe_load(original) or {}
+    except yaml.YAMLError as exc:
+        print(f"{path} does not parse ({exc}); fix it by hand first", file=sys.stderr)
+        return 1
+    if not isinstance(before, dict):
+        print(f"{path} is not a mapping; fix it by hand first", file=sys.stderr)
+        return 1
     text = original
+    assigned: list[tuple[str, str]] = []
     for item in args.assignments:
         name, sep, value = item.partition("=")
         section, dot, key = name.partition(".")
@@ -52,6 +80,16 @@ def main(argv: list[str] | None = None) -> int:
             print(f"expected section.key=value, got {item!r}", file=sys.stderr)
             return 2
         text = set_key(text, section, key, value)
+        assigned.append((section, key))
+    try:
+        after = yaml.safe_load(text) or {}
+    except yaml.YAMLError as exc:
+        print(f"tycho.yaml would not parse ({exc}); left unchanged", file=sys.stderr)
+        return 1
+    if _without(before, assigned) != _without(after, assigned):
+        print(f"editing {path} line by line would change other settings too (unusual layout, e.g. a flow-style "
+              f"section); left unchanged, edit it by hand", file=sys.stderr)
+        return 1
     path.write_text(text, encoding="utf-8")
     try:
         from tycho.config import load_config
