@@ -62,5 +62,9 @@ launchd (`ops/install_macmini.sh --dry-run` shows what it would do); see [docs/O
 * [docs/results/v0_findings.md](docs/results/v0_findings.md): what sky v0 (a system test) showed, and its problems.
 * [docs/results/v1_preregistration.md](docs/results/v1_preregistration.md): sky v1's design, the criteria fixed before
   the run, and its run-time estimate.
+* [docs/results/v1_results.md](docs/results/v1_results.md): the pre-registered analysis of sky v1 (DR1).
+* [docs/ROADMAP.md](docs/ROADMAP.md): what each sky is for, the current plan, and a dated record of changes and
+  their reasons.
+* [docs/results/v2_design_draft.md](docs/results/v2_design_draft.md): sky v2 design draft (for discussion).
 
 Tests: `python -m pytest -q` (add `--runslow` for the slow ones).
