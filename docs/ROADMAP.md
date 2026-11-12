@@ -27,6 +27,19 @@ gates before it can say anything useful about language models:
 
 ## Change log
 
+### 12 November 2026 (later): marginal and conditional RI side by side; A3 done
+
+* **Decision.** The discussion with Prof. Sugiyama is postponed: he is busy for two weeks and next week's meeting is
+  cancelled. v2 does not wait for it. Both marginal and conditional RI are computed side by side, and the gate-2
+  referees decide between them. The other open questions in v2_design_draft.md §9 stay open, and their answers can
+  still change the v2 pre-registration before it is written.
+* **A3 result** ([v2_a3_stored_data.md](results/v2_a3_stored_data.md)). In DR1 the θ and η views agree almost
+  everywhere. They diverge only where the output is saturated and lower-order coefficients are large together,
+  which happens in one configuration ({1}:1.0 + {1,2,3}:1.0, chain). Rebuilding θ coefficients from the stored
+  data fails in exactly those cases.
+* **Consequences for v2 Part A.** Saturation and lower-order strength become crossed knobs. Exact per-cell outputs
+  and the mean output are stored. That one DR1 cell is the first A2 experiment, with an ablation referee.
+
 ### 12 November 2026: v2 retargeted to gate 2; small transformers moved forward
 
 **Before.** The roadmap of 10 November: v2 correlated inputs (RI on in-context Markov chains, settle RI for

@@ -86,15 +86,21 @@ questions, which is expected; it calibrates, it does not pass the gate. The othe
 ## 4. Part A: θ and η on known answers (CPU server)
 
 **A0. Settle the definitions.**
-* Marginal or conditional RI with correlated probes. Conditional RI needs the full table over the variables it
-  conditions on, so it is limited to about 16 to 20 binary variables, or to a chosen conditioning set.
+* Marginal and conditional RI are both computed, side by side, and the referees decide between them (decided 12
+  November; see ROADMAP.md). Conditional RI needs the full table over the variables it conditions on, so it is
+  limited to about 16 to 20 binary variables, or to a chosen conditioning set.
+* Storage: for every kept subset, the model's mean output per cell of the subset (for small inputs, the output on
+  every distinct probe pattern) and the mean output f(∅). Then θ and η coefficients are both exact. A3 showed that
+  rebuilding them from stored coefficients fails exactly where the two views diverge.
 * Probe distribution: uniform, data, or both.
 * Calibration under correlated probes. The v0 calibration (noise floor, false positives, min_effect) assumed
   independent uniform probes, so it has to be redone with correlated nulls (new calibration experiments E7 onward).
 
 **A1. Constructed networks (no training).** The exact value of every measure is known in each case. The check is
 that the estimators reproduce them: an instrument check, not a finding.
-* additive log-odds through a saturating output (θ: no interaction; η: higher-order moments);
+* additive log-odds through a saturating output (θ: no interaction; η: higher-order moments), with the logit scale
+  (saturation) and the strength of the lower-order terms as two crossed knobs. A3 found divergences in DR1 only
+  where both are large;
 * probability-scale products such as soft AND and XOR (both nonzero, at different orders);
 * the v1 cancellation pattern ({1}, {2}, {3} with {1,2,3});
 * correlated inputs: Markov-chain and Ising-type inputs with tunable ρ, where unused inputs are correlated with used
@@ -103,13 +109,14 @@ that the estimators reproduce them: an instrument check, not a finding.
 **A2. Trained networks with planted structure under correlated inputs.**
 * v1's Markov language with RI probes drawn from the training distribution (chain) as well as uniform;
 * sparse parity on correlated input bits at tunable ρ;
-* the v1 cancellation sets.
+* the v1 cancellation sets, starting with {1}:1.0 + {1,2,3}:1.0 on chain contexts, the only DR1 cell where the
+  views diverge: rerun with exact storage and an ablation of the three-way component (R3).
 
 Questions: the false-interaction rate of each measure against the planted mechanism (R1), with ablations (R3).
 
 **A3. What stored v1 data can already answer (no new training).**
 * RI against the single-mode R(f), and against RI rebuilt from the coefficients, over all subsets stored in DR1
-  (v1 Amendment J): where and how often the two views diverge.
+  (v1 Amendment J): where and how often the two views diverge. **Done:** [v2_a3_stored_data.md](v2_a3_stored_data.md).
 * A dense replay of the Markov order-4 and order-5 objects (v1 Q5).
 * Re-specified system checks 9 and 10 (a minimum prefix size; anomaly groups by configuration).
 
@@ -198,8 +205,9 @@ The CPU server comes first, the GPU servers after it.
 
 ## 9. Questions for discussion
 
-1. For correlated variables, should the survey's spectral line be marginal RI, conditional RI, or both? Conditional
-   RI depends on which variables are in the table. How should that set be chosen in a transformer?
+1. For correlated variables, should the survey's spectral line be marginal RI, conditional RI, or both? (Working
+   decision: both, side by side, with the referees deciding.) Conditional RI depends on which variables are in the
+   table. How should that set be chosen in a transformer?
 2. Is the referee framing right? Is "θ beats η on prediction or intervention" the right bar for gate 2, and what
    margin should count?
 3. Interaction measures are known to depend on the scale: additive in log-odds is not additive in probability. Is
