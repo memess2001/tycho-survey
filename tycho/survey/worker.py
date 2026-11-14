@@ -75,7 +75,7 @@ from tycho.train.spec import ObjectSpec, RIConfig, RunResult
 logger = logging.getLogger(__name__)
 
 __all__ = ["DISK_RECHECK_S", "IDLE_POLL_S", "LOG_FORMAT", "STALL_S", "Heartbeat", "code_version", "free_disk_gb",
-           "load_sky", "process_object", "region_of", "run_followups", "save_light_curve", "worker_main"]
+           "PATTERNS_TAG", "load_sky", "process_object", "region_of", "run_followups", "save_light_curve", "worker_main"]
 
 IDLE_POLL_S = 5.0
 """Seconds between claim attempts while there is nothing to do."""
@@ -102,6 +102,10 @@ _SLEEP_SLICE_S = 0.5
 
 
 # ---------------------------------------------------------------------------------------------- helpers
+#: RI file tag of the pattern observations of objects observed with ``ri.mode = "patterns"``.
+PATTERNS_TAG = "patterns"
+
+
 def free_disk_gb(path: Path | str) -> float:
     """Free space (GB = 1e9 bytes) on the file system holding ``path``."""
     return shutil.disk_usage(path).free / 1e9
@@ -234,6 +238,8 @@ def _record(catalog: Catalog, paths: Paths, result: RunResult, ri_cfg: RIConfig 
 
     oid = result.object_id
     lc_path = save_light_curve(paths.lightcurve_path(oid), result.light_curve)
+    if result.patterns is not None:  # pattern mode (sky v2 Part A): data/ri/<id[:2]>/<id>_patterns.npz
+        save_light_curve(paths.ri_path(oid, PATTERNS_TAG), result.patterns)
     summary = result.summary
     cls = classify(summary)
     if not _exists(catalog, "SELECT 1 FROM classifications WHERE object_id = ? AND classifier = ?",

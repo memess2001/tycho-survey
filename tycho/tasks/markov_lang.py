@@ -66,6 +66,15 @@ Extra light-curve metric
 ------------------------
 ``kl_true``: mean over the test split of ``KL(P_true(x_t | ctx) ‖ P_model(x_t | ctx))`` in nats, the model's excess
 cross-entropy over the Bayes-optimal predictor (0 for a perfect model).
+
+Exact observation on all windows (sky v2 Part A)
+------------------------------------------------
+The task implements :class:`~tycho.tasks.patterns.PatternTask`: the window code is ``c = Σ_ℓ x_{t−ℓ} 2^{ℓ−1}``
+(input j of the pattern = the token at lag j + 1), the output is x_t = 1. The pmfs are D = the exact stationary
+window distribution (``train_context = "chain"``) or uniform (``"iid"``), U = uniform, and S = a stationary binary
+chain over the lags with ``P(x_{t−ℓ−1} = x_{t−ℓ}) = (1 + shift_rho)/2``. With ``exact_metrics = True`` the light
+curve also holds ``x_lossD``, ``x_lossU``, ``x_lossS`` (Σ_c pmf(c) KL(P_true ‖ P_model)) and ``x_sqD``, ``x_sqU``,
+``x_sqS`` (Σ_c pmf(c) (P_model(1 | c) − P_true(1 | c))²).
 """
 from __future__ import annotations
 
@@ -81,6 +90,7 @@ from tycho.models.mlp import MLP
 from tycho.models.transformer import TinyGPT
 from tycho.ri.variables import VariableSet
 from tycho.tasks.base import Task, logit_margin, model_device, numpy_rng, softmax_np, torch_generator
+from tycho.tasks.patterns import PatternTask, chain_pmf, float64_copy, markov_window_pmf, pattern_bits, uniform_pmf
 
 __all__ = ["BURN_IN", "MODELS", "RI_CONTEXTS", "TRAIN_CONTEXTS", "MarkovLanguage", "parse_couplings"]
 
@@ -181,7 +191,7 @@ def _lag_windows(seq: np.ndarray, window: int) -> np.ndarray:
     return np.ascontiguousarray(temporal[:, ::-1])
 
 
-class MarkovLanguage(Task):
+class MarkovLanguage(PatternTask, Task):
     """Order-W binary Markov source with planted couplings (see the module docstring)."""
 
     name = "markov_lang"
@@ -190,7 +200,8 @@ class MarkovLanguage(Task):
     def defaults(cls) -> dict:
         return {"window": 6, "couplings": {"1": 1.0, "1,3": 0.8}, "bias": 0.0, "n_tokens": 200_000, "width": 128,
                 "depth": 1, "act": "relu", "model": "mlp", "d_model": 32, "n_layer": 2, "n_head": 2,
-                "data_seed": 0, "n_train": None, "test_size": 4096, "ri_context": "uniform", "train_context": "chain"}
+                "data_seed": 0, "n_train": None, "test_size": 4096, "ri_context": "uniform", "train_context": "chain",
+                "shift_rho": -0.5, "exact_metrics": False}
 
     def __init__(self, cfg: dict | None, seed: int) -> None:
         super().__init__(cfg, seed)
@@ -218,6 +229,9 @@ class MarkovLanguage(Task):
             raise ValueError(f"test_size must be >= 1, got {self.test_size}")
         self.p_table = _conditional_table(self.window, self.couplings, self.bias)
         self.lag_names = [f"x[t-{lag}]" for lag in range(1, self.window + 1)]
+        self.shift_rho, self.exact = float(c["shift_rho"]), bool(c["exact_metrics"])
+        if not -1.0 <= self.shift_rho <= 1.0:
+            raise ValueError(f"shift_rho must lie in [-1, 1], got {self.shift_rho}")
 
     # ------------------------------------------------------------------------------------------ source
     def true_conditional(self, lag_bits: np.ndarray) -> np.ndarray:
@@ -348,4 +362,36 @@ class MarkovLanguage(Task):
         p = np.stack([1.0 - p1, p1], axis=1)
         safe_p = np.where(p > 0.0, p, 1.0)  # 0 log 0 = 0 (σ(2h) saturates in float64 for very strong couplings)
         kl = np.sum(np.where(p > 0.0, p * (np.log(safe_p) - log_q), 0.0), axis=1)
-        return {"kl_true": float(kl.mean())}
+        out = {"kl_true": float(kl.mean())}
+        if self.exact:
+            out.update(self.exact_metrics(model))
+        return out
+
+    # ------------------------------------------------------------------------------------------ all windows
+    def pattern_dim(self) -> int:
+        return self.window
+
+    def pattern_input_names(self) -> list[str]:
+        return list(self.lag_names)
+
+    def pattern_truth(self) -> np.ndarray:
+        return self.p_table.copy()
+
+    @cached_property
+    def _pattern_pmfs(self) -> dict[str, np.ndarray]:
+        U = uniform_pmf(self.window)
+        D = markov_window_pmf(self.p_table, self.window) if self.train_context == "chain" else U.copy()
+        return {"D": D, "U": U, "S": chain_pmf(self.window, self.shift_rho)}
+
+    def pattern_pmfs(self) -> dict[str, np.ndarray]:
+        return {k: v.copy() for k, v in self._pattern_pmfs.items()}
+
+    def pattern_logodds(self, model: nn.Module) -> np.ndarray:
+        """float64 log-odds of x_t = 1 on every window, in code order (a float64 copy of the model)."""
+        m64 = float64_copy(model)
+        x = self._model_inputs(pattern_bits(self.window))
+        if self.model_kind == "mlp":
+            x = x.to(torch.float64)
+        with torch.no_grad():
+            logits = self._last(m64(x.to(model_device(m64))))
+        return (logits[:, 1] - logits[:, 0]).to("cpu", torch.float64).numpy()

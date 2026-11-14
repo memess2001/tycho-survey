@@ -4,7 +4,10 @@ File format (``configs/sky_v0.yaml``)
     Top level: ``version`` (part of every object's identity), ``description``, ``regions``. A region has ``name``,
     ``task``, ``seeds`` (initial seeds per point), ``priority`` (scheduling weight), ``ri_policy`` (always | followup
     | never), ``ri`` (RIConfig overrides), ``fixed`` (task-config values shared by the region), ``train`` (TrainConfig
-    fields shared by the region), an optional ``description``, and ``knobs``: a mapping from knob name to
+    fields shared by the region), an optional ``description``, optional ``seed_base`` (the first training seed,
+    default 0: seed rank r is training seed ``seed_base + r``) and ``data_seed_from_seed`` (default false: when true,
+    the task config's ``data_seed`` is the training seed, so each seed has its own data), and ``knobs``: a mapping
+    from knob name to
     ``{values, kind, refine, bounds}`` (a bare list is shorthand for ``{values: [...]}``). Unknown keys are errors, so
     typos fail when the sky is loaded rather than months into a survey. YAML ``null`` is a legal categorical value
     (e.g. ``n_train: null`` = online data). Beware that YAML 1.1 reads ``1e-3`` as a *string* (write ``1.0e-3`` or
@@ -76,7 +79,7 @@ _RI_FIELDS: frozenset[str] = frozenset(f.name for f in fields(RIConfig)) - {"min
 ``tycho.survey.followup.resolve_ri_config`` only)."""
 _SKY_KEYS = frozenset({"version", "description", "regions"})
 _REGION_KEYS = frozenset({"name", "task", "seeds", "priority", "ri_policy", "ri", "fixed", "train", "knobs",
-                          "description"})
+                          "description", "seed_base", "data_seed_from_seed"})
 _KNOB_KEYS = frozenset({"values", "kind", "refine", "bounds"})
 
 
@@ -243,6 +246,8 @@ class Region:
     ri: dict = field(default_factory=dict)
     priority: float = 1.0
     description: str = ""
+    seed_base: int = 0
+    data_seed_from_seed: bool = False
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not _REGION_NAME.match(self.name):
@@ -275,6 +280,12 @@ class Region:
             raise ValueError(f"{where}: knobs {clash} also appear in fixed/train")
         if isinstance(self.seeds, bool) or not isinstance(self.seeds, int) or self.seeds < 1:
             raise ValueError(f"{where}: seeds must be a positive integer, got {self.seeds!r}")
+        if isinstance(self.seed_base, bool) or not isinstance(self.seed_base, int) or self.seed_base < 0:
+            raise ValueError(f"{where}: seed_base must be a non-negative integer, got {self.seed_base!r}")
+        if not isinstance(self.data_seed_from_seed, bool):
+            raise ValueError(f"{where}: data_seed_from_seed must be true or false, got {self.data_seed_from_seed!r}")
+        if self.data_seed_from_seed and ("data_seed" in self.fixed or "data_seed" in names):
+            raise ValueError(f"{where}: data_seed_from_seed excludes a fixed or knob data_seed")
         if self.ri_policy not in RI_POLICIES:
             raise ValueError(f"{where}: ri_policy must be one of {RI_POLICIES}, got {self.ri_policy!r}")
         self.ri = dict(self.ri or {})
@@ -308,6 +319,10 @@ class Region:
                                "knobs": {k.name: k.to_dict() for k in self.knobs}}
         if self.description:
             out["description"] = self.description
+        if self.seed_base:
+            out["seed_base"] = self.seed_base
+        if self.data_seed_from_seed:
+            out["data_seed_from_seed"] = True
         return out
 
 
@@ -396,7 +411,10 @@ class Sky:
             raise ValueError(f"invalid point for region {reg.name!r}: " + "; ".join(errors))
 
     def make_spec(self, region: Region | str, point: Mapping[str, Any], seed: int, device: str = "cpu") -> ObjectSpec:
-        """The ObjectSpec of a point and seed (ValueError for an invalid point or a negative seed)."""
+        """The ObjectSpec of a point and seed rank (ValueError for an invalid point or a negative seed rank).
+
+        The training seed is ``region.seed_base + seed``; with ``data_seed_from_seed`` the task config's
+        ``data_seed`` is that training seed."""
         reg = self._region(region)
         self._require_valid(reg, point)
         if isinstance(seed, (bool, np.bool_)) or not isinstance(seed, (int, np.integer)) or seed < 0:
@@ -409,7 +427,10 @@ class Sky:
                 task_cfg[knob.name] = value
             else:
                 train[knob.train_field] = value
-        return ObjectSpec(task=reg.task, task_cfg=task_cfg, seed=int(seed), train=TrainConfig.from_dict(train),
+        actual = int(reg.seed_base) + int(seed)
+        if reg.data_seed_from_seed:
+            task_cfg["data_seed"] = actual
+        return ObjectSpec(task=reg.task, task_cfg=task_cfg, seed=actual, train=TrainConfig.from_dict(train),
                           sky_version=self.version, region=reg.name, device=device)
 
     def point_of(self, region: Region | str, spec: ObjectSpec) -> dict[str, Any]:
@@ -471,7 +492,8 @@ def _region_from_dict(r: Any) -> Region:
     knobs = [_knob_from_dict(name, settings) for name, settings in spec.items()]
     return Region(name=r.get("name"), task=r.get("task"), knobs=knobs, fixed=r.get("fixed") or {},
                   train=r.get("train") or {}, seeds=r.get("seeds", 3), ri_policy=r.get("ri_policy", "followup"),
-                  ri=r.get("ri") or {}, priority=r.get("priority", 1.0), description=r.get("description") or "")
+                  ri=r.get("ri") or {}, priority=r.get("priority", 1.0), description=r.get("description") or "",
+                  seed_base=r.get("seed_base", 0), data_seed_from_seed=r.get("data_seed_from_seed", False))
 
 
 def _knob_from_dict(name: Any, settings: Any) -> Knob:

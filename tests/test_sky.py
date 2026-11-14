@@ -316,3 +316,23 @@ def test_explicit_bounds_widen_the_refinable_range():
     assert sky.validate_point("r", {"width": 16}) == []
     assert sky.validate_point("r", {"width": 8}) != []
     assert sky.coords("r", {"width": 64})[0] == pytest.approx(0.5)
+
+
+def test_seed_base_and_data_seed_from_seed():
+    from tycho.survey.sky import Sky
+    d = {"version": "t", "regions": [
+        {"name": "m", "task": "markov_lang", "seeds": 2, "seed_base": 100, "data_seed_from_seed": True,
+         "fixed": {"window": 6}, "knobs": {"couplings": ["1:1.0"]}},
+        {"name": "plain", "task": "markov_lang", "seeds": 2, "fixed": {"window": 6},
+         "knobs": {"couplings": ["1:1.0"]}}]}
+    sky = Sky.from_dict(d)
+    a = sky.make_spec("m", {"couplings": "1:1.0"}, 1)
+    assert a.seed == 101 and a.task_cfg["data_seed"] == 101
+    b = sky.make_spec("plain", {"couplings": "1:1.0"}, 1)
+    assert b.seed == 1 and "data_seed" not in b.task_cfg
+    assert Sky.from_dict(sky.to_dict()).make_spec("m", {"couplings": "1:1.0"}, 1).object_id() == a.object_id()
+    for bad in ({"seed_base": -1}, {"seed_base": True}, {"data_seed_from_seed": "yes"},
+                {"data_seed_from_seed": True, "fixed": {"window": 6, "data_seed": 3}}):
+        r = {**d["regions"][1], **bad}
+        with pytest.raises(ValueError):
+            Sky.from_dict({"version": "t", "regions": [r]})

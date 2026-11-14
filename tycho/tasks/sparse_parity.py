@@ -22,6 +22,17 @@ Extra light-curve metric
 ------------------------
 ``support_frac`` = ``‖W₁[:, S*]‖²_F / ‖W₁‖²_F`` for the first-layer weight ``W₁``: the share of input-weight mass on
 the relevant coordinates (``≈ k/n`` at initialisation, → 1 when the network has localised the support).
+
+Correlated inputs and fixed supports (sky v2 Part A)
+----------------------------------------------------
+``rho ≠ 0`` draws the training, train-eval and test inputs from a stationary binary Markov chain along the bit
+index: ``x_0`` uniform and ``P(x_{i+1} = x_i) = (1 + rho)/2`` (spin correlation rho^|i−j|, uniform marginals).
+``rho = 0`` keeps the uniform sampler above bit for bit. ``support`` (a list of k indices) fixes ``S*`` instead of
+drawing it from ``data_seed``. RI probes stay uniform. The task implements
+:class:`~tycho.tasks.patterns.PatternTask` for n ≤ 12: code bit j = 1 iff x_j = +1, the output is y = 1; the pmfs
+are D = the training chain, U = uniform and S = the same chain with ``shift_rho``. With ``exact_metrics = True`` the
+light curve also holds ``x_lossD``/``U``/``S`` (log-loss of the true label) and ``x_sqD``/``U``/``S`` (its Brier
+score).
 """
 from __future__ import annotations
 
@@ -35,11 +46,12 @@ from torch import Tensor, nn
 from tycho.models.mlp import MLP
 from tycho.ri.variables import VariableSet
 from tycho.tasks.base import Task, logit_margin, model_device, softmax_np, torch_generator
+from tycho.tasks.patterns import MAX_PATTERN_INPUTS, PatternTask, chain_pmf, float64_copy, pattern_bits
 
 __all__ = ["SparseParity"]
 
 
-class SparseParity(Task):
+class SparseParity(PatternTask, Task):
     """k-sparse parity of n uniform ±1 bits, learned by an MLP (see the module docstring)."""
 
     name = "sparse_parity"
@@ -47,7 +59,8 @@ class SparseParity(Task):
     @classmethod
     def defaults(cls) -> dict:
         return {"n": 20, "k": 3, "width": 256, "depth": 1, "act": "relu", "n_train": None, "test_size": 2048,
-                "data_seed": 0, "ri_soft": True}
+                "data_seed": 0, "ri_soft": True, "rho": 0.0, "support": None, "shift_rho": -0.5,
+                "exact_metrics": False}
 
     def __init__(self, cfg: dict | None, seed: int) -> None:
         super().__init__(cfg, seed)
@@ -62,14 +75,33 @@ class SparseParity(Task):
             raise ValueError(f"n_train must be None or >= 1, got {self.n_train}")
         if self.test_size < 1:
             raise ValueError(f"test_size must be >= 1, got {self.test_size}")
-        self.support: list[int] = sorted(int(i) for i in
-                                         np.random.default_rng(self.data_seed).choice(self.n, self.k, replace=False))
+        self.rho, self.shift_rho = float(c["rho"]), float(c["shift_rho"])
+        for name, value in (("rho", self.rho), ("shift_rho", self.shift_rho)):
+            if not -1.0 < value < 1.0:
+                raise ValueError(f"{name} must lie in (-1, 1), got {value}")
+        self.exact = bool(c["exact_metrics"])
+        if self.exact and self.n > MAX_PATTERN_INPUTS:
+            raise ValueError(f"exact_metrics needs n <= {MAX_PATTERN_INPUTS}, got n={self.n}")
+        if c["support"] is None:
+            self.support: list[int] = sorted(int(i) for i in np.random.default_rng(self.data_seed).choice(
+                self.n, self.k, replace=False))
+        else:
+            self.support = sorted(int(i) for i in c["support"])
+            if len(self.support) != self.k or len(set(self.support)) != self.k or not all(
+                    0 <= i < self.n for i in self.support):
+                raise ValueError(f"support must be k={self.k} distinct indices in 0..{self.n - 1}, got {c['support']}")
         self._support_idx = torch.tensor(self.support, dtype=torch.long)
 
     # ------------------------------------------------------------------------------------------ data
     def _sample(self, m: int, gen: torch.Generator) -> tuple[Tensor, Tensor]:
-        """``m`` uniform ±1 inputs (float32) and their parity labels (int64)."""
-        x = torch.randint(0, 2, (m, self.n), generator=gen, dtype=torch.float32).mul_(2.0).sub_(1.0)
+        """``m`` ±1 inputs (float32; uniform, or the Markov chain when rho ≠ 0) and their parity labels (int64)."""
+        if self.rho == 0.0:
+            x = torch.randint(0, 2, (m, self.n), generator=gen, dtype=torch.float32).mul_(2.0).sub_(1.0)
+        else:
+            x0 = torch.randint(0, 2, (m, 1), generator=gen, dtype=torch.float32).mul_(2.0).sub_(1.0)
+            flips = torch.rand((m, self.n - 1), generator=gen, dtype=torch.float32) < (1.0 - self.rho) / 2.0
+            signs = torch.cat([x0, 1.0 - 2.0 * flips.to(torch.float32)], dim=1)
+            x = torch.cumprod(signs, dim=1)
         y = x.index_select(1, self._support_idx).prod(dim=1).lt(0).long()
         return x, y
 
@@ -140,4 +172,33 @@ class SparseParity(Task):
         w = model.first_layer().weight.detach().to("cpu", torch.float64)  # (MPS has no float64)
         total = float(w.square().sum())
         on_support = float(w[:, self._support_idx].square().sum())
-        return {"support_frac": on_support / total if total > 0 else float("nan")}
+        out = {"support_frac": on_support / total if total > 0 else float("nan")}
+        if self.exact:
+            out.update(self.exact_metrics(model))
+        return out
+
+    # ------------------------------------------------------------------------------------------ all patterns
+    def pattern_dim(self) -> int:
+        if self.n > MAX_PATTERN_INPUTS:
+            raise ValueError(f"pattern observation needs n <= {MAX_PATTERN_INPUTS}, got n={self.n}")
+        return self.n
+
+    def pattern_input_names(self) -> list[str]:
+        return [f"x{i}" for i in range(self.n)]
+
+    def pattern_truth(self) -> np.ndarray:
+        """P(y = 1 | pattern) ∈ {0, 1}: y = 1 iff Π_{i∈S*} x_i = −1."""
+        spins = 2 * pattern_bits(self.pattern_dim()) - 1
+        return (np.prod(spins[:, self.support], axis=1) < 0).astype(np.float64)
+
+    def pattern_pmfs(self) -> dict[str, np.ndarray]:
+        n = self.pattern_dim()
+        return {"D": chain_pmf(n, self.rho), "U": chain_pmf(n, 0.0), "S": chain_pmf(n, self.shift_rho)}
+
+    def pattern_logodds(self, model: nn.Module) -> np.ndarray:
+        """float64 log-odds of y = 1 on every pattern, in code order (a float64 copy of the model)."""
+        m64 = float64_copy(model)
+        x = torch.as_tensor(2 * pattern_bits(self.pattern_dim()) - 1, dtype=torch.float64)
+        with torch.no_grad():
+            logits = m64(x.to(model_device(m64)))
+        return (logits[:, 1] - logits[:, 0]).to("cpu", torch.float64).numpy()

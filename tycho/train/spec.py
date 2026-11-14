@@ -56,6 +56,10 @@ class RIConfig:
     n_points: int = 40
     max_subsets: int = 50_000
     keep_top: int = 200
+    # "scan": RI scans of the task's RI variables (ri_scan). "patterns": the task's log-odds on every input pattern
+    # and the per-pattern counts of n_probe probes drawn from its training distribution, at the same steps
+    # (tasks implementing tycho.tasks.patterns.PatternTask; sky v2 Part A). Stored as RunResult.patterns.
+    mode: str = "scan"
     # calibration.json that min_effect came from (set by tycho.survey.followup.resolve_ri_config, never from a config
     # file). When set, the runner re-reads the calibrated threshold at the scan's actual number of probe rows, which
     # differs from n_probe for tasks that probe a fixed input set (modular addition probes all p^2 pairs).
@@ -134,6 +138,7 @@ class RunResult:
     light_curve: dict[str, np.ndarray] = field(default_factory=dict)
     summary: dict = field(default_factory=dict)
     ri_curve: "RICurve | None" = None
+    patterns: dict[str, np.ndarray] | None = None
     wall_time_s: float = 0.0
     device: str = "cpu"
     n_params: int = 0

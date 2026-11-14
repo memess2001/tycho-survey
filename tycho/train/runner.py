@@ -32,6 +32,14 @@ A non-finite minibatch loss stops training before that update is applied: a fina
 (if it is not already an evaluation row), and the result has status "done" with ``summary["diverged"] = True``.
 A non-finite evaluation train loss or non-finite parameters at a checkpoint also end the run this way.
 
+Pattern mode
+------------
+With ``ri.mode = "patterns"`` (tasks implementing :class:`~tycho.tasks.patterns.PatternTask`), each RI step
+records instead of a scan: the float64 log-odds of output 1 on every input pattern, and the per-pattern counts of
+``ri.n_probe`` probe codes drawn from the task's training distribution D with the generator ``(spec.seed, "ri",
+t)``. The result's ``patterns`` dict holds ``steps``, ``logodds (steps × 2^d)``, ``counts (steps × 2^d)``, the
+pmfs ``pmf_D``, ``pmf_U``, ``pmf_S``, ``truth`` (true P(output 1 | pattern)) and ``input_names``.
+
 Interruption and resume
 -----------------------
 ``work_dir/resume.pt`` is written every ``train.checkpoint_every_s`` seconds (checked every :data:`POLL_STEPS`
@@ -68,13 +76,14 @@ from tycho.ri.estimators import ri_scan
 from tycho.ri.fourier import walsh_coefficients, walsh_output
 from tycho.tasks import make_task
 from tycho.tasks.base import numpy_rng, torch_generator
+from tycho.tasks.patterns import PatternTask, sample_codes
 from tycho.train.device import pick_device
 from tycho.train.photometry import LIGHT_CURVE_KEYS, Photometer
 from tycho.train.schedule import eval_steps, lr_at, subsample_log
 from tycho.train.spec import ObjectSpec, RIConfig, RunResult, TrainConfig
 
-__all__ = ["ADAM_EPS", "CLIP_EPS", "OPTIMIZERS", "POLL_STEPS", "RESUME_FILE", "RESUME_FORMAT", "LeanOptimizer",
-           "light_curve_from_rows", "run_object"]
+__all__ = ["ADAM_EPS", "CLIP_EPS", "OPTIMIZERS", "POLL_STEPS", "RESUME_FILE", "RESUME_FORMAT", "RI_MODES",
+           "LeanOptimizer", "light_curve_from_rows", "run_object"]
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +99,8 @@ ADAM_EPS = 1e-8
 CLIP_EPS = 1e-6
 #: Supported optimizers (``TrainConfig.optimizer``).
 OPTIMIZERS = ("sgd", "adam", "adamw")
+#: Observation modes at RI steps (``RIConfig.mode``; see the module docstring).
+RI_MODES = ("scan", "patterns")
 
 _NAN = float("nan")
 
@@ -253,7 +264,13 @@ class _Run:
         self.ri_set = {int(s) for s in self.ri_steps}
         self.checkpoints = [int(s) for s in np.union1d(self.eval_steps, self.ri_steps)]
         self.max_order = None
+        self.pattern_mode = False
         if self.ri_cfg is not None:
+            if self.ri_cfg.mode not in RI_MODES:
+                raise ValueError(f"ri.mode must be one of {RI_MODES}, got {self.ri_cfg.mode!r}")
+            self.pattern_mode = self.ri_cfg.mode == "patterns"
+            if self.pattern_mode and not isinstance(self.task, PatternTask):
+                raise ValueError(f"task {spec.task!r} does not support ri.mode = 'patterns'")
             self.max_order = int(self.ri_cfg.max_order or self.task.default_ri_order())
         self.ri_kind = str(ri_kind)
         self.ri_extra_meta = dict(ri_meta or {})
@@ -267,6 +284,7 @@ class _Run:
         self.next_idx = 0
         self.rows: list[dict[str, float]] = []
         self.curve: RICurve | None = None
+        self.pattern_rows: dict[str, list] = {"steps": [], "logodds": [], "counts": []}
         self.ri_frozen: dict | None = None
         self.diverged = False
         self.last_grad_norm = _NAN
@@ -298,7 +316,20 @@ class _Run:
                 summary["diverged"] = True
         return RunResult(object_id=self.object_id, status=status, light_curve=lc, summary=summary,
                          ri_curve=self.pruned_curve(), wall_time_s=self.elapsed(), device=str(self.device),
-                         n_params=self.n_params, error=error)
+                         n_params=self.n_params, error=error, patterns=self.pattern_result())
+
+    def pattern_result(self) -> dict[str, np.ndarray] | None:
+        if not self.pattern_mode:
+            return None
+        task = self.task
+        d = task.pattern_dim()
+        rows = self.pattern_rows
+        pmfs = task.pattern_pmfs()
+        return {"steps": np.asarray(rows["steps"], dtype=np.int64).reshape(-1),
+                "logodds": np.asarray(rows["logodds"], dtype=np.float64).reshape(-1, 1 << d),
+                "counts": np.asarray(rows["counts"], dtype=np.int64).reshape(-1, 1 << d),
+                "pmf_D": pmfs["D"], "pmf_U": pmfs["U"], "pmf_S": pmfs["S"], "truth": task.pattern_truth(),
+                "input_names": np.asarray(task.pattern_input_names()), "n_probe": np.int64(self.ri_cfg.n_probe)}
 
     # ------------------------------------------------------------------------------------------ checkpoints
     def save(self) -> None:
@@ -317,6 +348,11 @@ class _Run:
                  "gen_data": self.gen.get_state(), "torch_rng": torch.get_rng_state(),
                  "photometer": self.photometer.state_dict(), "rows": self.rows,
                  "ri_frozen": json.dumps(self.ri_frozen, default=_json_default), "curve": curve,
+                 "patterns": {"steps": [int(v) for v in self.pattern_rows["steps"]],
+                              "logodds": [torch.from_numpy(np.asarray(v, dtype=np.float64))
+                                          for v in self.pattern_rows["logodds"]],
+                              "counts": [torch.from_numpy(np.asarray(v, dtype=np.int64))
+                                         for v in self.pattern_rows["counts"]]},
                  "last_grad_norm": self.last_grad_norm, "last_update_norm": self.last_update_norm,
                  "elapsed_s": self.elapsed()}
         tmp = self.ckpt_path.with_name(self.ckpt_path.name + ".tmp")
@@ -353,6 +389,11 @@ class _Run:
         self.ri_frozen = json.loads(state["ri_frozen"])
         self.last_grad_norm, self.last_update_norm = float(state["last_grad_norm"]), float(state["last_update_norm"])
         self.elapsed_before = float(state["elapsed_s"])
+        pr = state.get("patterns")
+        if pr is not None:
+            self.pattern_rows = {"steps": [int(v) for v in pr["steps"]],
+                                 "logodds": [t.numpy().astype(np.float64) for t in pr["logodds"]],
+                                 "counts": [t.numpy().astype(np.int64) for t in pr["counts"]]}
         c = state["curve"]
         if c is not None:
             self.curve = RICurve(steps=c["steps"].numpy(), names=c["names"], subsets=[tuple(s) for s in c["subsets"]],
@@ -440,7 +481,20 @@ class _Run:
                         value, n_rows, cfg.min_effect, cfg.n_probe)
         return value
 
+    def observe_patterns(self, step: int) -> None:
+        """Pattern mode: log-odds on every pattern and per-pattern counts of probes drawn from D."""
+        task = self.task
+        z = task.pattern_logodds(self.model)
+        pmf = task.pattern_pmfs()["D"]
+        codes = sample_codes(pmf, int(self.ri_cfg.n_probe), torch_generator(self.spec.seed, "ri", step))
+        self.pattern_rows["steps"].append(int(step))
+        self.pattern_rows["logodds"].append(np.asarray(z, dtype=np.float64))
+        self.pattern_rows["counts"].append(np.bincount(codes, minlength=pmf.size).astype(np.int64))
+
     def observe_ri(self, step: int) -> None:
+        if self.pattern_mode:
+            self.observe_patterns(step)
+            return
         cfg = self.ri_cfg
         was_training = self.model.training
         self.model.eval()
