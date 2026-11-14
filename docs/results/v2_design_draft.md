@@ -96,10 +96,11 @@ questions, which is expected; it calibrates, it does not pass the gate. The othe
   regenerated probes works.
 * Probe distribution: uniform, data, or both.
 * Calibration under correlated probes. The v0 calibration (noise floor, false positives, min_effect) assumed
-  independent uniform probes, so it has to be redone with correlated nulls (new calibration experiments E7 onward).
+  independent uniform probes, so it has to be redone with correlated nulls (new calibration experiments E8 onward;
+  E1 to E7 exist). **Done:** [v2_a0_a1.md](v2_a0_a1.md).
 
 **A1. Constructed networks (no training).** The exact value of every measure is known in each case. The check is
-that the estimators reproduce them: an instrument check, not a finding.
+that the estimators reproduce them: an instrument check, not a finding. **Done:** [v2_a0_a1.md](v2_a0_a1.md).
 * additive log-odds through a saturating output (θ: no interaction; η: higher-order moments), with the logit scale
   (saturation) and the strength of the lower-order terms as two crossed knobs. A3 found divergences in DR1 only
   where both are large;

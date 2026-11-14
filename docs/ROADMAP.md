@@ -27,6 +27,31 @@ gates before it can say anything useful about language models:
 
 ## Change log
 
+### 14 November 2026: A0 and A1 done
+
+* **A0** ([v2_a0_a1.md](results/v2_a0_a1.md)):
+  * The four measures are fixed, with one gate for all of them:
+    * θ view: marginal RI and conditional RI;
+    * η view: the uniform Walsh coefficient and the data moment, put in nats with the base rate.
+  * Per-cell counts and sums are the storage format.
+  * Conditional RI has a fast estimator (a weighted logistic regression, checked against iterative proportional
+    fitting).
+  * E8 calibrated both RI variants under correlated probes. The χ²_1 test is valid and conservative (pooled
+    false-positive rates 0.23 to 0.34 % at α = 0.01). Conditional RI's min_effect equals marginal RI's at
+    n ≥ 4,096.
+* **A1** (constructed known answers):
+  * The views diverge only with saturation (largest |m| ≥ about 0.8) and lower-order terms together, in both
+    directions by construction.
+  * Under correlated probes, marginal RI and the data moment report every correlated but unused input, while
+    conditional RI and the uniform Walsh coefficient report none.
+  * Conditional RI loses power when inputs are redundant: about 200 times smaller at ρ = 0.95.
+  * The uniform coefficient's clean record relies on the teacher being defined off the data distribution, which a
+    trained network is not.
+* **Next.**
+  * A2 tests this on trained networks, starting with the {1}:1.0 + {1,2,3}:1.0 chain cell.
+  * The pre-registration of Part A comes first. Its sharpest question: does the uniform coefficient keep its
+    advantage when the network was trained on correlated data?
+
 ### 12 November 2026 (later): marginal and conditional RI side by side; A3 done
 
 * **Decision.** The discussion with Prof. Sugiyama is postponed: he is busy for two weeks and next week's meeting is
