@@ -23,12 +23,21 @@ Measures for an input subset A (exact: :func:`exact_measures`; estimated: :func:
 * ``m_d``: data moment E_D[m χ_A], which depends on D.
 * ``f0_u``, ``f0_d``: mean outputs on uniform and data probes.
 * Information values (nats) on one scale: ``ri_marg`` and ``ri_cond`` directly; ``eta_u`` =
-  eta_information(f_u, f0_u) and ``eta_d`` = eta_information(m_d, f0_d).
+  eta_information(f_u, f0_u) (uniform inputs, so χ_A is balanced); ``eta_d`` = the mutual information between ŷ and
+  the parity feature χ_A under D (:func:`tycho.ri.cells.parity_information`). The last is always defined, whereas
+  eta_information(m_d, f0_d) is not when χ_A is unbalanced.
 
 E8 (null calibration under correlated probes): for marginal and conditional RI, the false-positive rate of the χ²_1
 p-value and the noise floor (quantiles of the plug-in and corrected values) when the population value is exactly 0,
-over probe distributions, table sizes, sample sizes and nuisance strengths. The table inputs form two independent
-blocks of equal size, each correlated inside according to the probe kind. The teacher uses the first block (additive
+over probe distributions, table sizes, sample sizes and nuisance strengths. Two designs.
+
+*Correlated nulls*, for conditional RI only. All table inputs form one correlated block. The teacher uses a random
+half of them (additive log-odds plus random pair terms) and the nuisance inputs. Each tested set (one, two or three
+inputs) contains an unused input, which is correlated with used ones. Its conditional RI is exactly 0; its marginal
+RI is not (that is the spurious case conditional RI exists for).
+
+*Block nulls*, for both RI variants. The table inputs form two independent blocks of equal size, each correlated
+inside according to the probe kind. The teacher uses the first block (additive
 log-odds and random pair terms) and four nuisance inputs, and ignores the second block. So every subset that
 contains a second-block input has conditional RI exactly 0. Every subset made only of second-block inputs also has
 marginal RI exactly 0. The exact population values of the tested subsets are computed and reported
@@ -46,7 +55,8 @@ import numpy as np
 from scipy import stats
 from scipy.optimize import brentq
 
-from tycho.ri.cells import (cell_stats, conditional_ri_plugin, eta_information, gate, local_ri_of)
+from tycho.ri.cells import (cell_stats, conditional_ri_plugin, eta_information, gate, local_ri_of,
+                            parity_information)
 from tycho.ri.estimators import bh_fdr
 from tycho.ri.refined import local_ri
 
@@ -188,12 +198,18 @@ def exact_measures(pmf: np.ndarray, teacher: Teacher, subsets: Sequence[Sequence
         marg = marg.reshape(marg.shape[:len(A) + 1] + (-1,)).sum(axis=-1)
         f_u = _walsh_on_uniform(m, d, A)
         m_d = float((pmf * m * _chi(s, A)).sum())
+        chiA = _chi(s, A)
+        tab = np.array([[(pmf[chiA == c] * (1 - p1[chiA == c])).sum(), (pmf[chiA == c] * p1[chiA == c]).sum()]
+                        for c in (-1, 1)])
+        prod = tab.sum(axis=1, keepdims=True) * tab.sum(axis=0, keepdims=True)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            eta_d = float(max(np.where(tab > 0, tab * np.log(tab / prod), 0.0).sum(), 0.0))
         out.append(dict(
             subset=list(A), ri_marg=float(local_ri(marg)),
             ri_cond=(conditional_ri_plugin(patterns(d), p1, A, range(d), weights=pmf) if with_cond
                      else math.nan),
             w=_walsh_on_uniform(z, d, A), f_u=f_u, m_d=m_d, f0_u=f0_u, f0_d=f0_d,
-            eta_u=float(eta_information(f_u, f0_u)), eta_d=float(eta_information(m_d, f0_d)),
+            eta_u=float(eta_information(f_u, f0_u)), eta_d=eta_d,
             planted=A in teacher.planted))
     return out
 
@@ -228,7 +244,7 @@ def estimate_measures(pmf: np.ndarray, teacher: Teacher, subsets: Sequence[Seque
         rc = conditional_ri_plugin(Xd, pd_, A, range(d)) if with_cond else math.nan
         out.append(dict(subset=list(A), ri_marg=float(rm), ri_cond=float(rc), f_u=float(f_u), m_d=float(m_d),
                         f0_u=f0_u, f0_d=f0_d, eta_u=float(eta_information(f_u, f0_u)),
-                        eta_d=float(eta_information(m_d, f0_d)), w=float(csu.logit_walsh()[top])))
+                        eta_d=parity_information(csd), w=float(csu.logit_walsh()[top])))
     return out
 
 
@@ -295,6 +311,31 @@ def e8_cell(probe: str, rho: float, d_table: int, n: int, nuisance_scale: float,
                 conditional_ri_plugin(X, p1, A, range(d_table)))
         for A, val in zip(tests_marg, local_ri_of(cell_stats(X, p1, tests_marg))):
             vals["marg_pair" if len(A) == 1 else "marg_triple"].append(float(val))
+    # correlated-null design: one correlated block; the teacher uses a random half of it (additive + random pairs)
+    # plus the nuisance inputs; tested sets contain an unused input, which is correlated with used ones
+    pmf_c = probe_pmf(probe, d_table, rho)
+    for k in (1, 2, 3):
+        vals[f"cond_corr_order{k + 1}"] = []
+    for r in range(reps):
+        used = sorted(rng.choice(d_table, size=d_table // 2, replace=False).tolist())
+        unused = [i for i in range(d_table) if i not in used]
+        w: dict[tuple[int, ...], float] = {(i,): float(rng.standard_normal()) for i in used}
+        for pr in itertools.combinations(used, 2):
+            if rng.random() < 0.3:
+                w[pr] = 0.5 * float(rng.standard_normal())
+        for k in range(N_NUISANCE):
+            w[(d_table + k,)] = nuisance_scale * float(rng.standard_normal())
+        t = logit_teacher(d_table + N_NUISANCE, w, "e8-corr-null")
+        j = unused[int(rng.integers(len(unused)))]
+        others = [i for i in range(d_table) if i != j]
+        tests = [(j,), tuple(sorted((j, int(rng.choice(others))))),
+                 tuple(sorted([j] + rng.choice(others, size=2, replace=False).tolist()))]
+        if r < 3:
+            ex = exact_measures(pmf_c, t, tests, d_table=d_table)
+            max_pop = max(max_pop, max(e["ri_cond"] for e in ex))
+        X, p1 = sample_rows(pmf_c, t, d_table, n, rng)
+        for A in tests:
+            vals[f"cond_corr_order{len(A) + 1}"].append(conditional_ri_plugin(X, p1, A, range(d_table)))
     res = dict(name=name, probe=probe, rho=rho, d_table=d_table, n=n, nuisance_scale=nuisance_scale, reps=reps,
                max_population_value=max_pop)
     q = stats.chi2.ppf(0.99, 1) / (2 * n)

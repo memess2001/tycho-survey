@@ -12,10 +12,10 @@ Teachers and measures: ``tycho/calibration/correlated.py``. Four families:
 3. **The v1 cancellation profile**: the exact cell means of the DR1 case where the views diverge (A3: object
    898791…, step 2206), as uniform-cell Walsh coefficients. Exact values only.
 4. **Correlated inputs** (6 table inputs, four nuisance inputs at scale 1.0). Probes: uniform, Markov chain
-   ρ = 0.5, 0.8, 0.95, equicorrelated ρ = 0.3, 0.6. Four teachers that use inputs 0 and 2 only. For all 21 subsets
-   of one or two inputs: the exact value of every measure, and detections in replicate estimates. Spurious sets
-   contain an input the teacher does not use: there ``ri_cond`` and ``f_u`` are exactly 0, whatever the
-   correlation.
+   ρ = 0.5, 0.8, 0.95, equicorrelated ρ = 0.3, 0.6. Four teachers that use input 0 (copy) or inputs 0 and 2. For
+   all 21 subsets of one or two inputs: the exact value of every measure, and detections in replicate estimates.
+   Spurious sets contain an input the teacher does not use: there ``ri_cond`` and ``f_u`` are exactly 0, whatever
+   the correlation.
 
 Detection (estimates): BH over the subsets of the family at α = 0.01, and corrected value ≥ min_effect. Marginal RI
 and the η measures use v1's calibrated min_effect at n. Conditional RI uses E8's recommended value at (n, table
@@ -148,15 +148,18 @@ TEACHERS4 = {
     "pair02": {(0, 2): 1.0},
 }
 PROBES4 = [("uniform", 0.0), ("markov", 0.5), ("markov", 0.8), ("markov", 0.95), ("equicorr", 0.3), ("equicorr", 0.6)]
-USED4 = {0, 2}
+def used_inputs(w: dict, d_table: int) -> set[int]:
+    """Table inputs that appear in the teacher's log-odds."""
+    return {i for T in w for i in T if i < d_table}
 
 
 def family4(me: dict, reps: int, seed: int) -> list[dict]:
     d = 6
     subs = [A for r in (1, 2) for A in itertools.combinations(range(d), r)]
-    spurious = np.array([not set(A) <= USED4 for A in subs])
     rows = []
     for (kind, rho), (tname, w) in itertools.product(PROBES4, TEACHERS4.items()):
+        used = used_inputs(w, d)
+        spurious = np.array([not set(A) <= used for A in subs])
         pmf = probe_pmf(kind, d, rho)
         t = logit_teacher(d + 4, with_nuisance(d, w), tname)
         ex = exact_measures(pmf, t, subs, d_table=d)

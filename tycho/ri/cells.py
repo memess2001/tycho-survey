@@ -25,10 +25,16 @@ P(x_A, ŷ = 1) = (N_x + S_x) / (2N), P(x_A, ŷ = 0) = (N_x − S_x) / (2N). With
     * local (marginal) RI of A ∪ {ŷ}: the plug-in RI of the marginal table, :func:`tycho.ri.refined.local_ri`.
 
 Conditional (purified) RI, RI^cond (Enouen & Sugiyama 2026, App. C.1), needs the joint table of the whole
-conditioning set, not only A: :func:`conditional_ri_plugin` builds it from the rows and calls
-:func:`tycho.ri.refined.conditional_ri`. For binary variables its top-order term has 1 degree of freedom, so
-G² = 2 N RI^cond is asymptotically χ²_1 under H0. That approximation needs non-sparse tables. Its calibration is
-experiment E8 of sky v2 (``tycho.calibration.correlated``).
+conditioning set, not only A. :func:`conditional_ri_plugin` builds it from the rows and solves the projection as a
+weighted logistic regression (default). The iterative proportional fitting of
+:func:`tycho.ri.refined.conditional_ri` is available as ``method="ipf"``, but it is inaccurate on near-saturated
+tables. For binary variables the top-order term has 1 degree of freedom, so G² = 2 N RI^cond is asymptotically
+χ²_1 under H0. That approximation needs non-sparse tables. Its calibration is experiment E8 of sky v2
+(``tycho.calibration.correlated``).
+
+Parity information. :func:`parity_information` is the mutual information between ŷ and the parity feature χ_A
+under the cells' weights: the information that A's top Walsh feature carries. It is the η view's information value
+on data probes. It is always defined, and with balanced χ_A it equals ``eta_information(f(A), f(∅))``.
 
 Information scale of a coefficient. ``eta_information(f, f0)`` is the mutual information of a binary input with an
 output whose mean is f0 + f·s: h((1 + f0)/2) − ½[h((1 + f0 + f)/2) + h((1 + f0 − f)/2)] nats. At f0 = 0 it equals
@@ -55,6 +61,7 @@ __all__ = [
     "eta_information",
     "conditional_ri_plugin",
     "gate",
+    "parity_information",
 ]
 
 
@@ -218,13 +225,41 @@ def _weighted_logistic_loss(F: np.ndarray, w: np.ndarray, t: np.ndarray, *, tol:
     return cur
 
 
+def parity_information(cs: CellStats, *, uniform_cells: bool = False) -> float:
+    """MI (nats) between ŷ and χ_A, with the cells weighted by their counts (data probes) or, with
+    ``uniform_cells``, equally (the uniform-cell analogue of :meth:`CellStats.uniform_cell_walsh`). NaN if a cell
+    is empty in the uniform-cell case."""
+    chiA = chi_matrix(cs.k)[:, -1] if cs.k else np.ones(1)
+    if uniform_cells:
+        m = cs.cell_means()
+        if not np.all(np.isfinite(m)):
+            return math.nan
+        w = np.full(len(m), 1.0 / len(m))
+        y = w * m
+    else:
+        w = cs.counts / cs.n
+        y = cs.sums / cs.n
+    tab = np.zeros((2, 2))
+    for sign, row in ((-1, 0), (1, 1)):
+        sel = chiA == sign
+        tab[row, 0] = (w[sel].sum() - y[sel].sum()) / 2
+        tab[row, 1] = (w[sel].sum() + y[sel].sum()) / 2
+    tab = np.clip(tab, 0.0, None)
+    tab /= tab.sum()
+    with np.errstate(divide="ignore", invalid="ignore"):
+        prod = tab.sum(axis=1, keepdims=True) * tab.sum(axis=0, keepdims=True)
+        terms = np.where(tab > 0, tab * np.log(tab / prod), 0.0)
+    return float(max(terms.sum(), 0.0))
+
+
 def conditional_ri_plugin(X: np.ndarray, p1: np.ndarray, A: Sequence[int], cond: Sequence[int], *,
                           method: str = "logistic", tol: float = 1e-10, weights: np.ndarray | None = None) -> float:
     """Plug-in conditional RI of A ∪ {ŷ} given the inputs ``cond`` (the table holds U = cond ∪ A and ŷ).
 
     The table is built from the rows with the soft output. ``method="ipf"`` projects the full table with
-    :func:`tycho.ri.refined.conditional_ri`. ``method="logistic"`` (default, faster and exact up to the Newton
-    tolerance) uses the equivalent form for a binary output: in the model without any term ⊇ A ∪ {ŷ} every
+    :func:`tycho.ri.refined.conditional_ri`; ``tol`` applies only to it. ``method="logistic"`` (default; faster,
+    and exact up to the Newton tolerance, including near saturation, where IPF stops early) uses the equivalent
+    form for a binary output: in the model without any term ⊇ A ∪ {ŷ} every
     input-only term is free, so the input margin is fitted exactly and the projection is a weighted logistic
     regression of ŷ on the features χ_B, B ⊆ U, B ⊉ A, with cell weights N_x/N and soft targets (the cell means
     of p1). RI^cond is the drop in weighted cross-entropy when χ_A is added. Cost grows as 2^|U|: small sets only.

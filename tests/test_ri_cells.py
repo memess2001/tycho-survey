@@ -143,3 +143,31 @@ def test_exact_conditional_ri_is_zero_for_unused_inputs_under_correlation():
     # planted terms stay positive, but strong correlation (redundant inputs) makes the conditional values small
     assert ex[(0,)]["ri_cond"] > 0.005 and ex[(0, 1)]["ri_cond"] > 1e-4
     assert ex[(0, 1)]["ri_cond"] < ex[(0, 1)]["ri_marg"]
+
+
+def test_parity_information_matches_eta_information_on_balanced_cells_and_is_always_defined():
+    from tycho.ri.cells import parity_information
+    X, p1 = _exact_rows(lambda s: 1.2 * s[:, 0] + 0.7 * s[:, 0] * s[:, 1] - 0.4 * s[:, 2], 3)
+    for A in [(0,), (0, 1), (0, 1, 2)]:
+        cs = cell_stats(X, p1, [A])[0]
+        mom = cs.data_moments()
+        top = tuple(range(len(A)))
+        assert parity_information(cs) == pytest.approx(float(eta_information(mom[top], mom[()])), abs=1e-12)
+    # strongly unbalanced chi_A: the uncentred moment has no valid single-mode reading, the parity MI does
+    w = np.array([0.02, 0.48, 0.48, 0.02])
+    Xb = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+    pb = np.array([0.01, 0.99, 0.99, 0.01])
+    cs = cell_stats(Xb, pb, [(0, 1)], weights=w)[0]
+    mom = cs.data_moments()
+    assert np.isnan(eta_information(mom[(0, 1)], mom[()]))
+    assert 0 < parity_information(cs) < np.log(2)
+
+
+def test_e8_cell_nulls_are_exactly_null():
+    import logging
+    from tycho.calibration.correlated import e8_cell
+    logging.getLogger("tycho").setLevel(logging.ERROR)
+    res = e8_cell("markov", 0.9, 4, 1024, 1.0, 4, 0)
+    assert res["max_population_value"] < 1e-10
+    for lab in ("cond_corr_order2", "cond_corr_order3", "cond_corr_order4", "cond_pair", "marg_pair"):
+        assert res[lab]["count"] > 0

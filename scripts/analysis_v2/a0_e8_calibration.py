@@ -4,7 +4,8 @@ value is exactly 0. See ``tycho/calibration/correlated.py`` (module docstring) f
 For every grid cell it reports the false-positive rate of the χ²_1 p-value, the KS distance of the p-values from
 U(0, 1), and the noise floor (quantiles of the plug-in and corrected values) next to the χ² predictions. The
 recommended min_effect for conditional RI follows v1's rule: max(floor 0.001, 0.99 quantile of the corrected null
-values), taken over the probe kinds, correlations and nuisance strengths at each (n, table size).
+values), taken over both null designs, the probe kinds, correlations and nuisance strengths at each (n, table size).
+The same rule applied to the marginal nulls is reported next to v1's marginal min_effect.
 
 Run from the repository root: ``PYTHONPATH=. python scripts/analysis_v2/a0_e8_calibration.py [--reps 300]``.
 Writes ``docs/results/v2_analysis/a0_e8_calibration.json``.
@@ -29,6 +30,10 @@ TABLES = [4, 6, 8]
 NS = [1024, 4096, 16384]
 NUISANCE = [0.5, 2.0]
 FLOOR = 0.001
+#: Null types: correlated nulls (one block; conditional RI of sets of order 2-4 that contain an unused input
+#: correlated with used ones) and block nulls (conditional and marginal RI; order 2 = one input with ŷ).
+LABELS = ("cond_corr_order2", "cond_corr_order3", "cond_corr_order4", "cond_pair", "cond_triple", "marg_pair",
+          "marg_triple")
 QUANTILE_KEY = "corrected_q99"
 
 
@@ -56,15 +61,17 @@ def main(argv: list[str] | None = None) -> int:
     for n, d in itertools.product(NS, TABLES):
         sub = [c for c in cells if c["n"] == n and c["d_table"] == d]
         row = {"n": n, "d_table": d}
-        for label in ("cond_pair", "cond_triple", "marg_pair", "marg_triple"):
+        for label in LABELS:
             vals = [c[label] for c in sub if label in c]
             row[label] = {"max_fpr_alpha_0_01": max(v["fpr_alpha_0_01"] for v in vals),
                           "mean_fpr_alpha_0_01": sum(v["fpr_alpha_0_01"] for v in vals) / len(vals),
                           "max_ks": max(v["ks_uniform"] for v in vals),
                           "max_plugin_mean_over_chi2_mean": max(v["plugin_mean"] / v["chi2_mean"] for v in vals),
                           "max_corrected_q99": max(v[QUANTILE_KEY] for v in vals)}
-        noise = max(row["cond_pair"]["max_corrected_q99"], row["cond_triple"]["max_corrected_q99"])
+        noise = max(row[lab]["max_corrected_q99"] for lab in LABELS if lab.startswith("cond"))
         row["recommended_min_effect_conditional"] = max(FLOOR, noise)
+        row["recommended_min_effect_marginal_e8"] = max(FLOOR, max(row[lab]["max_corrected_q99"] for lab in LABELS
+                                                                    if lab.startswith("marg")))
         summary.append(row)
     result = {"description": __doc__.split("\n\n")[0], "reps": args.reps, "seed": args.seed,
               "grid": {"probes": PROBES, "tables": TABLES, "n": NS, "nuisance": NUISANCE},
