@@ -197,5 +197,17 @@ def test_worker_records_the_pattern_file(tmp_path):
             assert f["logodds"].shape[1] == 256 and f["counts"].sum(axis=1).tolist() == [512] * f["steps"].size
             assert list(f["input_names"]) == [f"x{i}" for i in range(8)]
         assert catalog.get_object(oid)["ri_runs"] == []
+        # a data release carries the pattern file
+        import tarfile
+
+        import pandas as pd
+
+        from tycho.survey.release import make_release
+        target = make_release(catalog, paths, "DRt", cfg=cfg)
+        with tarfile.open(target / "patterns.tar.gz") as tar:
+            assert tar.getnames() == [f"patterns/{oid}.npz"]
+        objects = pd.read_parquet(target / "objects.parquet")
+        assert list(objects["patterns_file"]) == [f"patterns/{oid}.npz"]
+        assert "patterns.tar.gz" in (target / "README.md").read_text()
     finally:
         catalog.close()

@@ -12,6 +12,8 @@ SDSS data releases, so that others can look for their own empirical laws in the 
 ``transients.parquet/.csv`` alerts raised from events, photometry and classification
 ``lightcurves.tar.gz``      ``lightcurves/<object_id>.npz`` (``np.load``; keys in the datasheet)
 ``ricurves.tar.gz``         ``ricurves/<object_id>_<kind>_<ri_run_id>.npz`` (``tycho.analysis.ricurve.RICurve.load``)
+``patterns.tar.gz``         ``patterns/<object_id>.npz``: pattern-mode observations (sky v2 Part A; keys in
+                            ``tycho.train.runner``, "Pattern mode"); only when some released object has one
                             An archive larger than :data:`ARCHIVE_PART_BYTES` is split into
                             ``<name>.part001.tar.gz``, ``<name>.part002.tar.gz``, ... (each a complete tar.gz), so
                             that every file fits GitHub's 100 MB limit; extract all parts into one directory.
@@ -101,6 +103,8 @@ OBJECT_COLUMNS: dict[str, str] = {
     "code_version": "Tycho version (+ git describe) of the observing code",
     "lightcurve_points": "evaluations in the light curve",
     "lightcurve_file": "member of lightcurves.tar.gz (empty when not included)",
+    "patterns_file": "member of patterns.tar.gz: log-odds on every input pattern and probe counts per RI step "
+                     "(pattern-mode objects only; empty otherwise)",
     "label": "latest classification label (rules-v1: diverged, no_learning, memorization, grokking, plateau_drop, "
              "staged, double_descent, smooth, unknown; or a label set by the agent)",
     "label_tags_json": "JSON list of secondary tags of the latest classification",
@@ -276,7 +280,20 @@ def _build(snapshot: Catalog, paths: Paths, cfg: Mapping[str, Any], tag: str, wo
     runs["ricurve_file"] = files
     if include_ri_curves:
         ri_files = _tar(work / "ricurves.tar.gz", ri_members)
-    objects = objects[[c for c in objects.columns if c != "lightcurve_file"] + ["lightcurve_file"]]
+    from tycho.survey.worker import PATTERNS_TAG  # lazy: the worker module imports more than a release needs
+
+    pat_members: list[tuple[str, Path]] = []
+    if include_ri_curves:
+        for oid in objects["object_id"]:
+            path = paths.ri_path(oid, PATTERNS_TAG)
+            if path.is_file():
+                pat_members.append((f"patterns/{oid}.npz", path))
+    present_pat = {m for m, _ in pat_members}
+    objects["patterns_file"] = [f"patterns/{oid}.npz" if f"patterns/{oid}.npz" in present_pat else None
+                                for oid in objects["object_id"]]
+    pat_files = _tar(work / "patterns.tar.gz", pat_members) if pat_members else []
+    tail = ["lightcurve_file", "patterns_file"]
+    objects = objects[[c for c in objects.columns if c not in tail] + tail]
 
     for name, df in (("objects", objects), ("ri_runs", runs), ("ri_events", events), ("transients", transients)):
         df.to_parquet(work / f"{name}.parquet", index=False)
@@ -300,7 +317,7 @@ def _build(snapshot: Catalog, paths: Paths, cfg: Mapping[str, Any], tag: str, wo
     readme = _datasheet(tag, snapshot, objects, runs, events, transients, released=len(released),
                         lightcurves=len(lc_members) if include_lightcurves else None, missing_lc=missing_lc,
                         ricurves=len(ri_members) if include_ri_curves else None, missing_ri=missing_ri,
-                        lc_files=lc_files, ri_files=ri_files,
+                        lc_files=lc_files, ri_files=ri_files, pat_files=pat_files, patterns=len(pat_members),
                         sky=sky_path.name if sky_path.is_file() else None, calibrated=cal_path is not None, work=work)
     (work / "README.md").write_text(readme, encoding="utf-8")
 
@@ -425,7 +442,8 @@ def _datasheet(tag: str, snapshot: Catalog, objects: pd.DataFrame, runs: pd.Data
                transients: pd.DataFrame, *, released: int, lightcurves: int | None, missing_lc: int,
                ricurves: int | None, missing_ri: int, sky: str | None, calibrated: bool, work: Path,
                lc_files: Sequence[str] = ("lightcurves.tar.gz",),
-               ri_files: Sequence[str] = ("ricurves.tar.gz",)) -> str:
+               ri_files: Sequence[str] = ("ricurves.tar.gz",), pat_files: Sequence[str] = (),
+               patterns: int = 0) -> str:
     from tycho.survey.worker import code_version  # git describe of the releasing code
 
     created = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -442,6 +460,10 @@ def _datasheet(tag: str, snapshot: Catalog, objects: pd.DataFrame, runs: pd.Data
         files.append((" / ".join(ri_files), f"{ricurves} RI curves (`ricurves/<object_id>_<kind>_<ri_run_id>.npz`)"
                       + (f"; {missing_ri} missing on disk" if missing_ri else "")
                       + (f"; split into {len(ri_files)} parts" if len(ri_files) > 1 else "")))
+    if pat_files:
+        files.append((" / ".join(pat_files), f"{patterns} pattern-mode observations (`patterns/<object_id>.npz`: "
+                      "steps, logodds, counts, pmf_D, pmf_U, pmf_S, truth, input_names, n_probe)"
+                      + (f"; split into {len(pat_files)} parts" if len(pat_files) > 1 else "")))
     if sky:
         files.append(("sky.yaml", f"the sky definition (copied from `{sky}`)"))
     if calibrated:

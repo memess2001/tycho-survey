@@ -40,6 +40,39 @@ Sky v0 objects stay in the catalog. The scheduler enqueues objects and selects f
 but anything of an older sky that is still queued is claimed first (the script warns about it). To change other settings by
 hand, use `.venv/bin/python scripts/set_config.py section.key=value`.
 
+## Sky v2, Part A
+
+Part A is a fixed, pre-registered design ([v2a_preregistration.md](results/v2a_preregistration.md)): 440 objects in
+pattern mode, no refinement and no follow-ups. Do not start it before the analysis code is verified (see
+[ROADMAP.md](ROADMAP.md)).
+
+```bash
+cd ~/tycho-survey
+git pull
+.venv/bin/pip install -e .                 # no new dependencies; refreshes the installed package
+bash ops/linux/start_v2a.sh
+```
+
+`start_v2a.sh` refuses to run while a daemon is running. It sets three keys in `tycho.yaml` and starts the daemon:
+
+* `survey.sky: configs/sky_v2a.yaml`
+* `scheduler.boundary_refine: false`
+* `scheduler.followups_per_day: 0`
+
+No calibration file is needed. Each object writes its light curve and `data/ri/<id[:2]>/<id>_patterns.npz` (the
+log-odds on every input pattern and the probe counts at 60 checkpoints). When all 440 objects are done, stop the
+daemon and run the analysis on the server (about 10 to 20 minutes on 80 processes):
+
+```bash
+bash ops/linux/stop_survey.sh
+.venv/bin/python scripts/analysis_v2/v2a_manifest.py --root . --out work/v2a/manifest.jsonl
+.venv/bin/python scripts/analysis_v2/v2a_analysis.py --manifest work/v2a/manifest.jsonl \
+  --out work/v2a/analysis.json --cache work/v2a/stage1 --jobs 80
+```
+
+To restore the earlier settings afterwards: `.venv/bin/python scripts/set_config.py survey.sky=configs/sky_v1.yaml
+scheduler.boundary_refine=true scheduler.followups_per_day=10000`.
+
 ## Data releases
 
 ```bash
