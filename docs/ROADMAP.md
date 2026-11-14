@@ -29,20 +29,21 @@ gates before it can say anything useful about language models:
 
 ### 14 November 2026: A0 and A1 done
 
-* **A0** ([v2_a0_a1.md](results/v2_a0_a1.md)):
+* **A0** ([v2_a0_a1.md](results/v2_a0_a1.md); independently verified, corrections applied):
   * The four measures are fixed, with one gate for all of them:
     * θ view: marginal RI and conditional RI;
     * η view: the uniform Walsh coefficient and the data moment, put in nats with the base rate.
   * Per-cell counts and sums are the storage format.
   * Conditional RI has a fast estimator (a weighted logistic regression, checked against iterative proportional
     fitting).
-  * E8 calibrated both RI variants under correlated probes. The χ²_1 test is valid and conservative (pooled
-    false-positive rates 0.23 to 0.34 % at α = 0.01). Conditional RI's min_effect equals marginal RI's at
-    n ≥ 4,096.
+  * E8 calibrated both RI variants under correlated probes, including nulls that are correlated with used inputs.
+    The χ²_1 test is valid on average and conservative (pooled false-positive rates 0.22 to 0.34 % at α = 0.01;
+    single cells up to 2.7 %). Both variants use min_effect 0.001 at n ≥ 4,096; at n = 1,024 the thresholds are
+    0.003 to 0.0044.
 * **A1** (constructed known answers):
-  * The views diverge only with saturation (largest |m| ≥ about 0.8) and lower-order terms together, in both
-    directions by construction.
-  * Under correlated probes, marginal RI and the data moment report every correlated but unused input, while
+  * The views diverge only with saturation (largest |m| from about 0.74 at min_effect 0.001) and lower-order terms
+    together, in both directions by construction.
+  * Under correlated probes, marginal RI and the data moment report many correlated but unused inputs, while
     conditional RI and the uniform Walsh coefficient report none.
   * Conditional RI loses power when inputs are redundant: about 200 times smaller at ρ = 0.95.
   * The uniform coefficient's clean record relies on the teacher being defined off the data distribution, which a
