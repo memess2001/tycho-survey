@@ -5,6 +5,9 @@ v2 pre-registration is written, before any v2 data exist. Background: [v1_result
 changed: [ROADMAP.md](../ROADMAP.md); the discussion that led to it:
 [notes/discussion_2026-11-12_after_v1.md](../../notes/discussion_2026-11-12_after_v1.md).
 
+**Update, 14 November 2026.** Part A is now pre-registered: [v2a_preregistration.md](v2a_preregistration.md). Where
+the two differ, the pre-registration rules.
+
 ## 1. Why v2 changes
 
 The roadmap shown on 10 November planned four skies after v0:
@@ -116,6 +119,8 @@ that the estimators reproduce them: an instrument check, not a finding. **Done:*
   views diverge: rerun with exact storage and an ablation of the three-way component (R3).
 
 Questions: the false-interaction rate of each measure against the planted mechanism (R1), with ablations (R3).
+**Pre-registered:** [v2a_preregistration.md](v2a_preregistration.md), with two behavioural referees (shift
+fragility and data twins). The ablation referee is not in it yet.
 
 **A3. What stored v1 data can already answer (no new training).**
 * RI against the single-mode R(f), and against RI rebuilt from the coefficients, over all subsets stored in DR1
@@ -200,7 +205,8 @@ The CPU server comes first, the GPU servers after it.
 
 1. A3 (stored data). It informs the thresholds and cases of A0 and A1.
 2. A0 and A1: definitions, calibration under correlated probes, constructed cases (instrument checks). CPU.
-3. The Part A pre-registration (criteria, referees, margins), before any Part A data. Then A2. CPU.
+3. The Part A pre-registration (criteria, referees, margins), before any Part A data. Then A2. CPU. **Done:**
+   [v2a_preregistration.md](v2a_preregistration.md); A2 next.
 4. The Part B pilot on the smallest models: transformer task module, variable extraction, controls. CPU.
 5. The Part B pre-registration. Pilot results are disclosed in it, as v1's Amendment 1 disclosed its pilots.
 6. The Part B survey at the larger sizes, after GPU workers are added to the scheduler. GPU.

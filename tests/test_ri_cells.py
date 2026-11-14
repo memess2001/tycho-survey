@@ -197,6 +197,49 @@ def test_projection_information_matches_local_and_conditional_ri_and_has_link_sp
             th_null = cell_stats(X3, teacher(0.0).p1, [(0, 1, 2)], weights=pm)[0]
             et_null = cell_stats(X3, teacher(bstar).p1, [(0, 1, 2)], weights=pm)[0]
             assert projection_information(th_null, [0, 1, 2], link="logit", weights=wt) == pytest.approx(0, abs=1e-9)
-            assert projection_information(th_null, [0, 1, 2], link="linear", weights=wt) > 0.05
+            assert projection_information(th_null, [0, 1, 2], link="linear", weights=wt) > 0.003
             assert projection_information(et_null, [0, 1, 2], link="linear", weights=wt) == pytest.approx(0, abs=1e-9)
             assert projection_information(et_null, [0, 1, 2], link="logit", weights=wt) > 0.003
+
+
+def test_projection_information_eta_values_bounded_and_gaussian():
+    from tycho.calibration.correlated import patterns
+    from tycho.ri.cells import CellStats, eta_information, projection_information
+    cs = CellStats(inputs=(0,), counts=np.array([1.0, 1.0]), sums=np.array([-0.99, 0.99]), n=2.0)
+    theta = projection_information(cs, [0], link="logit")
+    gauss = projection_information(cs, [0], link="linear", eta_value="gaussian")
+    bounded = projection_information(cs, [0], link="linear")
+    assert theta == pytest.approx(0.662, abs=1e-3)
+    assert gauss == pytest.approx(1.959, abs=1e-3)
+    assert bounded == pytest.approx(float(eta_information(0.99)), abs=1e-12)
+    assert bounded <= np.log(2)
+    rng = np.random.default_rng(3)
+    X = patterns(3)
+    m = np.tanh(rng.normal(size=8) * 1.5)
+    cs3 = cell_stats(X, (1 + m) / 2, [(0, 1, 2)])[0]
+    fu = cs3.uniform_cell_walsh()[(0, 1, 2)]
+    assert projection_information(cs3, [0, 1, 2], link="linear", weights="uniform") == pytest.approx(
+        float(eta_information(fu)), abs=1e-10)
+    for wt in ("counts", "uniform"):
+        g = projection_information(cs3, [0, 1], link="linear", weights=wt, eta_value="gaussian")
+        b = projection_information(cs3, [0, 1], link="linear", weights=wt)
+        assert (g > 1e-12) == (b > 1e-12)
+
+
+def test_projection_information_zero_set_of_a_non_top_set_depends_on_the_weights():
+    from scipy.optimize import brentq
+    from tycho.calibration.correlated import logit_teacher, patterns, probe_pmf
+    from tycho.ri.cells import projection_information
+    X = patterns(3)
+    s0 = 2 * X[:, 0] - 1
+
+    def teacher(a):
+        return logit_teacher(3, {(0,): a, (0, 1): 1.0, (0, 2): 0.5, (0, 1, 2): 0.7, (1,): 0.3})
+    astar = brentq(lambda a: float(((2 * teacher(a).p1 - 1) * s0).mean()), -5, 5)
+    assert abs(astar) > 0.1
+    t = teacher(astar)
+    cu = cell_stats(X, t.p1, [(0, 1, 2)])[0]
+    for link in ("logit", "linear"):
+        assert projection_information(cu, [0], link=link, weights="uniform") == pytest.approx(0, abs=1e-9)
+    cd = cell_stats(X, t.p1, [(0, 1, 2)], weights=probe_pmf("markov", 3, 0.7))[0]
+    assert projection_information(cd, [0], link="logit") > 1e-3

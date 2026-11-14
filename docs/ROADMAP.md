@@ -21,11 +21,32 @@ gates before it can say anything useful about language models:
 |---|---|---|---|
 | v0 | system test: the platform runs end to end | done; DR0 | [v0_findings.md](results/v0_findings.md) |
 | v1 | sharper known-answer tasks with uniform probes (gate 1) | done; DR1 | [v1_preregistration.md](results/v1_preregistration.md), [v1_results.md](results/v1_results.md) |
-| v2 | gate 2: θ vs η with referees. Part A: correlated inputs and constructed cases (CPU). Part B: induction heads in small transformers (pilot on the CPU server, then the GPU servers) | design draft | [v2_design_draft.md](results/v2_design_draft.md) |
+| v2 | gate 2: θ vs η with referees. Part A: correlated inputs and constructed cases (CPU). Part B: induction heads in small transformers (pilot on the CPU server, then the GPU servers) | A0, A1, A3 done; Part A pre-registered | [v2_design_draft.md](results/v2_design_draft.md), [v2a_preregistration.md](results/v2a_preregistration.md) |
 | v3 | depends on gate 2. Candidates: transformers at several sizes, Pythia checkpoints across scale, SAE features as variables | open | |
 | v4 | closer to real models: text-trained transformers, own GPT-2-small runs, pre-trained open models (gates 3 to 5) | open | |
 
 ## Change log
+
+### 14 November 2026 (later): Part A pre-registered
+
+* **What is fixed** ([v2a_preregistration.md](results/v2a_preregistration.md)):
+  * Measures: two links (θ: log-odds, logistic; η: means, least squares) at four references (marginal or
+    conditional table × training or uniform weights), as exact values from the network's output on every input
+    pattern.
+  * Runs: 320 Markov runs (16 coupling sets, chain and iid) and 120 parity runs on correlated bits, on new seeds.
+  * Tests: T1, does a measure of spurious structure track fragility under a distribution shift? T2, does a
+    measure's change between twin networks (data with and without one planted term) track how differently they
+    behave? 12 comparisons; a link wins only with a margin of 0.10 in Spearman ρ, a Holm-adjusted bootstrap
+    p < 0.05, both η values and the same sign with a squared-error outcome.
+* **Review.** An independent review of the first draft
+  ([v2_analysis/v2a_prereg_review.md](results/v2_analysis/v2a_prereg_review.md)) found that the pooled statistic
+  ranked configurations rather than networks, that the draft's η value grows without bound as the output saturates,
+  and that the registered seeds would have retrained DR1's networks. All three were fixed, with the other
+  corrections it asked for.
+* **Disclosure.** The review's pilot (seeds 0–3) previews the tests. It points to "η wins" under both the draft's
+  and the revised rules. This is disclosed in §0 of the pre-registration; the expectations there say so.
+* **Next.** The engineering of §6 (pattern storage, exact pmfs, correlated parity, seeds, offline analysis), a
+  pilot with non-confirmatory seeds, then the run on the CPU server.
 
 ### 14 November 2026: A0 and A1 done
 

@@ -227,7 +227,7 @@ def _weighted_logistic_loss(F: np.ndarray, w: np.ndarray, t: np.ndarray, *, tol:
 
 
 def projection_information(cs: CellStats, positions: Sequence[int], *, link: str = "logit",
-                           weights: str = "counts") -> float:
+                           weights: str = "counts", eta_value: str = "bounded") -> float:
     """Information (nats) added by the term χ_A, A = ``positions`` within the table of ``cs``, to a model of the
     output that contains every term χ_B with B ⊉ A (sky v2 Part A; the θ and η views at a fixed reference).
 
@@ -235,15 +235,22 @@ def projection_information(cs: CellStats, positions: Sequence[int], *, link: str
       cross-entropy. With ``weights="counts"`` and A = all inputs of the table it is the local (marginal) RI of
       the table; with more inputs in the table it is the conditional RI (:func:`conditional_ri_plugin`).
     * ``link="linear"`` (η): weighted least squares of the mean m = E[2ŷ − 1 | x] on the same features, scored by
-      the expected squared error of 2ŷ − 1, Σ_x w_x (1 − 2 m_x fit_x + fit_x²) (Bernoulli variance included). The
-      value is ½ log(RSS_lo / RSS_hi), the per-sample Gaussian likelihood-ratio, so 2n·value is asymptotically χ²_1
-      under H0 as for RI.
+      the expected squared error of 2ŷ − 1, Σ_x w_x (1 − 2 m_x fit_x + fit_x²) (Bernoulli variance included). Let
+      ΔRSS = RSS_lo − RSS_hi, the weighted mean-square reduction from adding χ_A (≤ 1).
+      ``eta_value="bounded"`` (default; v2a pre-registration, amendment of 14 Nov 2026) returns
+      ln 2 − h((1 + √ΔRSS)/2), the information of a binary channel with that mean effect; it is at most ln 2 and
+      for the top set at uniform weights equals ``eta_information(f_u(A))``. ``eta_value="gaussian"`` returns
+      ½ log(RSS_lo / RSS_hi), the per-sample Gaussian likelihood ratio (2n·value is asymptotically χ²_1 under H0);
+      it grows without bound as the output saturates, because RSS_hi includes the Bernoulli variance Σ w (1 − m²).
 
-    Zero sets: the logit value is 0 iff the cells' log-odds have no χ_A term once the supersets are excluded, and
-    the linear value is 0 iff the cell means have none. With every cell occupied both zero sets are properties of
-    the function, whatever the weights. ``weights="counts"`` weights the cells by their probe counts (data
-    probes, or an exact pmf passed as row weights); ``"uniform"`` weights every cell equally and needs every cell
-    occupied (NaN otherwise).
+    Zero sets. Both η values share one zero set (ΔRSS = 0). When A is every input of the table, the logit value
+    is 0 iff the cells' log-odds have no χ_A term and the linear value is 0 iff the cell means have none; with
+    every cell occupied these zero sets are properties of the function, whatever the weights. For a smaller A
+    (conditional references) only one direction holds: no term on A or on any superset gives 0. The converse
+    fails, and the zero set depends on the weights; for example, for a singleton {i} at uniform weights both
+    links are 0 iff the mean's uniform Walsh coefficient f_u({i}) is 0, even when the log-odds have a χ_i term.
+    ``weights="counts"`` weights the cells by their probe counts (data probes, or an exact pmf passed as row
+    weights); ``"uniform"`` weights every cell equally and needs every cell occupied (NaN otherwise).
     """
     k = cs.k
     pos = {int(a) for a in positions}
@@ -275,6 +282,11 @@ def projection_information(cs: CellStats, positions: Sequence[int], *, link: str
         r = m - F @ beta
         return base + float(np.sum(w * r * r))
     r_lo, r_hi = rss(lo), rss(hi)
+    if eta_value == "bounded":
+        d = min(1.0, max(0.0, r_lo - r_hi))
+        return float(eta_information(math.sqrt(d)))
+    if eta_value != "gaussian":
+        raise ValueError(f"unknown eta_value {eta_value!r}")
     if not (r_hi > 0):
         return math.nan
     return max(0.0, 0.5 * math.log(r_lo / r_hi))
