@@ -338,3 +338,9 @@ stored array is 256 × 60 per run.
   ρ_train = 0; the T2 identifiability rule; Q1–Q4 redefined; §1 statements corrected; bootstrap (joint seed
   resampling, 10,000 resamples), windows and numerics fixed; a squared-error sensitivity outcome; T1 and T2
   relabelled as behavioural referees; BLAS pinned in the analysis; parity training shortened to 2,000 steps.
+* **14 November 2026, implementation notes (before any confirmatory data; no definition changes).**
+  * The sampled values of θ_M_D and θ_C_D (§2, IC-2) are computed in the offline analysis from the stored
+    per-pattern probe counts and the stored log-odds; they are the same quantities as values computed in situ.
+  * The two parity planted sets are two sky regions, `parity-corr-k2` and `parity-corr-k3`, with the same seeds
+    200–219. Parity runs use 80 log-spaced evaluation steps, which give the 60 log-spaced checkpoints of §2.
+  * Configuration: `configs/sky_v2a.yaml`; start script: `ops/linux/start_v2a.sh` (no refinement, no follow-ups).
