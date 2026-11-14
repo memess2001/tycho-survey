@@ -213,6 +213,7 @@ def test_projection_information_eta_values_bounded_and_gaussian():
     assert gauss == pytest.approx(1.959, abs=1e-3)
     assert bounded == pytest.approx(float(eta_information(0.99)), abs=1e-12)
     assert bounded <= np.log(2)
+    from tycho.calibration.correlated import probe_pmf
     rng = np.random.default_rng(3)
     X = patterns(3)
     m = np.tanh(rng.normal(size=8) * 1.5)
@@ -220,10 +221,20 @@ def test_projection_information_eta_values_bounded_and_gaussian():
     fu = cs3.uniform_cell_walsh()[(0, 1, 2)]
     assert projection_information(cs3, [0, 1, 2], link="linear", weights="uniform") == pytest.approx(
         float(eta_information(fu)), abs=1e-10)
-    for wt in ("counts", "uniform"):
-        g = projection_information(cs3, [0, 1], link="linear", weights=wt, eta_value="gaussian")
-        b = projection_information(cs3, [0, 1], link="linear", weights=wt)
-        assert (g > 1e-12) == (b > 1e-12)
+    pm = probe_pmf("markov", 3, 0.7)
+    csd = cell_stats(X, (1 + m) / 2, [(0, 1, 2)], weights=pm)[0]
+    for c in (cs3, csd):
+        for A in ([0, 1], [0, 1, 2], [2]):
+            g = projection_information(c, A, link="linear", eta_value="gaussian")
+            b = projection_information(c, A, link="linear")
+            assert g > 1e-6 and b > 1e-6 and g >= b - 1e-12
+    chi = np.prod(2 * X - 1, axis=1)
+    m0 = 0.45 * (m - np.mean(m * chi) * chi)
+    assert np.all(np.abs(m0) < 1)
+    cs0 = cell_stats(X, (1 + m0) / 2, [(0, 1, 2)])[0]
+    for ev in ("bounded", "gaussian"):
+        assert projection_information(cs0, [0, 1, 2], link="linear", weights="uniform",
+                                      eta_value=ev) == pytest.approx(0, abs=1e-12)
 
 
 def test_projection_information_zero_set_of_a_non_top_set_depends_on_the_weights():
@@ -243,3 +254,30 @@ def test_projection_information_zero_set_of_a_non_top_set_depends_on_the_weights
         assert projection_information(cu, [0], link=link, weights="uniform") == pytest.approx(0, abs=1e-9)
     cd = cell_stats(X, t.p1, [(0, 1, 2)], weights=probe_pmf("markov", 3, 0.7))[0]
     assert projection_information(cd, [0], link="logit") > 1e-3
+
+
+def test_projection_information_singleton_zero_set_is_shared_by_the_links_at_c_d():
+    from scipy.optimize import brentq
+    from tycho.calibration.correlated import logit_teacher, patterns, probe_pmf
+    from tycho.ri.cells import projection_information
+    X = patterns(3)
+    pm = probe_pmf("markov", 3, 0.7)
+    s0 = 2 * X[:, 0] - 1
+    rest = X[:, 1] * 2 + X[:, 2]
+
+    def teacher(a):
+        return logit_teacher(3, {(0,): a, (0, 1): 0.8, (0, 1, 2): 0.6, (1,): 0.4, (2,): -0.3})
+
+    def score(a):
+        t = teacher(a).p1
+        cond = np.zeros_like(t)
+        for r in range(4):
+            sel = rest == r
+            cond[sel] = np.sum(pm[sel] * t[sel]) / np.sum(pm[sel])
+        return float(np.sum(pm * (t - cond) * s0))
+    astar = brentq(score, -5, 5)
+    assert abs(astar) > 0.05
+    cd = cell_stats(X, teacher(astar).p1, [(0, 1, 2)], weights=pm)[0]
+    for link, ev in (("logit", "bounded"), ("linear", "bounded"), ("linear", "gaussian")):
+        assert projection_information(cd, [0], link=link, eta_value=ev) == pytest.approx(0, abs=1e-9)
+    assert projection_information(cd, [0], link="logit", weights="uniform") > 1e-4

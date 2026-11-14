@@ -42,7 +42,10 @@ gates before it can say anything useful about language models:
   ([v2_analysis/v2a_prereg_review.md](results/v2_analysis/v2a_prereg_review.md)) found that the pooled statistic
   ranked configurations rather than networks, that the draft's η value grows without bound as the output saturates,
   and that the registered seeds would have retrained DR1's networks. All three were fixed, with the other
-  corrections it asked for.
+  corrections it asked for. A second agent then checked the revision; it found two instrument checks that would
+  have failed on correct data (sampling and slow mixing, not bugs), a bootstrap that ignored seeds shared across
+  configurations, and overstatements about the preview. Those were fixed too, and the seeds moved to 100–109
+  (Markov) and 200–219 (parity), clear of every DR1 seed.
 * **Disclosure.** The review's pilot (seeds 0–3) previews the tests. It points to "η wins" under both the draft's
   and the revised rules. This is disclosed in §0 of the pre-registration; the expectations there say so.
 * **Next.** The engineering of §6 (pattern storage, exact pmfs, correlated parity, seeds, offline analysis), a
