@@ -62,6 +62,7 @@ __all__ = [
     "conditional_ri_plugin",
     "gate",
     "parity_information",
+    "projection_information",
 ]
 
 
@@ -223,6 +224,60 @@ def _weighted_logistic_loss(F: np.ndarray, w: np.ndarray, t: np.ndarray, *, tol:
             break
         cur = new
     return cur
+
+
+def projection_information(cs: CellStats, positions: Sequence[int], *, link: str = "logit",
+                           weights: str = "counts") -> float:
+    """Information (nats) added by the term χ_A, A = ``positions`` within the table of ``cs``, to a model of the
+    output that contains every term χ_B with B ⊉ A (sky v2 Part A; the θ and η views at a fixed reference).
+
+    * ``link="logit"`` (θ): weighted logistic regression of ŷ on the features. The value is the drop in weighted
+      cross-entropy. With ``weights="counts"`` and A = all inputs of the table it is the local (marginal) RI of
+      the table; with more inputs in the table it is the conditional RI (:func:`conditional_ri_plugin`).
+    * ``link="linear"`` (η): weighted least squares of the mean m = E[2ŷ − 1 | x] on the same features, scored by
+      the expected squared error of 2ŷ − 1, Σ_x w_x (1 − 2 m_x fit_x + fit_x²) (Bernoulli variance included). The
+      value is ½ log(RSS_lo / RSS_hi), the per-sample Gaussian likelihood-ratio, so 2n·value is asymptotically χ²_1
+      under H0 as for RI.
+
+    Zero sets: the logit value is 0 iff the cells' log-odds have no χ_A term once the supersets are excluded, and
+    the linear value is 0 iff the cell means have none. With every cell occupied both zero sets are properties of
+    the function, whatever the weights. ``weights="counts"`` weights the cells by their probe counts (data
+    probes, or an exact pmf passed as row weights); ``"uniform"`` weights every cell equally and needs every cell
+    occupied (NaN otherwise).
+    """
+    k = cs.k
+    pos = {int(a) for a in positions}
+    keep = cs.counts > 0
+    if weights == "uniform":
+        if not np.all(keep):
+            return math.nan
+        w = np.full(1 << k, 1.0 / (1 << k))
+    elif weights == "counts":
+        w = cs.counts[keep] / cs.counts[keep].sum()
+    else:
+        raise ValueError(f"unknown weights {weights!r}")
+    m = np.clip(cs.sums[keep] / cs.counts[keep], -1.0, 1.0)
+    H = chi_matrix(k)[keep]
+    subs = subsets_of(k)
+    lo = [j for j, B in enumerate(subs) if not pos <= set(B)]
+    hi = lo + [subs.index(tuple(sorted(pos)))]
+    if link == "logit":
+        t = (1.0 + m) / 2.0
+        return max(0.0, _weighted_logistic_loss(H[:, lo], w, t) - _weighted_logistic_loss(H[:, hi], w, t))
+    if link != "linear":
+        raise ValueError(f"unknown link {link!r}")
+    base = float(np.sum(w * (1.0 - m * m)))
+
+    def rss(cols):
+        F = H[:, cols]
+        sw = np.sqrt(w)
+        beta, *_ = np.linalg.lstsq(F * sw[:, None], m * sw, rcond=None)
+        r = m - F @ beta
+        return base + float(np.sum(w * r * r))
+    r_lo, r_hi = rss(lo), rss(hi)
+    if not (r_hi > 0):
+        return math.nan
+    return max(0.0, 0.5 * math.log(r_lo / r_hi))
 
 
 def parity_information(cs: CellStats, *, uniform_cells: bool = False) -> float:

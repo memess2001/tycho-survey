@@ -171,3 +171,32 @@ def test_e8_cell_nulls_are_exactly_null():
     assert res["max_population_value"] < 1e-10
     for lab in ("cond_corr_order2", "cond_corr_order3", "cond_corr_order4", "cond_pair", "marg_pair"):
         assert res[lab]["count"] > 0
+
+
+def test_projection_information_matches_local_and_conditional_ri_and_has_link_specific_zero_sets():
+    from scipy.optimize import brentq
+    from tycho.calibration.correlated import logit_teacher, patterns, probe_pmf, uniform_pmf
+    from tycho.ri.cells import projection_information
+    t = logit_teacher(5, {(0,): .9, (1,): -.5, (0, 1): .6, (0, 1, 3): .4, (2,): .3})
+    pmf = probe_pmf("markov", 5, 0.7)
+    X = patterns(5)
+    csA = cell_stats(X, t.p1, [(0, 1)], weights=pmf)[0]
+    assert projection_information(csA, [0, 1]) == pytest.approx(local_ri_of([csA])[0], abs=1e-10)
+    csC = cell_stats(X, t.p1, [tuple(range(5))], weights=pmf)[0]
+    assert projection_information(csC, [0, 1]) == pytest.approx(
+        conditional_ri_plugin(X, t.p1, [0, 1], range(5), weights=pmf), abs=1e-10)
+
+    X3 = patterns(3)
+    chi = np.prod(2 * X3 - 1, axis=1)
+
+    def teacher(b):
+        return logit_teacher(3, {(0,): 1.0, (1,): 1.0, (2,): 1.0, (0, 1, 2): b})
+    bstar = brentq(lambda b: float(((2 * teacher(b).p1 - 1) * chi).mean()), -10, 10)
+    for pm in (uniform_pmf(3), probe_pmf("markov", 3, 0.8), probe_pmf("equicorr", 3, 0.6)):
+        for wt in ("counts", "uniform"):
+            th_null = cell_stats(X3, teacher(0.0).p1, [(0, 1, 2)], weights=pm)[0]
+            et_null = cell_stats(X3, teacher(bstar).p1, [(0, 1, 2)], weights=pm)[0]
+            assert projection_information(th_null, [0, 1, 2], link="logit", weights=wt) == pytest.approx(0, abs=1e-9)
+            assert projection_information(th_null, [0, 1, 2], link="linear", weights=wt) > 0.05
+            assert projection_information(et_null, [0, 1, 2], link="linear", weights=wt) == pytest.approx(0, abs=1e-9)
+            assert projection_information(et_null, [0, 1, 2], link="logit", weights=wt) > 0.003
