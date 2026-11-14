@@ -344,3 +344,21 @@ stored array is 256 × 60 per run.
   * The two parity planted sets are two sky regions, `parity-corr-k2` and `parity-corr-k3`, with the same seeds
     200–219. Parity runs use 80 log-spaced evaluation steps, which give the 60 log-spaced checkpoints of §2.
   * Configuration: `configs/sky_v2a.yaml`; start script: `ops/linux/start_v2a.sh` (no refinement, no follow-ups).
+* **14 November 2026, analysis code, pilot and two clarifications (before any confirmatory data; no definition
+  changes).**
+  * The offline analysis (`tycho/analysis/v2a.py`, `scripts/analysis_v2/v2a_analysis.py`) implements §1 to §5. It
+    lists every choice the text leaves open in 24 DECISIONS. A second agent checked it independently with its own
+    code. One defect was found and fixed: a logistic fit that stalled was not flagged. The record is
+    [v2_analysis/v2a_analysis_verification.md](v2_analysis/v2a_analysis_verification.md).
+  * Correction to §4: the C_D residual variance of "1:1.0 vs 1:1.0;1,2,3:1.0" is 0.0061 (exactly 0.00615), not
+    0.0062. The exclusions are unchanged.
+  * IC-1 compares every light-curve key except `wall_s`, the wall-clock time, which cannot be reproduced. It also
+    compares the pattern arrays. Replays use one torch thread, as the survey workers do.
+  * When a bug check fails or is skipped, the analysis withholds the decision (§3).
+  * **Pilot disclosure.** The pilot (32 objects on seeds 900–901, 2 seeds per configuration) was analysed end to
+    end with `--min-seeds 2` as a smoke test.
+    * Every instrument check passed: IC-1 to IC-4, and IC-5 in 32 of 32 runs.
+    * Its test statistics were seen. They point to "η wins": η won T1 Markov at M_U, C_D and C_U, and T2 at M_D
+      and C_U. The parity comparisons were value-dependent or ties, and there was no θ win.
+    * With 2 seeds these numbers are not evidence. They are disclosed because they were seen. No definition was
+      changed after seeing them.

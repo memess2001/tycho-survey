@@ -338,3 +338,22 @@ def test_stage1_object_end_to_end_on_a_synthetic_parity_object(tmp_path):
     assert runs[0].ic5_pass and runs[0].win is not None
     ic = v2a.ic_results(runs, None)
     assert ic["IC-2a"]["passed"] and ic["IC-4"]["passed_local_ri"]
+
+
+def test_stalled_logistic_fit_is_redone_with_the_reference_algorithm():
+    """Regression (independent verification, 14 Nov 2026): a near-singular Hessian made the batched Newton's line
+    search fail at a non-optimal point (θ_C_D 0.0303 instead of 0.0239) without a flag. The fit is now redone with
+    projection_information's algorithm and counted."""
+    from pathlib import Path
+
+    from tycho.ri.cells import projection_information
+
+    z = np.load(Path(__file__).parent / "data" / "v2a_stall_case.npz")
+    lo, pmf, A = z["logodds"], z["pmf_D"], tuple(int(a) for a in z["set"])
+    m = v2a.clipped_mean(lo[None, :])
+    stats: dict = {}
+    (cd,) = v2a.conditional_measures(m, [pmf], [A], stats=stats)
+    assert cd["theta"][0, 0] == pytest.approx(0.0239322379, abs=2e-9)
+    cs = cell_stats(pattern_bits(6), (1.0 + m[0]) / 2.0, [tuple(range(6))], weights=pmf)[0]
+    assert cd["theta"][0, 0] == pytest.approx(projection_information(cs, A), abs=1e-9)
+    assert stats["unconverged"] >= 1 and stats["improved"] >= 1 and stats["fits"] == 2

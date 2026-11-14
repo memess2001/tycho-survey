@@ -138,15 +138,17 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[IC-1] {res['object_id']} {res.get('region')}: {'pass' if res.get('passed') else 'FAIL'} "
                   f"{res.get('mismatches', res.get('error', ''))}", flush=True)
     t_pool = time.perf_counter() - t1
-    if stage1_errors:
-        print(f"{len(stage1_errors)} stage-1 failures; stopping", file=sys.stderr)
-        return 1
+    if stage1_errors:  # listed as not done in the output; the decision is withheld (instrument_checks)
+        print(f"{len(stage1_errors)} stage-1 failures: {[e['object_id'] for e in stage1_errors]}", file=sys.stderr)
     if args.stage1_only:
-        return 0
+        return 1 if stage1_errors else 0
 
     t2 = time.perf_counter()
+    skipped = [name for name, flag in (("IC-1", args.skip_replays), ("IC-2a", args.skip_ic2a),
+                                       ("IC-3", args.skip_ic3), ("IC-4 local_ri", args.skip_local_ri)) if flag]
     result = v2a.analyse(manifest, cache, B=args.bootstrap, min_seeds=args.min_seeds,
-                         replays=None if args.skip_replays else replays)
+                         replays=None if args.skip_replays else replays,
+                         stage1_failed={e["object_id"]: e["error"] for e in stage1_errors}, skipped_checks=skipped)
     t_stage2 = time.perf_counter() - t2
     result["run"] = {
         "manifest": str(manifest), "manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),

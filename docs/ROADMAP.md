@@ -21,11 +21,31 @@ gates before it can say anything useful about language models:
 |---|---|---|---|
 | v0 | system test: the platform runs end to end | done; DR0 | [v0_findings.md](results/v0_findings.md) |
 | v1 | sharper known-answer tasks with uniform probes (gate 1) | done; DR1 | [v1_preregistration.md](results/v1_preregistration.md), [v1_results.md](results/v1_results.md) |
-| v2 | gate 2: θ vs η with referees. Part A: correlated inputs and constructed cases (CPU). Part B: induction heads in small transformers (pilot on the CPU server, then the GPU servers) | A0, A1, A3 done; Part A pre-registered | [v2_design_draft.md](results/v2_design_draft.md), [v2a_preregistration.md](results/v2a_preregistration.md) |
+| v2 | gate 2: θ vs η with referees. Part A: correlated inputs and constructed cases (CPU). Part B: induction heads in small transformers (pilot on the CPU server, then the GPU servers) | A0, A1, A3 done; Part A pre-registered, built and piloted; ready to run | [v2_design_draft.md](results/v2_design_draft.md), [v2a_preregistration.md](results/v2a_preregistration.md) |
 | v3 | depends on gate 2. Candidates: transformers at several sizes, Pythia checkpoints across scale, SAE features as variables | open | |
 | v4 | closer to real models: text-trained transformers, own GPT-2-small runs, pre-trained open models (gates 3 to 5) | open | |
 
 ## Change log
+
+### 14 November 2026 (evening): Part A engineering done; ready to run
+
+* **Built** (pre-registration §6):
+  * pattern-mode observation, which stores the log-odds on every input pattern and the probe counts;
+  * exact distributions;
+  * correlated parity;
+  * seed offsets with data_seed = seed;
+  * the offline analysis;
+  * `configs/sky_v2a.yaml` (440 objects) and `ops/linux/start_v2a.sh`;
+  * pattern files in data releases.
+* **Pilot** (32 objects, seeds 900–901). Every instrument check passed and every run converged. Markov runs take
+  about 9 s and parity runs about 1.5 s on this machine.
+* **Verification.** An independent agent reproduced every pilot number to rounding level. It found one defect, a
+  logistic fit that could stall without a flag, which is now fixed
+  ([v2_analysis/v2a_analysis_verification.md](results/v2_analysis/v2a_analysis_verification.md)).
+* **Disclosure.** The pilot's smoke-test statistics (2 seeds) were seen and point to "η wins". They are recorded in
+  the pre-registration's amendments; no definition was changed after seeing them.
+* **Next.** On the CPU server: `git pull`, then `bash ops/linux/start_v2a.sh`. When all 440 objects are done, run
+  the manifest and analysis commands of [OPS_LINUX.md](OPS_LINUX.md).
 
 ### 14 November 2026 (later): Part A pre-registered
 

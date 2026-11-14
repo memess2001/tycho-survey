@@ -36,7 +36,7 @@ import json
 import math
 import os
 import time
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -64,8 +64,11 @@ DECISIONS: tuple[str, ...] = (
      'references). A warm-started fit that has not converged (gradient test or a full step improving by < 1e-16) '
      'within 50 iterations is redone from beta = 0 with the 100-iteration limit, as projection_information does '
      '(on pilot data a warm start of a lo model stalled where beta = 0 converges). When the backtracking finds no '
-     'decrease down to a <= 1e-8 the fit stops at the current point (projection_information takes that tiny step '
-     'and continues). At the marginal references the hi model is saturated and its minimum, sum_x w H(t_x), is '
+     'decrease down to a <= 1e-8 the batched fit stops. Every fit not converged by then (iteration limit or failed '
+     "backtracking) is redone with projection_information's own algorithm (tycho.ri.cells._weighted_logistic_loss "
+     'from beta = 0) and the lower loss is kept; the counts are stored per object (fit_stats) and reported per '
+     'region (independent verification, 14 Nov 2026: a near-singular Hessian had stalled a fit at a non-optimal '
+     'point). At the marginal references the hi model is saturated and its minimum, sum_x w H(t_x), is '
      'computed in closed form.'),
     ("Sampled theta_M_D and theta_C_D: the runner stores per-pattern probe counts (probe seed (seed, 'ri', step)),"
      ' not sampled values. Stage 1 computes them with the exact-value code using the probe counts as cell weights.'
@@ -94,7 +97,8 @@ DECISIONS: tuple[str, ...] = (
      ' iid Markov runs and the parity rho = 0 runs; the local_ri check runs at every set and checkpoint of every '
      'run, on the table P(x_A, yhat) = CellStats(counts = D marginal, sums = D marginal of pmf*m).table().'),
     ("IC-5: the parity prediction is output 1 iff log-odds > 0 (argmax, ties to class 0); 'Markov runs' and "
-     "'parity runs' in the pass-rate rule are all done runs of each kind."),
+     "'parity runs' in the pass-rate rule are all runs of each kind in the manifest; a run that did not finish, or "
+     "whose stage 1 failed, counts as failing."),
     # ---------------------------------------------------------------- tests (§4)
     ("Support (for 'spurious'): Markov, the union of the lags of every planted coupling with beta != 0 (4-lag "
      "couplings included), as inputs lag - 1; parity, the planted set task_cfg['support']."),
@@ -105,7 +109,7 @@ DECISIONS: tuple[str, ...] = (
      "resample, possibly none); none of these occurred unless reported under 'degenerate'."),
     ('Bootstrap: for each family (T1 Markov, T1 parity, T2) a fresh numpy default_rng(20261114) draws a B x '
      'n_seeds matrix of seed indices; the same resamples serve the four references and both eta values of the '
-     "family. Seed labels are the sorted distinct seeds of the family's runs in the manifest. A resampled seed "
+     "family. Seed labels are the sorted distinct seeds of the family's done runs. A resampled seed "
      'contributes all window points of its (IC-5-passing) run in every configuration, or of both twins of its '
      'pair; resampled duplicates enter the Spearman as tied copies (weighted mid-ranks, weighted Pearson of '
      'ranks). Bootstrap SD is the sample SD (ddof = 1) of Delta*, the CI the 2.5 and 97.5 % percentiles.'),
@@ -143,7 +147,7 @@ DECISIONS: tuple[str, ...] = (
 __doc__ = (__doc__ or "") + "\nDECISIONS\n---------\n" + "\n".join(f"{i}. {d}" for i, d in enumerate(DECISIONS, 1))
 
 #: Bump when stage-1 outputs change (invalidates caches).
-STAGE1_VERSION = "v2a-stage1-1"
+STAGE1_VERSION = "v2a-stage1-2"
 REFS = ("M_D", "M_U", "C_D", "C_U")
 VALUES = ("theta", "eta_b", "eta_g")
 ETA_VALUES = ("eta_b", "eta_g")
@@ -308,17 +312,25 @@ def _newton(k: int, cols: np.ndarray, W: np.ndarray, T: np.ndarray, beta: np.nda
 
 
 def _fit(k: int, cols: np.ndarray, W: np.ndarray, T: np.ndarray, warm: np.ndarray, *,
-         chunk_elems: int = 4_000_000, warm_max_iter: int = 50) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+         chunk_elems: int = 4_000_000, warm_max_iter: int = 50, stats: dict | None = None
+         ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Minimum cross-entropy of the logistic model on ``cols``. Each problem starts from the warm start when it has
     a lower loss than β = 0; a warm-started fit that does not converge within ``warm_max_iter`` iterations is redone
     from β = 0 with projection_information's limit of 100 iterations (so the result is never worse than the
-    library's own start). Chunked to bound the Hessian stack. Returns (loss, β, iterations)."""
+    library's own start). A problem that still has not converged (iteration limit, or a backtracking search that
+    found no decrease, e.g. with a near-singular Hessian) is redone with ``tycho.ri.cells._weighted_logistic_loss``,
+    the algorithm of projection_information, and the lower loss is kept (the β returned for it stays the batched
+    one). ``stats`` (optional dict) accumulates ``fits``, ``unconverged`` (problems redone that way) and
+    ``improved`` (redone problems whose loss the reference lowered by more than 1e-15). Chunked to bound the
+    Hessian stack. Returns (loss, β, iterations)."""
     cols = np.asarray(cols, dtype=np.int64)
     S, p = warm.shape
     zero = np.zeros_like(warm)
     use = _ce(k, cols, warm, W, T) < _ce(k, cols, zero, W, T)
     size = max(1, chunk_elems // max(1, p * p))
     out_l, out_b, out_i = np.empty(S), np.empty((S, p)), np.zeros(S, np.int64)
+
+    converged = np.zeros(S, bool)
 
     def run(idx, start, max_iter):
         conv = np.zeros(idx.size, bool)
@@ -327,6 +339,7 @@ def _fit(k: int, cols: np.ndarray, W: np.ndarray, T: np.ndarray, warm: np.ndarra
             out_l[sl], out_b[sl], it, conv[s0:s0 + size] = _newton(k, cols, W[sl], T[sl], start[sl],
                                                                     max_iter=max_iter)
             out_i[sl] += it
+        converged[idx] = conv
         return conv
 
     warm_idx = np.flatnonzero(use)
@@ -338,6 +351,22 @@ def _fit(k: int, cols: np.ndarray, W: np.ndarray, T: np.ndarray, warm: np.ndarra
     zero_idx = np.flatnonzero(~use)
     if zero_idx.size:
         run(zero_idx, zero, 100)
+    bad = np.flatnonzero(~converged)
+    improved = 0
+    if bad.size:
+        from tycho.ri.cells import _weighted_logistic_loss
+
+        F = walsh_matrix(k)[:, cols]
+        for s_ in bad:
+            keep = W[s_] > 0
+            ref = _weighted_logistic_loss(F[keep], W[s_][keep], T[s_][keep])
+            if ref < out_l[s_] - 1e-15:
+                out_l[s_] = ref
+                improved += 1
+    if stats is not None:
+        stats["fits"] = stats.get("fits", 0) + int(S)
+        stats["unconverged"] = stats.get("unconverged", 0) + int(bad.size)
+        stats["improved"] = stats.get("improved", 0) + improved
     return out_l, out_b, out_i
 
 
@@ -360,8 +389,15 @@ def _linear(F_lo: np.ndarray, f_a: np.ndarray, w: np.ndarray, M: np.ndarray) -> 
     va = float(ra @ ra)
     base = w[keep] @ (1.0 - M[keep] ** 2)
     rss_lo = base + np.sum(Rm * Rm, axis=0)
-    drss = (ra @ Rm) ** 2 / va if va > 0 else np.zeros(M.shape[1])
-    return drss, rss_lo, rss_lo - drss, va
+    if va > 0:
+        proj = (ra @ Rm) / va
+        drss = proj ** 2 * va
+        Rh = Rm - ra[:, None] * proj[None, :]
+        rss_hi = base + np.sum(Rh * Rh, axis=0)  # direct, not RSS_lo − ΔRSS (precision when saturated)
+    else:
+        drss = np.zeros(M.shape[1])
+        rss_hi = rss_lo.copy()
+    return drss, rss_lo, rss_hi, va
 
 
 def _eta_values(drss: np.ndarray, rss_lo: np.ndarray, rss_hi: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -408,7 +444,7 @@ def marginal_tables(m: np.ndarray, w: np.ndarray, sets: Sequence[Sequence[int]])
 
 
 def marginal_measures(m: np.ndarray, weightings: Sequence[np.ndarray], sets: Sequence[Sequence[int]], *,
-                      linear: Sequence[bool] | None = None) -> list[dict[str, np.ndarray]]:
+                      linear: Sequence[bool] | None = None, stats: dict | None = None) -> list[dict[str, np.ndarray]]:
     """θ (and, where ``linear``, both η values and the residual variance of χ_A) at a marginal reference, for each
     weighting: a pmf (2^d,) shared by all checkpoints, or per-checkpoint weights (checkpoints, 2^d) such as probe
     counts (θ only). ``m``: (checkpoints, 2^d) clipped means. Returns one dict per weighting with arrays
@@ -435,7 +471,7 @@ def marginal_measures(m: np.ndarray, weightings: Sequence[np.ndarray], sets: Seq
             loss_hi = np.sum(W * (np.logaddexp(0.0, L) - T * L), axis=2)
             beta_sat = walsh_coefficients(L)
             l_lo, _, it = _fit(k, lo_cols, W.reshape(-1, nc), T.reshape(-1, nc), beta_sat[..., lo_cols].reshape(
-                -1, nc - 1))
+                -1, nc - 1), stats=stats)
             o["theta"][:, idx] = np.maximum(0.0, l_lo.reshape(n_ck, len(idx)) - loss_hi)
             o["iters"][idx] = it.reshape(n_ck, len(idx)).mean(axis=0)
             if lin:
@@ -449,7 +485,8 @@ def marginal_measures(m: np.ndarray, weightings: Sequence[np.ndarray], sets: Seq
 
 
 def conditional_measures(m: np.ndarray, weightings: Sequence[np.ndarray], sets: Sequence[Sequence[int]], *,
-                         linear: Sequence[bool] | None = None) -> list[dict[str, np.ndarray]]:
+                         linear: Sequence[bool] | None = None, stats: dict | None = None
+                         ) -> list[dict[str, np.ndarray]]:
     """As :func:`marginal_measures` at a conditional reference (the full table of all inputs, positions = A)."""
     m = np.atleast_2d(m)
     n_ck, n = m.shape
@@ -471,8 +508,8 @@ def conditional_measures(m: np.ndarray, weightings: Sequence[np.ndarray], sets: 
         lo_cols = masks[(masks & a) != a]
         hi_cols = np.sort(np.append(lo_cols, a))
         lo_in_hi = np.flatnonzero(hi_cols != a)
-        l_hi, b_hi, it_hi = _fit(d, hi_cols, Ws, T, beta_full[:, hi_cols])
-        l_lo, _, it_lo = _fit(d, lo_cols, Ws, T, b_hi[:, lo_in_hi])
+        l_hi, b_hi, it_hi = _fit(d, hi_cols, Ws, T, beta_full[:, hi_cols], stats=stats)
+        l_lo, _, it_lo = _fit(d, lo_cols, Ws, T, b_hi[:, lo_in_hi], stats=stats)
         th = np.maximum(0.0, l_lo - l_hi)
         for i, (o, w, lin) in enumerate(zip(out, weightings, linear, strict=True)):
             o["theta"][:, j] = th[i * n_ck:(i + 1) * n_ck]
@@ -616,9 +653,12 @@ def object_measures(logodds: np.ndarray, pmf_D: np.ndarray, pmf_U: np.ndarray, c
     if counts is not None:
         ws.append(np.asarray(counts, dtype=np.float64))
         lin.append(False)
-    M = marginal_measures(m, ws, sets, linear=lin)
-    C = conditional_measures(m, ws, sets, linear=lin)
+    stats: dict = {}
+    M = marginal_measures(m, ws, sets, linear=lin, stats=stats)
+    C = conditional_measures(m, ws, sets, linear=lin, stats=stats)
     out = {v: np.stack([M[0][v], M[1][v], C[0][v], C[1][v]]) for v in VALUES}
+    out["fit_stats"] = np.array([stats.get("fits", 0), stats.get("unconverged", 0), stats.get("improved", 0)],
+                                dtype=np.int64)
     out["iters"] = np.stack([M[0]["iters"], M[1]["iters"], C[0]["iters"], C[1]["iters"]])
     if counts is not None:
         out["theta_sampled"] = np.stack([M[2]["theta"], C[2]["theta"]])
@@ -686,6 +726,7 @@ def stage1_object(rec: dict, cache_dir: str | os.PathLike, manifest: str | os.Pa
         out[v] = meas[v]
     out["theta_sampled"] = meas["theta_sampled"]
     out["iters"] = meas["iters"]
+    out["fit_stats"] = meas["fit_stats"]  # logistic fits: total, redone with the reference algorithm, improved
 
     # IC-4, second part: θ_M_D against tycho.ri.refined.local_ri of the exact marginal.
     t0 = time.perf_counter()
@@ -1396,8 +1437,10 @@ def apply_decision(comps: list[dict]) -> dict:
 
 
 # ================================================================================================ instrument checks
-def ic_results(runs: Sequence[Run], replays: Sequence[dict] | None) -> dict:
-    """IC-1 to IC-5 (§3)."""
+def ic_results(runs: Sequence[Run], replays: Sequence[dict] | None,
+               not_done: Sequence[dict] = ()) -> dict:
+    """IC-1 to IC-5 (§3). ``not_done``: manifest records without usable stage-1 output (not done, or stage 1
+    failed); they count as IC-5 failures in the pass shares."""
     ic: dict[str, Any] = {}
     # IC-1
     if replays is None:
@@ -1494,9 +1537,11 @@ def ic_results(runs: Sequence[Run], replays: Sequence[dict] | None) -> dict:
     share = {}
     for task, need in IC5_SHARE.items():
         tr = [r for r in runs if r.task == task]
-        if tr:
-            s = float(np.mean([r.ic5_pass for r in tr]))
-            share[task] = {"n": len(tr), "n_passed": int(sum(r.ic5_pass for r in tr)), "share": s, "required": need,
+        nd = sum(1 for x in not_done if x.get("task") == task)
+        if tr or nd:
+            n_pass = int(sum(r.ic5_pass for r in tr))
+            s = n_pass / (len(tr) + nd)
+            share[task] = {"n": len(tr) + nd, "n_not_done": nd, "n_passed": n_pass, "share": s, "required": need,
                            "shortfall": s < need}
     ic["IC-5"] = {"criterion": {"markov_lang": f"final KL under D < {IC5_KL}",
                                 "sparse_parity": f"final accuracy under D >= {IC5_ACC}"},
@@ -1699,16 +1744,34 @@ def timing_summary(runs: Sequence[Run]) -> dict:
                        "ic4_s_per_object_mean": float(np.mean([float(r.z["seconds_ic4"]) for r in rr])),
                        "ic3_s_per_object_mean": float(np.mean([float(r.z["seconds_ic3"]) for r in rr])),
                        "mean_newton_iterations_by_ref": dict(zip(
-                           REFS, np.mean([r.z["iters"].mean(axis=1) for r in rr], axis=0).tolist(), strict=True))}
+                           REFS, np.mean([r.z["iters"].mean(axis=1) for r in rr], axis=0).tolist(), strict=True)),
+                       "logistic_fits": dict(zip(("total", "redone_with_reference", "improved_by_reference"),
+                                                 np.sum([r.z["fit_stats"] for r in rr], axis=0).tolist(),
+                                                 strict=True))}
     return out
 
 
+def _record_config(rec: dict) -> str:
+    """The configuration name of a manifest record (as :attr:`Run.config`)."""
+    if rec["task"] == "markov_lang":
+        return f"{rec['task_cfg']['couplings']} | {rec['task_cfg'].get('train_context', 'chain')}"
+    return f"{rec['region']} rho={float(rec['task_cfg'].get('rho', 0.0)):g}"
+
+
 def analyse(manifest: str | os.PathLike, cache_dir: str | os.PathLike, *, B: int = N_BOOT,
-            min_seeds: int = MIN_SEEDS, replays: Sequence[dict] | None = None) -> dict:
-    """Stage 2 on the stage-1 caches of the done objects of ``manifest``."""
+            min_seeds: int = MIN_SEEDS, replays: Sequence[dict] | None = None,
+            stage1_failed: Mapping[str, str] | None = None, skipped_checks: Sequence[str] = ()) -> dict:
+    """Stage 2 on the stage-1 caches of the done objects of ``manifest``. ``stage1_failed`` maps object ids whose
+    stage 1 failed (e.g. a missing or unreadable patterns file) to the error; they are treated as not done, listed,
+    and withhold the decision. ``skipped_checks`` names instrument checks that were skipped (they withhold it too)."""
     manifest = Path(manifest)
     t0 = time.perf_counter()
+    stage1_failed = dict(stage1_failed or {})
     records = load_manifest(manifest)
+    for rec in records:
+        if rec["object_id"] in stage1_failed and rec.get("status") == "done":
+            rec["status"] = "stage1_failed"
+            rec["stage1_error"] = stage1_failed[rec["object_id"]]
     runs = build_runs(records, cache_dir)
     fam_seeds = {
         "T1_markov": sorted({r.seed for r in runs if r.task == "markov_lang" and r.context == "chain"}),
@@ -1728,9 +1791,18 @@ def analyse(manifest: str | os.PathLike, cache_dir: str | os.PathLike, *, B: int
         for ref in ("M_D", "C_D"):
             if f"prereg_{ref}" in row:
                 row[f"match_{ref}"] = prereg_matches(row[ref], row[f"prereg_{ref}"])
+    not_done = [{"object_id": r["object_id"], "region": r["region"], "task": r["task"],
+                 "configuration": _record_config(r), "seed": r.get("seed"), "status": r.get("status"),
+                 **({"stage1_error": r["stage1_error"].strip().splitlines()[-1]} if r.get("stage1_error") else {})}
+                for r in records if r.get("status") != "done"]
+    t1_names = {"T1_markov": {_record_config(r) for r in records if r["task"] == "markov_lang"
+                              and r["task_cfg"].get("train_context", "chain") == "chain"},
+                "T1_parity": {_record_config(r) for r in records if r["task"] == "sparse_parity"
+                              and float(r["task_cfg"].get("rho", 0.0)) in (0.5, 0.8)}}
     exclusions = {
-        "not_done": [{"object_id": r["object_id"], "region": r["region"], "status": r.get("status")}
-                     for r in records if r.get("status") != "done"],
+        "not_done": not_done,
+        "configurations_without_done_runs": {fam: sorted(names - {c.name for c in cfgs[fam]})
+                                             for fam, names in t1_names.items()},
         "ic5_failures": [{"object_id": r.oid, "configuration": r.config, "seed": r.seed, "value": r.ic5_value}
                          for r in runs if not r.ic5_pass],
     }
@@ -1747,7 +1819,7 @@ def analyse(manifest: str | os.PathLike, cache_dir: str | os.PathLike, *, B: int
                      "alpha": ALPHA, "presence": PRESENCE, "divergence_high": DIVERGE,
                      "identifiability_min": IDENT_MIN, "seed_labels": fam_seeds},
         "n_objects": {"manifest": len(records), "done": len(runs)},
-        "instrument_checks": ic_results(runs, replays),
+        "instrument_checks": ic_results(runs, replays, not_done),
         "identifiability": ident,
         "t2_consistency_checks": t2_checks,
         "comparisons": comps,
@@ -1757,6 +1829,14 @@ def analyse(manifest: str | os.PathLike, cache_dir: str | os.PathLike, *, B: int
         "timing_stage1": timing_summary(runs),
         "DECISIONS": list(DECISIONS),
     }
+    bug = dict(out["instrument_checks"]["bug_checks_passed"])
+    bug["stage1_complete"] = not stage1_failed
+    out["instrument_checks"]["bug_checks_passed"] = bug
+    blocked = sorted(k for k, v in bug.items() if v is not True) + sorted(f"{k} (skipped)" for k in skipped_checks)
+    out["decision"]["outcome_if_checks_pass"] = out["decision"]["outcome"]
+    out["decision"]["withheld_because"] = blocked
+    if blocked:  # §3: a failed bug check means a bug, and the tests wait for the fix
+        out["decision"]["outcome"] = "withheld: instrument checks " + ", ".join(blocked)
     out["timing_stage2_s"] = time.perf_counter() - t0
     return out
 
