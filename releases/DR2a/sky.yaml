@@ -1,0 +1,59 @@
+# Sky v2, Part A of the Tycho survey: gate 2 on trained networks with correlated inputs.
+# Design and the criteria fixed before the run: docs/results/v2a_preregistration.md (binding). Every object is observed
+# in pattern mode: at each of 60 log-spaced checkpoints the network's float64 log-odds on every input pattern and the
+# per-pattern counts of probes drawn from its training distribution D (tycho.tasks.patterns). All measures are then
+# exact, computed offline (scripts/analysis_v2/v2a_analysis.py). Run with: bash ops/linux/start_v2a.sh
+version: sky-v2a
+description: >
+  Part A of sky v2. Markov language (v1 settings) with 16 coupling sets, four of them saturated, trained on chain and
+  iid contexts; sparse parity on 8 Markov-chain bits with planted sets {2,5} and {1,3,6} at three input correlations.
+  New seeds (Markov 100-109, parity 200-219) with data_seed equal to the seed. No refinement and no follow-ups.
+regions:
+  # ---------------------------------------------------------------- Markov language: 16 coupling sets x 2 contexts
+  - name: markov-v2
+    task: markov_lang
+    seeds: 10
+    seed_base: 100
+    data_seed_from_seed: true
+    priority: 1.0
+    ri_policy: always
+    ri: {mode: patterns, n_probe: 8192, n_points: 60}
+    fixed: {window: 6, width: 128, depth: 1, n_tokens: 200000, shift_rho: -0.5, exact_metrics: true}
+    train: {steps: 30000, batch_size: 64, optimizer: adam, lr: 0.001, n_log_evals: 80, n_lin_evals: 0}
+    knobs:
+      couplings:
+        kind: categorical
+        values: ["1:1.0", "1,3:1.0", "1,2,4:1.0", "1,2,3,5:1.0",
+                 "1:0.5", "1,3:0.5", "1,2,4:0.5", "1,2,3,5:0.5",
+                 "1,3:0.8", "1:1.0;1,3:0.8", "1,2,3:1.0", "1:1.0;1,2,3:1.0",
+                 "1:2.0", "1,2,3:2.0", "1:2.0;1,3:1.6", "1:2.0;1,2,3:2.0"]
+      train_context: {values: [chain, iid], kind: categorical}
+  # ---------------------------------------------------------------- correlated sparse parity: k = 2 and k = 3
+  # Bits 0-7 along a stationary binary Markov chain with P(x_{i+1} = x_i) = (1 + rho)/2; y = 1 iff the product of
+  # the planted bits is -1. Same seeds 200-219 in both regions.
+  - name: parity-corr-k2
+    task: sparse_parity
+    seeds: 20
+    seed_base: 200
+    data_seed_from_seed: true
+    priority: 1.0
+    ri_policy: always
+    ri: {mode: patterns, n_probe: 4096, n_points: 60}
+    fixed: {n: 8, k: 2, support: [2, 5], width: 256, depth: 1, act: relu, test_size: 2048, shift_rho: -0.5,
+            exact_metrics: true}
+    train: {steps: 2000, batch_size: 32, optimizer: sgd, momentum: 0.0, lr: 0.1, n_log_evals: 80, n_lin_evals: 0}
+    knobs:
+      rho: {values: [0.0, 0.5, 0.8], kind: categorical}
+  - name: parity-corr-k3
+    task: sparse_parity
+    seeds: 20
+    seed_base: 200
+    data_seed_from_seed: true
+    priority: 1.0
+    ri_policy: always
+    ri: {mode: patterns, n_probe: 4096, n_points: 60}
+    fixed: {n: 8, k: 3, support: [1, 3, 6], width: 256, depth: 1, act: relu, test_size: 2048, shift_rho: -0.5,
+            exact_metrics: true}
+    train: {steps: 2000, batch_size: 32, optimizer: sgd, momentum: 0.0, lr: 0.1, n_log_evals: 80, n_lin_evals: 0}
+    knobs:
+      rho: {values: [0.0, 0.5, 0.8], kind: categorical}
