@@ -21,11 +21,28 @@ gates before it can say anything useful about language models:
 |---|---|---|---|
 | v0 | system test: the platform runs end to end | done; DR0 | [v0_findings.md](results/v0_findings.md) |
 | v1 | sharper known-answer tasks with uniform probes (gate 1) | done; DR1 | [v1_preregistration.md](results/v1_preregistration.md), [v1_results.md](results/v1_results.md) |
-| v2 | gate 2: θ vs η with referees. Part A: correlated inputs and constructed cases (CPU). Part B: induction heads in small transformers (pilot on the CPU server, then the GPU servers) | A0, A1, A3 done; Part A run: "η wins" (1 of 12; see v2a_results.md) | [v2_design_draft.md](results/v2_design_draft.md), [v2a_preregistration.md](results/v2a_preregistration.md), [v2a_results.md](results/v2a_results.md) |
+| v2 | gate 2: θ vs η with referees. Part A: correlated inputs and constructed cases (CPU). Part B: induction heads in small transformers (pilot on the CPU server, then the GPU servers) | A0, A1, A3 done; Part A run: "η wins" (1 of 12; see v2a_results.md); Part B pilot ready | [v2_design_draft.md](results/v2_design_draft.md), [v2a_preregistration.md](results/v2a_preregistration.md), [v2a_results.md](results/v2a_results.md) |
 | v3 | depends on gate 2. Candidates: transformers at several sizes, Pythia checkpoints across scale, SAE features as variables | open | |
 | v4 | closer to real models: text-trained transformers, own GPT-2-small runs, pre-trained open models (gates 3 to 5) | open | |
 
 ## Change log
+
+### 15 November 2026 (later): Part B started, pilot ready
+
+* **Plan** ([v2b_pilot_plan.md](results/v2b_pilot_plan.md)). Part B studies induction heads in small
+  attention-only transformers. Following Part A's decision, η is the detector and RI its descriptive companion.
+  The variables are head-ablation patterns, all 2^H enumerated, as in Part A's pattern mode. The mechanism referee
+  is the head roles read from attention patterns, which neither view uses.
+* **Probes on this machine** (to be disclosed in the Part B pre-registration):
+  * A fixed repeat offset lets one positional head solve the task, so the repeat now has a random length and
+    position.
+  * Whether the two-layer circuit (previous-token heads plus induction heads) forms depends on the seed and on the
+    minimum repeat length. Some runs stall in a positional heuristic.
+  * In one formed circuit, η's top head pair was a previous-token head with an induction head; θ's top pairs were
+    redundant induction heads.
+* **Built.** The induction task, head masks and attention maps in TinyGPT, `configs/sky_v2b_pilot.yaml` (48
+  objects) and `ops/linux/start_v2b_pilot.sh`.
+* **Next.** The pilot on the CPU server, then the Part B pre-registration.
 
 ### 15 November 2026: Part A run; "η wins" by the pre-registered rule
 

@@ -45,6 +45,25 @@ Adam lr 1e-3, batch 32, one seed. Scratch code, not in the repository.
 
    This is one model and one seed, so it is a preview and not a result.
 
+5. **Whether the circuit forms depends on the seed and the data.** A first full-size run under the runner showed
+   this; it used d_model 64, 4 heads per layer, minimum repeat 12, random start and seed 300.
+   * By 6,000 steps it had not formed the circuit. No head attended to t − 1; the layer-0 heads attended about 12
+     positions back, a positional heuristic tied to the minimum repeat length. The loss on repeated tokens stalled
+     near 1.1.
+   * Four variants, one seed each, 8,000 to 24,000 steps:
+
+     | variant | outcome |
+     |---|---|
+     | minimum repeat 4 | the circuit formed by step ~6,000: two previous-token heads at 0.97 and 0.99, three induction heads at 0.93 |
+     | minimum repeat 12, another seed | formed by step 3,000–6,000 |
+     | a fixed start | formed fastest |
+     | vocabulary 256 | stalled in the non-circuit solution (loss 1.4) |
+
+   * So the pilot maps the formation rate and its timing across seeds, the minimum repeat length and the head
+     count, and trains longer.
+6. **Cost.** On one core of this machine, a 2-layer, 8-head run takes about 5 minutes for 12,000 steps. The 256
+   ablation patterns take about 13 s per checkpoint, so about 9 minutes for 40 checkpoints.
+
 ## 3. Pilot design
 
 * **Task** (`induction`, new): uniform random tokens with one repeated segment per sequence.
@@ -55,8 +74,12 @@ Adam lr 1e-3, batch 32, one seed. Scratch code, not in the repository.
     * repeat length range;
     * the fraction of sequences that contain a repeat (0 is the no-repeat control);
     * later, a global bigram background, so that in-weights and in-context predictions can conflict.
-* **Models.** TinyGPT, attention-only to begin with; layers {1 (control), 2, 3}, heads {2, 4}, d_model {32, 64}.
-  At most 12 heads in total, so that every ablation pattern can be enumerated.
+* **Models.** Attention-only TinyGPT with d_model 64; layers {1 (control), 2}, heads per layer {2, 4}.
+  * At most 8 heads in total, so that the 2^H ablation patterns stay cheap.
+  * Minimum repeat length {4, 12}, as a knob.
+  * The no-repeat control (p_repeat = 0).
+  * 12,000 steps; 3 seeds (300–302).
+  * 48 objects: `configs/sky_v2b_pilot.yaml`.
 * **Variables.** One binary variable per head (kept or ablated), and the output "the model predicts the repeated
   token" (soft: the mean probability of the correct token over a fixed probe set of repeated positions).
   * The probe distribution over ablation patterns is ours to choose: uniform here, so D = U. Correlated designs
@@ -67,11 +90,8 @@ Adam lr 1e-3, batch 32, one seed. Scratch code, not in the repository.
   * Loss on repeated and on other positions (their difference is the in-context-learning score).
   * Per head: the previous-token score and the induction score. These are the R1 reference, measured from
     attention patterns, which neither view uses.
-* **Pilot size.** About 3 seeds per configuration, 5,000 to 10,000 steps, 60 checkpoints. Estimated CPU cost:
-  * training about 2 minutes per run;
-  * the 2^H ablation passes per checkpoint about 1 to 3 seconds.
-
-  So the pilot needs minutes on the 88-core server.
+* **Pilot size.** 48 objects at 40 checkpoints each, about 6 CPU hours in total. That is 10 to 20 minutes of wall
+  time on the 88-core server; the longest single run (8 heads) takes about 15 minutes.
 
 ## 4. Engineering
 
