@@ -31,11 +31,14 @@ gates before it can say anything useful about language models:
 
 * **Run.** All 440 objects done on the CPU server in about 3 hours of wall time. The analysis took 7 minutes.
   Every instrument check passed.
-* **Result** ([v2a_results.md](results/v2a_results.md); pending independent verification from DR2a):
+* **Result** ([v2a_results.md](results/v2a_results.md); verified independently from the data release DR2a, which
+  reproduced every number and label):
   * η wins 1 of 12 comparisons (T2 at C_U) and θ none. Four comparisons are value-dependent and seven are ties.
-  * The two views are largely interchangeable on these referees. They part ways only where outputs saturate
-    (the {1, 2, 3} chain configurations, "1:2.0", parity at ρ_train = 0.8), and there behaviour sides with η.
-  * The single win rests mostly on one twin set.
+  * The two views are largely interchangeable on these referees. Large gaps occur only where outputs saturate (the
+    {1, 2, 3} chain configurations, "1:2.0", parity at ρ_train = 0.8). There θ is mostly, but not always, the worse
+    of the two.
+  * The single win is weak. It rests mostly on one twin set, in which θ's values stay below the presence floor and
+    the added term is close to unidentifiable.
   * Q1, Q3 and Q4 hold. Q2 (the divergence law of A1) fails on trained networks.
 * **Consequence (decision table).** Gate 2 is not passed. Part B uses the η view as its detector, with RI as a
   descriptive companion. Part B's pre-registration needs a referee that intervenes on the network.
