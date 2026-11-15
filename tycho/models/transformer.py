@@ -10,10 +10,17 @@ At these sizes the cost is negligible, the CPU computation is deterministic, and
 
 Initialisation: all ``Linear`` and ``Embedding`` weights N(0, 0.02²) (:data:`INIT_STD`), biases 0, LayerNorm
 weight 1 / bias 0. ``torch.manual_seed`` right before construction makes the initial function deterministic.
+
+Head ablation and attention maps (sky v2 Part B): :meth:`TinyGPT.head_mask` is a context manager that scales each
+head's output (before the output projection) by a per-head factor, 0 for zero ablation; :meth:`TinyGPT.attention_maps`
+returns every layer's attention probabilities. Both are plain attributes, not parameters or buffers, so they leave
+the state dict and training untouched; without a mask the forward pass is unchanged.
 """
 from __future__ import annotations
 
+import contextlib
 import math
+from typing import Iterator, Sequence
 
 import torch
 from torch import Tensor, nn
@@ -31,6 +38,8 @@ class _CausalSelfAttention(nn.Module):
         self.d_head = d_model // n_head
         self.qkv = nn.Linear(d_model, 3 * d_model)
         self.proj = nn.Linear(d_model, d_model)
+        self.head_scale: Tensor | None = None  # (n_head,) factors on the head outputs; None = intact
+        self.record: list[Tensor] | None = None  # when a list, forward appends its attention probabilities
 
     def forward(self, x: Tensor, mask: Tensor) -> Tensor:
         B, T, C = x.shape
@@ -40,8 +49,12 @@ class _CausalSelfAttention(nn.Module):
         v = v.reshape(B, T, self.n_head, self.d_head).transpose(1, 2)
         att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(self.d_head))
         att = att.masked_fill(~mask, float("-inf")).softmax(dim=-1)
-        y = (att @ v).transpose(1, 2).reshape(B, T, C)
-        return self.proj(y)
+        if self.record is not None:
+            self.record.append(att.detach())
+        y = att @ v
+        if self.head_scale is not None:
+            y = y * self.head_scale.to(device=y.device, dtype=y.dtype)[None, :, None, None]
+        return self.proj(y.transpose(1, 2).reshape(B, T, C))
 
 
 class _Block(nn.Module):
@@ -116,3 +129,38 @@ class TinyGPT(nn.Module):
             states.append(h)
         logits = self.head(self.ln_f(h))
         return (logits, states) if return_hidden else logits
+
+    @property
+    def n_heads_total(self) -> int:
+        return self.n_layer * self.n_head
+
+    @contextlib.contextmanager
+    def head_mask(self, keep: Sequence[float] | Tensor | None) -> Iterator[None]:
+        """Within the block, scale head h of layer l by ``keep[l · n_head + h]`` (0 = zero ablation); None or all
+        ones leaves the model intact. The previous state is restored on exit."""
+        attns = [b.attn for b in self.blocks]
+        before = [a.head_scale for a in attns]
+        try:
+            if keep is not None:
+                k = torch.as_tensor(keep, dtype=torch.float32).reshape(-1)
+                if k.numel() != self.n_heads_total:
+                    raise ValueError(f"head mask needs {self.n_heads_total} entries, got {k.numel()}")
+                for i, a in enumerate(attns):
+                    a.head_scale = k[i * self.n_head:(i + 1) * self.n_head]
+            yield
+        finally:
+            for a, b in zip(attns, before):
+                a.head_scale = b
+
+    def attention_maps(self, idx: Tensor) -> list[Tensor]:
+        """Attention probabilities of every layer, each ``(B, n_head, T, T)``, for token ids ``idx``."""
+        attns = [b.attn for b in self.blocks]
+        for a in attns:
+            a.record = []
+        try:
+            with torch.no_grad():
+                self(idx)
+            return [a.record[0] for a in attns]
+        finally:
+            for a in attns:
+                a.record = None

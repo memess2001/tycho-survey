@@ -38,7 +38,8 @@ With ``ri.mode = "patterns"`` (tasks implementing :class:`~tycho.tasks.patterns.
 records instead of a scan: the float64 log-odds of output 1 on every input pattern, and the per-pattern counts of
 ``ri.n_probe`` probe codes drawn from the task's training distribution D with the generator ``(spec.seed, "ri",
 t)``. The result's ``patterns`` dict holds ``steps``, ``logodds (steps × 2^d)``, ``counts (steps × 2^d)``, the
-pmfs ``pmf_D``, ``pmf_U``, ``pmf_S``, ``truth`` (true P(output 1 | pattern)) and ``input_names``.
+pmfs ``pmf_D``, ``pmf_U``, ``pmf_S``, ``truth`` (true P(output 1 | pattern); absent for tasks without one, such as
+head-ablation patterns) and ``input_names``.
 
 Interruption and resume
 -----------------------
@@ -325,11 +326,15 @@ class _Run:
         d = task.pattern_dim()
         rows = self.pattern_rows
         pmfs = task.pattern_pmfs()
-        return {"steps": np.asarray(rows["steps"], dtype=np.int64).reshape(-1),
-                "logodds": np.asarray(rows["logodds"], dtype=np.float64).reshape(-1, 1 << d),
-                "counts": np.asarray(rows["counts"], dtype=np.int64).reshape(-1, 1 << d),
-                "pmf_D": pmfs["D"], "pmf_U": pmfs["U"], "pmf_S": pmfs["S"], "truth": task.pattern_truth(),
-                "input_names": np.asarray(task.pattern_input_names()), "n_probe": np.int64(self.ri_cfg.n_probe)}
+        out = {"steps": np.asarray(rows["steps"], dtype=np.int64).reshape(-1),
+               "logodds": np.asarray(rows["logodds"], dtype=np.float64).reshape(-1, 1 << d),
+               "counts": np.asarray(rows["counts"], dtype=np.int64).reshape(-1, 1 << d),
+               "pmf_D": pmfs["D"], "pmf_U": pmfs["U"], "pmf_S": pmfs["S"],
+               "input_names": np.asarray(task.pattern_input_names()), "n_probe": np.int64(self.ri_cfg.n_probe)}
+        truth = task.pattern_truth()
+        if truth is not None:  # tasks without a ground-truth conditional (head-ablation patterns) omit it
+            out["truth"] = np.asarray(truth, dtype=np.float64)
+        return out
 
     # ------------------------------------------------------------------------------------------ checkpoints
     def save(self) -> None:

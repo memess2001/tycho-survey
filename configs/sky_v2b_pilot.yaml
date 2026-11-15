@@ -1,0 +1,26 @@
+# Sky v2, Part B pilot: induction heads in small attention-only transformers (CPU server).
+# Plan: docs/results/v2b_pilot_plan.md. Not a pre-registration: the Part B pre-registration follows and discloses
+# this pilot. Every object is observed in pattern mode over head-ablation patterns: at 40 log-spaced checkpoints the
+# log-odds that the model predicts the repeated token, for each of the 2^H patterns of kept and zero-ablated heads.
+# Run with: bash ops/linux/start_v2b_pilot.sh
+version: sky-v2b-pilot
+description: >
+  Part B pilot. Attention-only TinyGPT with 1 (control) or 2 layers, 2 or 4 heads per layer and d_model 32 or 64,
+  trained on random tokens with one repeated segment of random length and position (p_repeat = 1), or without
+  repeats (p_repeat = 0, control). Seeds 300-302 with data_seed equal to the seed. No refinement, no follow-ups.
+regions:
+  - name: induction-pilot
+    task: induction
+    seeds: 3
+    seed_base: 300
+    data_seed_from_seed: true
+    priority: 1.0
+    ri_policy: always
+    ri: {mode: patterns, n_probe: 1024, n_points: 40}
+    fixed: {vocab: 64, seq_len: 64, rep_min: 12, rep_max: 32, attn_only: true, probe_size: 128}
+    train: {steps: 6000, batch_size: 32, optimizer: adam, lr: 0.001, n_log_evals: 80, n_lin_evals: 0, ntk_every: 0}
+    knobs:
+      n_layer: {values: [1, 2], kind: ordinal}
+      n_head: {values: [2, 4], kind: ordinal}
+      d_model: {values: [32, 64], kind: ordinal}
+      p_repeat: {values: [0.0, 1.0], kind: categorical}

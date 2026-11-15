@@ -6,16 +6,17 @@ from __future__ import annotations
 
 from tycho.tasks.base import Task
 from tycho.tasks.icl_markov import ICLMarkov
+from tycho.tasks.induction import Induction
 from tycho.tasks.markov_lang import MarkovLanguage
 from tycho.tasks.modular_addition import ModularAddition
 from tycho.tasks.sparse_parity import SparseParity
 from tycho.tasks.toy_superposition import ToySuperposition
 
-__all__ = ["REGISTRY", "Task", "make_task", "ICLMarkov", "MarkovLanguage", "ModularAddition", "SparseParity",
-           "ToySuperposition"]
+__all__ = ["REGISTRY", "Task", "make_task", "ICLMarkov", "Induction", "MarkovLanguage", "ModularAddition",
+           "SparseParity", "ToySuperposition"]
 
 REGISTRY: dict[str, type[Task]] = {cls.name: cls for cls in (SparseParity, MarkovLanguage, ModularAddition,
-                                                             ICLMarkov, ToySuperposition)}
+                                                             ICLMarkov, ToySuperposition, Induction)}
 
 
 def make_task(name: str, cfg: dict | None, seed: int) -> Task:

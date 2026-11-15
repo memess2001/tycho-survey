@@ -130,7 +130,7 @@ class PatternTask:
     * ``pattern_dim()`` — number of binary inputs d (``2^d`` patterns, codes as in this module);
     * ``pattern_logodds(model)`` — float64 log-odds of output 1 on every pattern, in code order, computed with a
       float64 copy of the model;
-    * ``pattern_truth()`` — the true P(output 1 | pattern);
+    * ``pattern_truth()`` — the true P(output 1 | pattern), or None when there is none (then no exact losses);
     * ``pattern_pmfs()`` — ``{"D": training distribution, "U": uniform, "S": shift distribution}``;
     * ``pattern_input_names()`` — the RI variable names of the d inputs, in bit order.
     """

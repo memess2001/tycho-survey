@@ -49,8 +49,13 @@ def _one_thread():
     torch.set_num_threads(before)
 
 
+#: Tasks observed in pattern mode only (no RI scans); their contract is tested in their own files
+#: (induction: tests/test_induction.py).
+PATTERN_ONLY = {"induction"}
+
+
 def test_registry_covers_spec_tasks():
-    assert set(REGISTRY) == set(SMALL)
+    assert set(REGISTRY) == set(SMALL) | PATTERN_ONLY
     assert all(REGISTRY[name].name == name for name in REGISTRY)
 
 
