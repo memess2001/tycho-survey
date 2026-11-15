@@ -68,5 +68,6 @@ launchd (`ops/install_macmini.sh --dry-run` shows what it would do); see [docs/O
 * [docs/results/v2_design_draft.md](docs/results/v2_design_draft.md): sky v2 design draft (for discussion).
 * [docs/results/v2a_preregistration.md](docs/results/v2a_preregistration.md): sky v2 Part A's design, the criteria
   fixed before the run, and its run-time estimate.
+* [docs/results/v2a_results.md](docs/results/v2a_results.md): the pre-registered analysis of sky v2 Part A.
 
 Tests: `python -m pytest -q` (add `--runslow` for the slow ones).

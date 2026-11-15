@@ -21,11 +21,24 @@ gates before it can say anything useful about language models:
 |---|---|---|---|
 | v0 | system test: the platform runs end to end | done; DR0 | [v0_findings.md](results/v0_findings.md) |
 | v1 | sharper known-answer tasks with uniform probes (gate 1) | done; DR1 | [v1_preregistration.md](results/v1_preregistration.md), [v1_results.md](results/v1_results.md) |
-| v2 | gate 2: θ vs η with referees. Part A: correlated inputs and constructed cases (CPU). Part B: induction heads in small transformers (pilot on the CPU server, then the GPU servers) | A0, A1, A3 done; Part A pre-registered, built and piloted; ready to run | [v2_design_draft.md](results/v2_design_draft.md), [v2a_preregistration.md](results/v2a_preregistration.md) |
+| v2 | gate 2: θ vs η with referees. Part A: correlated inputs and constructed cases (CPU). Part B: induction heads in small transformers (pilot on the CPU server, then the GPU servers) | A0, A1, A3 done; Part A run: "η wins" (1 of 12; see v2a_results.md) | [v2_design_draft.md](results/v2_design_draft.md), [v2a_preregistration.md](results/v2a_preregistration.md), [v2a_results.md](results/v2a_results.md) |
 | v3 | depends on gate 2. Candidates: transformers at several sizes, Pythia checkpoints across scale, SAE features as variables | open | |
 | v4 | closer to real models: text-trained transformers, own GPT-2-small runs, pre-trained open models (gates 3 to 5) | open | |
 
 ## Change log
+
+### 15 November 2026: Part A run; "η wins" by the pre-registered rule
+
+* **Run.** All 440 objects done on the CPU server in about 3 hours of wall time. The analysis took 7 minutes.
+  Every instrument check passed.
+* **Result** ([v2a_results.md](results/v2a_results.md); pending independent verification from DR2a):
+  * η wins 1 of 12 comparisons (T2 at C_U) and θ none. Four comparisons are value-dependent and seven are ties.
+  * The two views are largely interchangeable on these referees. They part ways only where outputs saturate
+    (the {1, 2, 3} chain configurations, "1:2.0", parity at ρ_train = 0.8), and there behaviour sides with η.
+  * The single win rests mostly on one twin set.
+  * Q1, Q3 and Q4 hold. Q2 (the divergence law of A1) fails on trained networks.
+* **Consequence (decision table).** Gate 2 is not passed. Part B uses the η view as its detector, with RI as a
+  descriptive companion. Part B's pre-registration needs a referee that intervenes on the network.
 
 ### 14 November 2026 (evening): Part A engineering done; ready to run
 
