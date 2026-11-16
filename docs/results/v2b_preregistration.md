@@ -1,8 +1,5 @@
 # Sky v2, Part B: how induction circuits form; design, pre-registered criteria and run-time estimate
 
-**Status: revised after independent review; consistency check pending. It becomes binding when this line is
-removed.**
-
 Written 16 November 2026, before any confirmatory Part B data exist.
 
 **What Part B is.** A study of how the two-layer induction circuit forms in small attention-only transformers, and
@@ -13,10 +10,14 @@ patterns.
 **What Part B is not: a test of gate 2.**
 * The design draft (`v2_design_draft.md` §3) lets gate 2 pass only on a prediction referee (R2) or an intervention
   referee (R3), and says a mechanism referee (R1) by itself does not pass it.
-* The independent review of the first draft (`v2_analysis/v2b_prereg_review.md`) showed two things:
-  * On this task no R2 can tell the views apart. The circuit forms abruptly, and every measure crosses any
-    control-calibrated threshold at the same checkpoint.
-  * An R3 would be circular, because both views are computed from head ablations.
+* The independent review of the first draft (`v2_analysis/v2b_prereg_review.md`) found that its prediction referee
+  (R2) could not discriminate:
+  * With thresholds calibrated on no-repeat controls, every view crossed at the same untrained-level checkpoint.
+  * With thresholds from 1-layer controls, the verdict depended on which control was used.
+  * No calibration gave a lead of more than one checkpoint before the loss drop.
+* The first draft had no intervention referee (R3). An R3 that ablates heads and reads the same output on the same
+  probe set would be circular, because both views are computed from exactly those 64 ablations. A non-circular R3,
+  with another intervention or another output, has not been designed.
 * On 16 November 2026 the researcher decided to run Part B as a formation study and leave gate 2 open. Gate 2 will
   be tested later with a real prediction or intervention referee, designed with Prof. Sugiyama.
 * The mechanism comparison of §4 is reported, but no outcome of it passes or fails gate 2.
@@ -44,28 +45,49 @@ Background:
     * The loss on repeated tokens first falls to ≤ 1.0 at step 339 in 4 of 4 runs at d_model 96 (light-curve grid).
     * The size check: at d_model 48 it falls at step 692 (2 of 2), at 192 at steps 211 and 237.
     * The induction scores rise with the drop. The previous-token head becomes clean (score ≥ 0.5) thousands of
-      steps later: steps 5,900 to 7,500 at d_model 96, and 7,500 to 8,400 at 48.
-    * The size check rests on 2 runs per size.
-  * **A context head.** In 9 of 9 runs checked, one layer-0 head without a previous-token, duplicate or induction
-    role attends to t − 2 (0.20 to 0.34, against ≤ 0.10 for the other role-less heads).
-    * Its single ablation costs 0.07 to 0.11 in p, more than any induction head.
-    * It interacts strongly with the previous-token head (+3.0 in log-odds).
+      steps later:
+      * steps 4,600 to 5,200 at d_model 96 (4 runs);
+      * 7,500 to 8,400 at 48 (2 runs);
+      * 5,900 to 7,500 in the 2-head d_model 64 runs of DR2b-pilot2.
+    * The size check rests on 2 runs per size. The review's d_model 48 runs fell at steps 614 and 692.
+  * **A context head.** In 9 of 9 three-head runs, the role-less head with the largest single-ablation cost is in
+    layer 0.
+    * Its ablation costs 0.07 to 0.11 in p, more than any induction head.
+    * It interacts with the previous-token head: +2.3 to +3.3 in log-odds.
+    * θ's top non-circuit pair at C_U is (previous-token head, this head).
+    * Its attention to t − 2 could be measured only where weights were saved: 0.20 to 0.34 in the review's 3 models,
+      against ≤ 0.10 for the other role-less heads.
+    * In the 6 local d_model 64 models (2 or 4 heads per layer), exactly one such head attends to t − 2 at 0.29 to
+      0.46, with the other role-less heads ≤ 0.08.
   * **Previews of the mechanism comparison** (§4), θ − bounded η AUC at C_U, lr 3e-4, 6 runs:
 
     | referee | mean |
     |---|---|
-    | counting the context head as role-less | −0.10 (SD 0.03) |
-    | excluding pairs with the context head | −0.008 |
-    | at M_U | −0.015 (−0.003 in an earlier preview, which included lr 1e-3 runs) |
+    | (i) counting the context head as role-less, at C_U | −0.10 (SD 0.03) |
+    | (ii) as defined in §4, at C_U | −0.007 (5 runs) |
+    | (i), at M_U | −0.015 (−0.003 in an earlier preview, which included lr 1e-3 runs) |
+    | (ii), at M_U | −0.027 |
 
-    * In the 2-head runs of DR2b-pilot2: θ 0.78–0.89 against η 1.00 at C_U; all 1.00 at M_U.
+    * Referee (ii) is undefined in the sixth run (d_model 48, seed 331), which has no role-less head besides the
+      context head. The review's own variant, which drops every pair with the context head, gave −0.008.
+    * Where no weights were saved, the context head was taken as the review's ablation helper.
+    * The composition-only AUC under referee (i) at C_U: −0.15.
+
+    * In the 2-head runs of DR2b-pilot2, under referee (i): θ 0.78–0.89 against η 1.00 at C_U; all 1.00 at M_U.
+      Referee (ii) is undefined in 2-head models.
     * The earlier top-pair previews (the first probe, pilot 1 and the local 4-head runs) all favoured η. They counted
       the context head as role-less.
     * Counting redundancy pairs (same-role pairs) as circuit pairs was decided after seeing that θ's top pairs were
       redundancy pairs.
-  * **Onset previews.** The first checkpoint at which a composition pair reaches 0.001 nats came for θ 1 to 4
-    checkpoints after η, depending on the reference and the η value. With control-calibrated thresholds every view
-    crossed at the same early checkpoint, between steps 0 and 11.
+  * **Onset previews.**
+    * The first checkpoint at which a composition pair reaches 0.001 nats came for θ 1 to 4 checkpoints after η,
+      depending on the reference and the η value.
+    * With thresholds calibrated on no-repeat controls, every view crossed at about the same early checkpoint,
+      between steps 0 and 11.
+    * With thresholds from the 1-layer, 3-head control, θ crossed 2 to 3 pilot checkpoints after η at d_model 96,
+      and 2 to 8 after it at d_model 48 (d_model 96 thresholds).
+    * With a 1-layer, 6-head control the views crossed at about the same checkpoint.
+    * No calibration gave a lead of more than one checkpoint before the loss drop.
 * **Not blind.** The design, the referees and the expectations of §4 were written after these previews. The
   confirmatory seeds (400–419 and 450–459) are new.
 
@@ -78,7 +100,7 @@ Background:
   * **M_U** (marginal): the table of the 2 heads of A alone. Cell means average 2p − 1 over the other heads, in
     probability space.
 * **Output.** For pattern c, p(c) = the mean probability of the correct token over the probe set's predictable
-  repeated tokens: 128 fixed sequences with repeats, about 6,000 tokens. It is treated as a soft binary output, as in
+  repeated tokens: 128 fixed sequences with repeats, about 6,700 to 6,800 tokens. It is treated as a soft binary output, as in
   Part A's pattern mode. The runner's sampled probe counts are not used.
 * **Measures.** `tycho.ri.cells.projection_information`, exactly as Part A §1: link θ (logistic, cross-entropy drop)
   and link η (least squares), with both η values (bounded, primary; Gaussian, sensitivity). m = 2p − 1 is clipped to
@@ -87,7 +109,8 @@ Background:
   orthogonal). In the pilots the bounded and Gaussian η values gave the same AUCs in 5 of 6 runs. So the comparisons
   of §4 are far from independent, and "wins with both η values" adds little for this design.
 * **Sets.** All 15 head pairs. Singletons and triples are stored and reported but do not enter the tests.
-* **Exact values.** All 64 patterns are evaluated at every checkpoint, so every measure is exact for the probe set.
+* **Exact values.** All 64 patterns (8 for the 1-layer controls, which have 3 heads) are evaluated at every
+  checkpoint, so every measure is exact for the probe set.
 
 ## 2. Sky v2b
 
@@ -112,8 +135,9 @@ Configuration file `configs/sky_v2b.yaml` (§6).
 
 ## 3. Instrument checks, preconditions and roles
 
-* **IC-1.** Replays of 5 % of objects (at least one per configuration group) are bit-identical to the stored light
-  curves (all keys except `wall_s`) and pattern arrays. A failure is a bug, and the analysis waits for the fix.
+* **IC-1.** One replay per configuration group (7 groups, so 7 % of objects) is bit-identical to the stored light
+  curve (all keys except `wall_s`), pattern arrays and `param/…` arrays. A failure is a bug, and the analysis waits
+  for the fix.
 * **IC-2, controls behave.**
   * Every no-repeat run ends with a repeat loss ≥ 4.0.
   * No 1-layer run has, at the end, both a head with previous-token score ≥ 0.5 and a head with induction score ≥ 0.5.
@@ -128,26 +152,31 @@ Configuration file `configs/sky_v2b.yaml` (§6).
   | induction head | 1 | ind ≥ 0.5 |
   | context head | 0 | prev < 0.5 and prev2 ≥ 0.15 (the cut comes from 3 pilot models: context heads 0.20–0.34, other role-less heads ≤ 0.10) |
   | role-less | | any other head |
-* **Formation precondition** (main runs). At the last checkpoint, all of:
-  * at least one previous-token head;
-  * at least one induction head;
-  * at least one role-less head that is not a context head;
-  * a repeat loss ≤ 0.1.
-
-  Runs that fail enter neither §4 nor B2, and are listed. A size with fewer than 10 qualifying seeds is dropped from
-  the §4 family statistic and listed.
+* **Formation** (main runs; B1, B2). At the last checkpoint: at least one previous-token head, at least one induction
+  head, and a repeat loss ≤ 0.1.
+* **M eligibility.** A formed run enters M only if it also has at least one role-less head that is not a context
+  head; without one, referee (ii) has no non-circuit pair. In the pilots this failed in 1 of the 3 runs with saved
+  weights (d_model 48, seed 331: the third layer-0 head became a second previous-token head, 0.73). It fails in every
+  2-head model.
+* **Listing and dropping.**
+  * Runs that do not form, and formed runs that are not eligible, are listed.
+  * Runs that do not form enter neither the B1 slope nor B2.
+  * A size with fewer than 10 eligible seeds is dropped from M's Δ (both referees) and listed.
+  * B1 and B2 use every formed run at every size.
 
 ## 4. Pre-registered questions and predictions
 
-1. **B1, formation and scale.** The formation rate (the precondition of §3) and the phase-change step per size.
+1. **B1, formation and scale.** The formation rate (formation, §3) and the phase-change step per size.
    * **Phase-change step:** the first light-curve evaluation with repeat loss ≤ 1.0.
-   * **Slope:** ordinary least squares of ln(step) on ln(d_model) over the qualifying runs, with a 95 % joint-seed
-     bootstrap percentile interval.
+   * **Slope:** ordinary least squares of ln(step) on ln(d_model) over the formed runs.
+   * **Interval:** 95 % percentile interval from the joint-seed resampling described under M (10,000 resamples, seed
+     20261116). Runs that did not form are skipped, and a resample with fewer than two sizes holding a formed run is
+     redrawn.
    * **Predicted:**
-     * formation in at least 18 of 20 seeds at every size (the pilots: 2 of 2 at 48 and 192 in the size check, plus
-       the review's 2 at 48; every run at 96);
+     * formation in at least 18 of 20 seeds at every size. The pilots formed the circuit in 25 of 25 two-layer
+       tiled runs; at 48 and 192 that is only 4 and 2 runs.
      * a slope interval entirely below 0: larger models change earlier (previews about 690, 340 and 220 steps).
-2. **B2, order of events.** Among qualifying runs, the share in which the largest induction score (layer 1) reaches
+2. **B2, order of events.** Among formed runs, the share in which the largest induction score (layer 1) reaches
    0.5 before the largest previous-token score (layer 0) does. Read on the light-curve grid; reaching both at the
    same evaluation counts as "not before".
    * **Predicted:** at least 80 %. The pilots showed the previous-token head becoming clean thousands of steps after
@@ -155,28 +184,30 @@ Configuration file `configs/sky_v2b.yaml` (§6).
 3. **M, mechanism agreement** (θ against η; reported, not part of gate 2).
    * **Pairs.**
      * Circuit pairs: every (previous-token head, induction head) pair, which is composition, and every pair of two
-       heads with the same role, which is redundancy.
-     * Non-circuit pairs: every pair with at least one role-less head.
-   * **Two referees.**
-     * (i) Context heads count as role-less.
-     * (ii) Pairs that contain a context head and no other role-less head are excluded.
+       previous-token heads or of two induction heads, which is redundancy. A context head is never in a circuit
+       pair.
+     * Non-circuit pairs under referee (i): every pair with at least one role-less or context head.
+     * Non-circuit pairs under referee (ii): every pair with at least one role-less head that is not a context head.
+       Pairs whose heads are all context, previous-token or induction heads, with at least one context head, are
+       left out.
    * **Per run.** The AUC with which μ, at the last checkpoint, ranks circuit pairs above non-circuit pairs (ties count
      one half).
-   * **Statistic.** Δ = the mean over sizes of the mean over qualifying runs of (AUC_θ − AUC_η). Positive favours θ.
+   * **Statistic.** Δ = the mean over sizes of the mean over eligible runs of (AUC_θ − AUC_η). Positive favours θ.
      There is one Δ for each referee, reference (C_U, M_U) and η value.
    * **Bootstrap.**
      * 10,000 resamples, seed 20261116.
      * Each resample draws one multiset of the 20 seed labels with replacement and uses it for every size, because a
-       seed's runs share their seed and data_seed across sizes. Runs that do not qualify are skipped.
-     * The sizes in the family are fixed from the observed data. A resample with no qualifying run at a size is
+       seed's runs share their seed and data_seed across sizes. Runs that are not eligible are skipped.
+     * The sizes in the family are fixed from the observed data. A resample with no eligible run at a size is
        redrawn.
      * p = min(1, 2 · min(#{Δ* ≤ 0} + 1, #{Δ* ≥ 0} + 1) / (B + 1)).
    * **Comparisons.** Two, at C_U and M_U. Holm is applied over the two, separately for each referee and η value.
-   * **Ahead.** A view is **ahead** at a reference if, under both referees and with both η values, Δ favours it,
-     |Δ| ≥ 0.05 and the Holm-adjusted p is below 0.05.
-     * Ahead under one referee only: **referee-dependent**.
-     * Ahead with one η value only: **value-dependent**.
-     * Neither counts as ahead.
+   * **Labels.** A (referee, η value) combination is met when Δ favours the view, |Δ| ≥ 0.05 and the Holm p is
+     below 0.05.
+     * Met in all four combinations: **ahead**.
+     * Met under one referee only (with one or both η values): **referee-dependent**.
+     * Met with one η value only (under one or both referees): **value-dependent**.
+     * A single met combination carries both labels. Neither label counts as ahead.
    * **Outcomes.**
 
      | outcome | condition | meaning |
@@ -184,20 +215,23 @@ Configuration file `configs/sky_v2b.yaml` (§6).
      | **θ ahead on mechanism** | θ ahead at C_U or M_U, η at neither | the log-odds view agrees better with the attention-score roles |
      | **η ahead on mechanism** | η ahead somewhere, θ nowhere | the mean view agrees better with them |
      | **mixed** | both ahead somewhere | report which |
-     | **tie** | neither ahead | the views agree equally well with the roles |
+     | **tie** | neither ahead | no difference holds under both referees and both η values; any referee- or value-dependent difference is reported with it |
 
      None of these passes or fails gate 2.
    * **Secondary.**
-     * The same with composition pairs only.
-     * The rank of the best composition pair (1 + the number of pairs with a strictly larger value).
+     * The same with composition pairs only (redundancy pairs left out).
+     * The rank of the best composition pair: 1 + the number of pairs whose value is larger by more than 1e-12.
    * **Expected, from the previews:** **tie**. Under referee (i) η was ahead by about 0.10; under (ii) the difference
-     was −0.008. So "referee-dependent" at C_U is the expected label.
+     was −0.007. So "referee-dependent" at C_U is the expected label.
+   * **Ceiling.** Bounded η's AUC was at its ceiling of 1.0 in 3 of 6 pilot runs under (i) and in 4 of 5 under (ii).
+     θ can be ahead only where η falls below 1, so "θ ahead" is nearly unreachable on this design.
 
 ## 5. Descriptive (no predictions)
 
-* **Onsets against the phase change.** For each view, size and reference: the first checkpoint (step ≥ 1) at which the
-  largest pair value exceeds a threshold τ (`numpy.percentile`, method "linear"; exceed means >), under three
-  calibrations:
+* **Onsets against the phase change.** For each view, size, reference and η value: the first checkpoint (step ≥ 1) at
+  which the largest pair value exceeds a threshold τ. τ is computed with `numpy.percentile`, method "linear", and
+  "exceed" means strictly greater. Its pool is the largest pair value over all checkpoints with step ≥ 1 of all
+  controls of that configuration. The 1-layer controls have only 3 pairs and 8 patterns. Three calibrations:
   * (a) the 99th percentile in the no-repeat controls of that size;
   * (b) the 99th percentile in the 1-layer controls (d_model 96 thresholds);
   * (c) a fixed 0.001 nats.
@@ -227,8 +261,23 @@ Configuration file `configs/sky_v2b.yaml` (§6).
 |---|---|---|---|---|
 | d_model 48 | 30 | ≈ 3 min | ≈ 4 min | ≈ 3.5 h |
 | d_model 96 | 40 | ≈ 4.5 min | ≈ 6 min | ≈ 7 h |
-| d_model 192 | 30 | ≈ 12 min | ≈ 14 min | ≈ 13 h |
+| d_model 192 | 30 | ≈ 12 min | ≈ 14 min (estimated; not measured) | ≈ 13 h |
 | **total** | 100 | | | **≈ 24 CPU hours** |
 
-About 30 minutes of wall time on 86 workers; the longest single run (d_model 192) takes about 26 minutes. The
-analysis is small: 15 pairs × 71 checkpoints × 100 runs.
+About 30 to 35 minutes of wall time on 86 workers: 100 runs leave 14 for a second wave, and the longest single run
+(d_model 192) takes about 26 minutes. The patterns were measured at 1.3 to 3.4 minutes per run at d_model 96, so
+the table is conservative. The analysis is small: 15 pairs × 71 checkpoints × 100 runs.
+
+## Amendments
+
+* **16 November 2026, before binding.** The first draft (commits 61754e2 and 045380d) planned a second test of gate 2.
+  * An independent review found it could not serve as one (`v2_analysis/v2b_prereg_review.md`).
+  * The researcher decided to run Part B as a formation study.
+  * A consistency check of the revision then found:
+    * the formation precondition coupled to M (now separated into formation and M eligibility);
+    * pair definitions that could be read two ways (now fixed);
+    * five overstated or wrong statements: the R2/R3 attribution, the onset previews, the d_model 96 timing, the
+      context-head evidence, and the meaning of "tie";
+    * minor wording.
+
+    All are applied. Record: the review file, section "Consistency check of the revision".
