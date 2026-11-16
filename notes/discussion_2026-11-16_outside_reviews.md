@@ -96,7 +96,8 @@
 | 重放最有价值的用途是干预 | Gemini、Antigravity；Claude 接受 |
 
 同一天主分支上的独立审查（`docs/results/v2_analysis/v2b_prereg_review.md`）从内部得出了与第五行相同的结论：Part B
-草稿里的 R2 不能区分两种视角，R1 的结果取决于一个标注选择，θ 没有可达的胜出路径。
+草稿里的 R2 不能区分两种视角，R1 的结果取决于一个标注选择，θ 没有可达的胜出路径。研究者随后在主分支上把 Part B 改成了
+"电路形成过程的研究"，gate 2 留待以后；这份预注册当天已生效。
 
 ## 4. 分歧，以及仓库的数据怎么说
 
@@ -209,8 +210,8 @@ tiled 布局（词表 64，64 个 token，片段长 4 到 16）下，不做内�
 
 1. **仪器按损失选。** RI 不是主角。交叉熵训练时，对数线性层次给出损失自身的可加分解；平方误差训练时对应的是矩。
    留下的是按阶的层次分解，放下的是逐子集扫描和事件检测。
-2. **θ 对 η 的擂台停下。** 三份评价里两份这样说，主分支上的独立审查也从内部得出同样结论。Part B 的预注册草稿
-   怎么处理，留给研究者决定（§7 第 7 条）。
+2. **θ 对 η 的擂台停下。** 三份评价里两份这样说，主分支上的独立审查也从内部得出同样结论。Part B 已由研究者改为
+   形成过程研究，其中 θ 和 η 的比较照常报告，但不计入 gate 2（`docs/results/v2b_preregistration.md`，已生效）。
 3. **候选主线分成两半。**
    - 候选的停留状态和它们的损失可以由数据分布事先算出（MLP 上是各阶最佳拟合；tiled 归纳任务上是不依赖内容的解，
      算出来 1.56 到 1.96，1 层对照实测 1.65 到 1.89）。
@@ -238,7 +239,13 @@ tiled 布局（词表 64，64 个 token，片段长 4 到 16）下，不做内�
 4. single 布局里损失 0.8 到 1.6 的那个长平台是什么解？是陷阱还是只是慢？
 5. v1 的 Q4：奇偶任务的指数约为 2、与 k 无关。是参考值 n^(k−1) 不适用于这个设置，还是一个发现？
 6. 论文主张的最小版本是什么，什么结果算它失败？
-7. Part B 的预注册草稿：改目标、改变量，还是停？
+7. Part B 现在是形成过程研究（100 个运行；d_model 48、96、192；1 层对照在 96）。它的数据可以顺带检验 §6 第 3 条。
+   下面写在 Part B 的确证数据产生之前，不属于它的预注册：
+   - 预测：1 层对照在 12,000 步时的重复损失落在 1.56 到 2.0 之间，也就是不依赖内容的解的损失。
+   - 预测：在 d_model 96，相变之前 2 层运行的重复损失与 1 层对照的中位数曲线相差不超过 0.2 nats。
+   - 没有预测、但值得量的：网络离开那条路径时的损失怎样随模型规模变化。如果规模对电路的加速大于对不依赖内容的解
+     的加速，较大的模型会在更高的损失处离开。"离开时的损失"取重复损失在一个评估步内下降超过 0.3 nats 之前的最后
+     一个评估点。pilot 2（d_model 64，2 个头）里它是 3.19 到 3.23。
 8. Antigravity 的"算法探针变量"和"模型到每个候选解的预测分布的距离"，哪一个是通向 Pythia 的更好的观测量？
 9. 除了学习率乘时间和增益加权时间，还有哪些重整化变量值得一试？§5.6 的否定结果是否只是因为对齐方式太粗？
 
@@ -248,7 +255,8 @@ tiled 布局（词表 64，64 个 token，片段长 4 到 16）下，不做内�
   `docs/results/v2_analysis/hierarchy_projections_verification.md`。
 - 本次讨论的核对：`scripts/analysis_v2/discussion_checks.py`，
   `docs/results/v2_analysis/discussion_checks_2026-11-16.json`。
-- Part B 的现状：`docs/results/v2b_preregistration.md`（草稿），`docs/results/v2_analysis/v2b_prereg_review.md`。
+- Part B 的现状：`docs/results/v2b_preregistration.md`（形成过程研究，已生效），
+  `docs/results/v2_analysis/v2b_prereg_review.md`。
 - 文献：
   - Edelman, Edelman, Goel, Malach, Tsilivis (2024). The evolution of statistical induction heads: in-context learning
     Markov chains. *NeurIPS*. arXiv:2402.11004.
