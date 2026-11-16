@@ -34,6 +34,9 @@ Background:
       loss drop for η, and one or two checkpoints later for θ. That preview used fixed roles and a fixed threshold,
       unlike R2 below.
     * In the 2-head runs every measure put the redundant induction-head pair first.
+  * **A size check** (training only, seeds 320–321, 3 heads per layer, learning rate 3e-4). The circuit formed at
+    d_model 48 (2 of 2, phase change at step 692) and 192 (2 of 2, steps 211 and 237). At 96 the pilots put it at
+    steps 339 to 430. Training took about 3 minutes at 48 and 12 minutes at 192 on one core.
 * **Not blind.** The design, the referees and the expectations of §4 were written after these previews. The
   confirmatory seeds (400–419 and 450–459) are new.
 
@@ -127,9 +130,10 @@ Overall "η wins" is expected; a θ win is not.
 
 ## 5. Pre-registered questions (estimates; any outcome is reported)
 
-1. **B1, formation and scale.** The formation rate and the phase-change step k* per size. Predicted: formation in at
-   least 18 of 20 seeds at d_model 96. No prediction for 48 and 192. The step of the phase change against d_model is
-   reported with a log-log slope and its bootstrap interval.
+1. **B1, formation and scale.** The formation rate and the phase-change step per size.
+   * Predicted: formation in at least 18 of 20 seeds at every size.
+   * Predicted: a negative log-log slope of the phase-change step against d_model, with its bootstrap interval
+     below 0. Larger models change earlier: the previews gave about 690, 340 and 220 steps.
 2. **B2, order of events.** The share of qualifying runs in which the induction score reaches 0.5 before the
    previous-token score does. Predicted: at least 80 % (the pilots showed the previous-token head becoming clean
    thousands of steps after the phase change).
@@ -148,10 +152,13 @@ Overall "η wins" is expected; a θ win is not.
 
 ## 7. Run-time estimate on the 88-core server
 
-| part | per run | runs | total CPU |
-|---|---|---|---|
-| training, 12,000 steps | 3 to 10 min (d_model 48 to 192; measured in the pilots for 64 and 96) | 100 | ≈ 10 h |
-| 64 ablation patterns × 60 checkpoints | 3 to 10 min | 100 | ≈ 10 h |
-| **total** | | | **≈ 20 CPU hours**, about 15 to 30 minutes of wall time on 86 workers |
+| size | runs | training per run (measured) | 64 patterns × 60 checkpoints per run (estimated) | total CPU |
+|---|---|---|---|---|
+| d_model 48 | 30 | ≈ 3 min | ≈ 3 min | ≈ 3 h |
+| d_model 96 | 40 | ≈ 4.5 min | ≈ 5 min | ≈ 6.5 h |
+| d_model 192 | 30 | ≈ 12 min | ≈ 12 min | ≈ 12 h |
+| **total** | 100 | | | **≈ 21 CPU hours** |
+
+About 30 minutes of wall time on 86 workers; the longest single run (d_model 192) takes about 25 minutes.
 
 The analysis is small: 15 pairs × 60 checkpoints × 100 runs.
