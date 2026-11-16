@@ -305,6 +305,15 @@ Ratios at 25 % in the five configurations where the indicators follow the transi
 * **A very small setting.** Six binary inputs, 64 windows, MLPs of width 128 and depth 1, Adam at one learning rate,
   two task families of which only the Markov language is analysed. Nothing here says the picture holds for larger
   inputs, categorical tokens, transformers or other optimisers.
+* **A first look at a transformer goes against the strong form** (added later on 16 November; quick check, not
+  recomputed independently: `scripts/analysis_v2/discussion_checks.py`). For Part B's tiled induction task the
+  solutions that use no content matching can be computed from the data: they cost 1.56 to 1.96 nats, and the 1-layer
+  controls of DR2b-pilot2 end at 1.65 to 1.89. The 2-layer networks follow the 1-layer path only up to a loss of
+  3.2 to 3.4 and then form the circuit; they spend at most one evaluation between 1.6 and 2.3 nats. So candidate
+  waiting states can be computed in advance, but whether a network waits at one depends on how fast it learns that
+  state relative to the next, which this note does not predict. On these MLPs the lower order is learned faster; in
+  the attention-only transformer the content-free solution is learned more slowly than the circuit. See
+  `notes/discussion_2026-11-16_outside_reviews.md`, §5.4 and §6.
 * **Exact projections need the truth.** L_k and the rungs are computed from the known source. For real data the
   hierarchy has to be estimated or approximated, for example by n-gram or k-body models.
 * **The picture is weaker at higher orders and for rungs with several terms.** Order-3 rungs are approached to 17
