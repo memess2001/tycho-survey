@@ -103,7 +103,13 @@ def test_runner_pattern_mode_on_head_ablations(tmp_path):
     assert res.status == "done", res.error
     pat = res.patterns
     assert pat["logodds"].shape == (pat["steps"].size, 16) and "truth" not in pat
-    assert "x_ind_l1h0" in res.light_curve
+    assert "x_ind_l1h0" in res.light_curve and "x_prev2_l0h1" in res.light_curve
+    # the final weights are stored and rebuild the network exactly
+    from tycho.tasks import make_task as _mk
+    m = _mk("induction", spec.task_cfg, 0).build_model()
+    m.load_state_dict({k[len("param/"):]: torch.as_tensor(v) for k, v in pat.items() if k.startswith("param/")})
+    z_final = _mk("induction", spec.task_cfg, 0).pattern_logodds(m)
+    assert np.allclose(z_final, pat["logodds"][-1])
     again = run_object(spec, work_dir=tmp_path / "b", ri=ri)
     assert np.array_equal(again.patterns["logodds"], pat["logodds"])
 

@@ -32,9 +32,10 @@ Extra light-curve metrics (on the probe set)
 * Per head (``l<layer>h<head>``): ``prev_…`` = mean attention from position t to t − 1 (t ≥ 1); ``ind_…`` = mean
   attention mass from a predictable position t to the keys j ≤ t whose previous token equals the current one
   (``x[j−1] = x[t]``), i.e. to the tokens that followed earlier occurrences of the current token; ``dup_…`` = mean
-  attention mass from t to earlier positions holding the current token itself (a duplicate-token head). These are
-  the attention-pattern scores of the circuits literature, used as the mechanism referee: neither the θ nor the η
-  view uses them.
+  attention mass from t to earlier positions holding the current token itself (a duplicate-token head);
+  ``prev2_…`` = mean attention from t to t − 2 (t ≥ 2): the review of the Part B draft found a functional layer-0
+  "context" head that attends two tokens back. These are the attention-pattern scores of the circuits literature,
+  used as the mechanism referee: neither the θ nor the η view uses them.
 
 Pattern mode: head-ablation patterns
 ------------------------------------
@@ -115,6 +116,9 @@ class Induction(PatternTask, Task):
     """Next-token prediction on random tokens with a repeated segment (see the module docstring)."""
 
     name = "induction"
+    #: In pattern mode the runner also stores the final weights (``param/<name>`` arrays), so referees that read
+    #: the network (attention scores, ablations) can be recomputed from a data release.
+    store_final_weights = True
 
     @classmethod
     def defaults(cls) -> dict:
@@ -227,6 +231,7 @@ class Induction(PatternTask, Task):
             for h in range(att.shape[1]):
                 a = att[:, h]
                 out[f"prev_l{layer}h{h}"] = float(a[:, torch.arange(1, T), torch.arange(0, T - 1)].mean())
+                out[f"prev2_l{layer}h{h}"] = float(a[:, torch.arange(2, T), torch.arange(0, T - 2)].mean())
                 out[f"ind_l{layer}h{h}"] = float((a * ind_keys).sum(-1)[rep].mean())
                 out[f"dup_l{layer}h{h}"] = float((a * dup_keys).sum(-1)[rep].mean())
         return out
