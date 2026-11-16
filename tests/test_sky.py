@@ -336,3 +336,19 @@ def test_seed_base_and_data_seed_from_seed():
         r = {**d["regions"][1], **bad}
         with pytest.raises(ValueError):
             Sky.from_dict({"version": "t", "regions": [r]})
+
+
+def test_every_point_of_every_sky_file_builds_its_task_and_model():
+    """Catches configurations that only fail on the server (e.g. d_model not divisible by n_head)."""
+    from pathlib import Path
+
+    from tycho.survey.sky import Sky
+    from tycho.tasks import make_task
+
+    for path in sorted((Path(__file__).resolve().parents[1] / "configs").glob("sky_*.yaml")):
+        sky = Sky.from_yaml(path)
+        for region in sky.regions:
+            for point in sky.points(region):
+                spec = sky.make_spec(region, point, 0)
+                task = make_task(spec.task, spec.task_cfg, spec.seed)
+                task.build_model()
