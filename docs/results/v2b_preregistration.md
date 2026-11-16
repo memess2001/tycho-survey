@@ -281,3 +281,26 @@ the table is conservative. The analysis is small: 15 pairs × 71 checkpoints × 
     * minor wording.
 
     All are applied. Record: the review file, section "Consistency check of the revision".
+* **16 November 2026, clarifications from implementing the analysis** (before any confirmatory data; no definition
+  changes):
+  * **Labels.** The labels of §4 M are made exhaustive.
+    * Combinations met under exactly one referee: referee-dependent.
+    * Met with exactly one η value: value-dependent. A single met combination carries both labels.
+    * Met combinations spanning both referees and both η values without being all four (three combinations, or a
+      "diagonal" pair): **partial**.
+    * Only "ahead" counts as ahead.
+  * **Onsets (§5).** "Exceed" applies the tie tolerance of §1: a value exceeds τ when it is larger by more than
+    1e-12.
+  * **B1's bootstrap** uses its own stream started from seed 20261116, with the same joint-seed scheme as M and B1's
+    redraw rule.
+  * **Trajectories.** "Context pairs" are the pairs that contain a context head, as in B3.
+  * **The B1 interval** can be very narrow: phase-change steps snap to the evaluation grid (about 13 % apart), and in
+    the analysis pilot both seeds of each size gave the same step. "Entirely below 0" then mostly reflects the
+    per-size steps, and the report will say so.
+  * **The analysis code** is `tycho/analysis/v2b.py` and `scripts/analysis_v2/v2b_analysis.py`. Every choice the text
+    leaves open is listed in its DECISIONS (20 items). It was run on a pilot of 10 objects (seeds 900–901, sky
+    version sky-v2b-pilot3):
+    * IC-1 5 of 5, IC-2 passed;
+    * 4 of 4 main runs formed;
+    * M: "tie", with η referee-dependent at C_U.
+    * Verification by an independent agent follows before the run.

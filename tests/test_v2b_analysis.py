@@ -265,12 +265,12 @@ def test_labels_referee_and_value_dependent():
     res = v2b.m_labels(_comps({("M_U", "ii", "eta_g"): (0.2, 0.01)}))
     assert res["by_reference"]["M_U"]["theta"]["labels"] == ["referee-dependent", "value-dependent"]
     assert res["outcome"] == "tie"
-    # diagonal and three-of-four patterns have no label in §4: reported as unlabelled partial, never ahead
+    # diagonal and three-of-four patterns have no label in §4: reported as partial, never ahead
     res = v2b.m_labels(_comps({("C_U", "i", "eta_b"): (-0.1, 0.001), ("C_U", "ii", "eta_g"): (-0.1, 0.001)}))
-    assert res["by_reference"]["C_U"]["eta"]["labels"] == ["unlabelled partial"] and res["outcome"] == "tie"
+    assert res["by_reference"]["C_U"]["eta"]["labels"] == ["partial"] and res["outcome"] == "tie"
     three = _all4("C_U", -0.1)
     three[("C_U", "ii", "eta_g")] = (-0.1, 0.2)
-    assert v2b.m_labels(_comps(three))["by_reference"]["C_U"]["eta"]["labels"] == ["unlabelled partial"]
+    assert v2b.m_labels(_comps(three))["by_reference"]["C_U"]["eta"]["labels"] == ["partial"]
 
 
 def test_met_condition_boundaries():

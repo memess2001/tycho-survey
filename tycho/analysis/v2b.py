@@ -112,10 +112,9 @@ DECISIONS: tuple[str, ...] = (
      'Delta is also reported.'),
     ("M labels, per reference and view: 'ahead' = all four combinations met; 'referee-dependent' = the met "
      "combinations lie under exactly one referee; 'value-dependent' = they use exactly one eta value (a single met "
-     "combination is both). §4 gives no label to met combinations spanning both referees and both eta values without "
-     "being all four (three combinations, or (i, bounded) with (ii, Gaussian), or (i, Gaussian) with (ii, "
-     "bounded)); such a pattern is reported as 'unlabelled partial' with its combinations and does not count as "
-     'ahead.'),
+     "combination is both); 'partial' = met combinations span both referees and both eta values without being all four "
+     "(three combinations, or (i, bounded) with (ii, Gaussian), or (i, Gaussian) with (ii, bounded)): the "
+     "pre-registration's amendment of 16 November 2026. None but 'ahead' counts as ahead."),
     ('Secondary, composition pairs only: positives = composition pairs, redundancy pairs dropped, negatives as under '
      'each referee; the same Delta, bootstrap (same resamples), Holm, labels and outcome, reported apart. Rank of the '
      'best composition pair: per formed run, view and reference at the last checkpoint, 1 + the number of the 15 '
@@ -793,7 +792,7 @@ def m_labels(comps: Sequence[dict]) -> dict:
             val_dep = not is_ahead and len(values) == 1
             labels = (["ahead"] if is_ahead else []) + (["referee-dependent"] if ref_dep else []) + \
                      (["value-dependent"] if val_dep else []) + \
-                     (["unlabelled partial"] if met and not (is_ahead or ref_dep or val_dep) else [])
+                     (["partial"] if met and not (is_ahead or ref_dep or val_dep) else [])
             by_ref[ref][view] = {"met": [list(m) for m in sorted(met)], "labels": labels}
             if is_ahead:
                 ahead[view].append(ref)
@@ -805,7 +804,7 @@ def m_labels(comps: Sequence[dict]) -> dict:
         outcome = "mixed"
     else:
         outcome = "tie"
-    reported = []  # referee-, value-dependent or unlabelled differences, reported with the outcome
+    reported = []  # referee-dependent, value-dependent or partial differences, reported with the outcome
     for ref in REFS:
         for view in ("theta", "eta"):
             labels = by_ref[ref][view]["labels"]
