@@ -134,6 +134,12 @@ DECISIONS: tuple[str, ...] = (
      'context head). §5 lists every done main run; its summaries (by size, and B3 also over all sizes: mean of '
      'per-run shares and the pooled share) use the formed runs, and the trajectories the formed runs with at least one '
      'pair of the kind on the size\'s common grid.'),
+    ("Withheld or not evaluable (added after the independent verification of the code): the B1, B2 and M verdicts "
+     "are withheld when IC-1 is skipped or fails, when stage 1 fails for any done object (a missing light curve or "
+     "stage-1 cache counts as a stage-1 failure), or when a data check fails (71 checkpoints, equal pattern and "
+     "light-curve grids, finite values, uniform pmf_U, head names); all numbers are still computed. IC-2 with no "
+     "control run, B1's slope prediction when the slope or its interval cannot be computed, and M when no size has "
+     "enough eligible seeds are reported as not evaluable, not as passed, not met or tie."),
 )
 __doc__ = (__doc__ or "") + "\nDECISIONS\n---------\n" + "\n".join(f"{i}. {d}" for i, d in enumerate(DECISIONS, 1))
 
@@ -627,7 +633,8 @@ def ic2(runs: Sequence[Run]) -> dict:
             "one_layer": {"rule": "not (a layer-0 head with prev >= 0.5 and a layer-0 head with ind >= 0.5)",
                           "n": len(ol), "n_failed": sum(not x["passed"] for x in ol),
                           "passed": all(x["passed"] for x in ol), "runs": ol},
-            "passed": all(x["passed"] for x in nr + ol)}
+            "passed": all(x["passed"] for x in nr + ol) if (nr or ol) else None,
+            "evaluable": bool(nr or ol)}
 
 
 def ic1_summary(replays: Sequence[dict] | None, records: Sequence[dict]) -> dict:
@@ -698,8 +705,11 @@ def b1(runs: Sequence[Run], records: Sequence[dict], B: int) -> dict:
             "slope": slope, "slope_interval_95": interval, "bootstrap": boot,
             "predictions": {"formation_at_every_size": {"met": all_met,
                                                         "rule": "n_formed >= ceil(18 n / 20) at every size"},
-                            "slope_interval_below_0": {"met": bool(math.isfinite(interval[1]) and interval[1] < 0),
-                                                       "upper": interval[1]}}}
+                            "slope_interval_below_0": ({"met": bool(interval[1] < 0), "upper": interval[1]}
+                                                       if math.isfinite(interval[1]) else
+                                                       {"met": None, "upper": interval[1],
+                                                        "not_evaluable": "the slope or its interval cannot be "
+                                                                         "computed"})}}
 
 
 def b2(runs: Sequence[Run], sizes: Sequence[int]) -> dict:
@@ -802,6 +812,8 @@ def m_labels(comps: Sequence[dict]) -> dict:
         outcome = "η ahead on mechanism"
     elif ahead["theta"] and ahead["eta"]:
         outcome = "mixed"
+    elif not any(math.isfinite(c["delta"]) for c in comps):
+        outcome = "not evaluable (no size with enough eligible seeds)"
     else:
         outcome = "tie"
     reported = []  # referee-dependent, value-dependent or partial differences, reported with the outcome
@@ -1018,6 +1030,13 @@ def analyse(manifest: str | os.PathLike, cache_dir: str | os.PathLike, *, B: int
     t0 = time.perf_counter()
     stage1_failed = dict(stage1_failed or {})
     records = load_manifest(manifest)
+    for rec in records:  # a done object whose light curve or stage-1 cache is missing counts as a stage-1 failure
+        if rec.get("status") == "done" and rec["object_id"] not in stage1_failed:
+            missing = [name for name, path in (("light curve", resolve_path(rec["lightcurve"], manifest)),
+                                               ("stage-1 cache", Path(cache_dir) / f"{rec['object_id']}.npz"))
+                       if not Path(path).is_file()]
+            if missing:
+                stage1_failed[rec["object_id"]] = "missing " + " and ".join(missing)
     for rec in records:
         if rec["object_id"] in stage1_failed and rec.get("status") == "done":
             rec["status"] = "stage1_failed"

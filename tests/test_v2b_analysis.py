@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import itertools
 import json
+from pathlib import Path
 import math
 
 import numpy as np
@@ -513,3 +514,22 @@ def test_analyse_end_to_end(tmp_path):
     assert set(taus["a_no_repeat_p99"]["C_U:theta"]) == {"48", "96"} and taus["c_fixed"]["M_U:eta_g"] == 1e-3
     one = next(x for x in out["runs"] if x["object_id"] == "o96")
     assert len(one["last_checkpoint_values"]["C_U"]["theta"]) == 7  # 3 + 3 + 1 sets
+
+
+def test_analyse_edge_cases_are_reported_not_evaluable(tmp_path):
+    """Independent verification, minor items: a missing light curve withholds instead of crashing; no controls and
+    no family size are 'not evaluable', not passed or tie; an undefined B1 slope is not evaluable."""
+    rng = np.random.default_rng(3)
+    recs = [_write_object(tmp_path, f"m96{s}", v2b.MAIN, 96, s, 2, FORMED, rng, 0.05) for s in (0, 1)]
+    man = tmp_path / "manifest.jsonl"
+    man.write_text("".join(json.dumps(r) + "\n" for r in recs))
+    cache = tmp_path / "cache"
+    for r in recs:
+        v2b.stage1_object(r, cache, man)
+    out = v2b.analyse(man, cache, B=50, min_eligible=5, replays=None, n_checkpoints=4)
+    assert out["instrument_checks"]["IC-2"]["passed"] is None and not out["instrument_checks"]["IC-2"]["evaluable"]
+    assert out["M"]["decision"]["outcome_if_checks_pass"].startswith("not evaluable")
+    assert out["B1"]["predictions"]["slope_interval_below_0"]["met"] is None  # one size only
+    Path(recs[1]["lightcurve"]).unlink()
+    out2 = v2b.analyse(man, cache, B=50, min_eligible=1, replays=None, n_checkpoints=4)
+    assert any("stage 1 failed" in w and "m961" in w for w in out2["status"]["withheld_because"])
