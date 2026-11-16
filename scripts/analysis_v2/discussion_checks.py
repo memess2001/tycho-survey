@@ -19,6 +19,14 @@ E. Two heads under a uniform ablation design: the θ value (information added by
    with the two single terms) and the bounded η value (the same for least squares on the mean) for AND-like and
    OR-like tables.
 
+F. The stored light-curve indicators across task families (DR1: parity k = 2, 3, 4; Markov language, iid contexts,
+   one coupling of order at least 2; modular addition, runs that reach 90 % test accuracy. DR2b-pilot2: tiled
+   induction, 2 layers). For each run, the step at which an indicator has completed 25 % or 50 % of its total change,
+   divided by the step at which the event series (test accuracy; exact loss for the Markov language; repeat loss for
+   induction) has completed the same fraction. A universal sequence of events would give each indicator about the
+   same ratio in every family. Also: the hidden effective rank of the 2-layer induction runs against the 1-layer
+   controls, which cannot form the circuit.
+
 Usage, from the repository root: ``python scripts/analysis_v2/discussion_checks.py``. Numpy and the standard library
 only (it loads ``hierarchy_projections.py`` from its own directory for the logistic fit). Writes
 ``docs/results/v2_analysis/discussion_checks_2026-11-16.json``. Well under a minute.
@@ -295,6 +303,91 @@ def two_heads() -> list[dict]:
     return out
 
 
+# ---------------------------------------------------------------------------------------------------- F
+INDICATORS = ("erank_hidden", "erank_weights", "dist_from_init", "param_norm", "ntk_align", "ntk_trace",
+              "ntk_top_eig", "ntk_erank")
+
+
+def frac_time(steps: np.ndarray, y: np.ndarray, frac: float) -> float:
+    ok = np.isfinite(y)
+    steps, y = steps[ok], y[ok]
+    if len(y) < 6:
+        return float("nan")
+    y0, y1 = float(y[0]), float(np.mean(y[-5:]))
+    if abs(y1 - y0) < 1e-12:
+        return float("nan")
+    prog = (y - y0) / (y1 - y0)
+    for i in range(1, len(prog)):
+        if prog[i] >= frac and prog[i - 1] < frac:
+            a, b = math.log(max(float(steps[i - 1]), 0.5)), math.log(float(steps[i]))
+            return math.exp(a + (frac - prog[i - 1]) / (prog[i] - prog[i - 1]) * (b - a))
+    return float("nan")
+
+
+def photometry_families(releases: Path, work: Path) -> dict:
+    fam = defaultdict(list)
+
+    def add(family: str, path: Path, event_key: str) -> None:
+        with np.load(path, allow_pickle=False) as f:
+            step = f["step"].astype(float)
+            ev = f[event_key].astype(float)
+            r = {"event": {fr: frac_time(step, ev, fr) for fr in (0.25, 0.5)}}
+            for k in INDICATORS:
+                y = f[k].astype(float)
+                yy = y[np.isfinite(y)]
+                r[k] = {fr: frac_time(step, y, fr) for fr in (0.25, 0.5)}
+                r[k]["rises"] = bool(np.mean(yy[-5:]) > yy[0]) if len(yy) > 5 else None
+            drift = 1.0 - f["rep_cka_prev"].astype(float)
+            ok = np.isfinite(drift) & (step >= 5)
+            r["rep_drift_peak"] = float(step[ok][int(np.argmax(drift[ok]))])
+        fam[family].append(r)
+
+    lc1 = lightcurves(releases / "DR1", work / "dr1")
+    for o in read_objects(releases / "DR1"):
+        cfg = json.loads(o["task_cfg_json"])
+        path = lc1 / f"{o['object_id']}.npz"
+        if o["region"].startswith("parity"):
+            add(o["region"], path, "test_acc")
+        elif (o["region"] == "markov-v1" and cfg.get("train_context") == "iid" and ";" not in cfg["couplings"]
+              and "," in cfg["couplings"]):
+            add("markov iid, one coupling of order >= 2", path, "x_kl_true")
+        elif o["region"] == "grokking-v1" and o["t_test_acc90"] not in ("", "nan"):
+            add("modular addition, reaches 90 %", path, "test_acc")
+    lc2 = lightcurves(releases / "DR2b-pilot2", work / "dr2b_pilot2")
+    erank = []
+    for o in read_objects(releases / "DR2b-pilot2"):
+        cfg = json.loads(o["task_cfg_json"])
+        path = lc2 / f"{o['object_id']}.npz"
+        if int(cfg["n_layer"]) == 2 and float(cfg["p_repeat"]) == 1.0:
+            add("induction tiled, 2 layers", path, "x_loss_rep")
+        if float(cfg["p_repeat"]) == 1.0 and abs(float(o["train_lr"]) - 3e-4) < 1e-9:
+            with np.load(path, allow_pickle=False) as f:
+                step, y = f["step"].astype(float), f["erank_hidden"].astype(float)
+            erank.append({"n_layer": int(cfg["n_layer"]), "seed": int(o["seed"]),
+                          "erank_hidden": {str(s): at(step, y, s) for s in (0, 50, 100, 200, 300, 400, 1000)}})
+
+    def med(xs) -> float | None:
+        xs = np.asarray([x for x in xs if x is not None], dtype=float)
+        xs = xs[np.isfinite(xs)]
+        return float(np.median(xs)) if len(xs) else None
+
+    out = {"families": {}, "pilot2_erank_hidden_lr_3e-4": sorted(erank, key=lambda r: (r["n_layer"], r["seed"]))}
+    for name, rs in fam.items():
+        entry = {"runs": len(rs), "t_event": {str(fr): med(r["event"][fr] for r in rs) for fr in (0.25, 0.5)},
+                 "rep_drift_peak_over_t_event50": med(r["rep_drift_peak"] / r["event"][0.5] for r in rs),
+                 "indicators": {}}
+        for k in INDICATORS:
+            rises = [r[k]["rises"] for r in rs if r[k]["rises"] is not None]
+            entry["indicators"][k] = {
+                "ratio": {str(fr): med(r[k][fr] / r["event"][fr] for r in rs) for fr in (0.25, 0.5)},
+                "share_of_runs_in_which_it_rises": float(np.mean(rises)) if rises else None}
+        out["families"][name] = entry
+    ratios = [e["indicators"][k]["ratio"]["0.25"] for e in out["families"].values() for k in INDICATORS]
+    ratios = [r for r in ratios if r is not None]
+    out["ratio_range_at_25_percent"] = [min(ratios), max(ratios)]
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--releases", type=Path, default=REPO / "releases")
@@ -311,6 +404,7 @@ def main(argv: list[str] | None = None) -> int:
         "D_pilot1_single_repeat": pilot1(args.releases / "DR2b-pilot", args.work / "dr2b_pilot",
                                          REPO / "docs" / "results" / "v2_analysis" / "v2b_pilot.json"),
         "E_two_heads": two_heads(),
+        "F_photometry_across_families": photometry_families(args.releases, args.work),
     }
     args.out.write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
     a, b, d = (result["A_refinement_dr1_grokking"], result["B_tiled_induction_content_free_losses"],
@@ -329,6 +423,11 @@ def main(argv: list[str] | None = None) -> int:
     print("D:", {k: v for k, v in d.items() if k != "runs"})
     for r in result["E_two_heads"]:
         print(f"E: {r['table']:<46s} theta {r['theta_nats']:.4f}  eta {r['eta_bounded_nats']:.4f}")
+    fmt = lambda v: "   n/a" if v is None else f"{v:6.2f}"  # noqa: E731
+    print("F: t_indicator / t_event at 25 %: " + " ".join(k[:9] for k in INDICATORS))
+    for name, e in result["F_photometry_across_families"]["families"].items():
+        print(f"F: {name:>40s} ({e['runs']:>3d} runs) "
+              + " ".join(fmt(e["indicators"][k]["ratio"]["0.25"]) for k in INDICATORS))
     return 0
 
 
