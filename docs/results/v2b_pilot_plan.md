@@ -103,6 +103,35 @@ Adam lr 1e-3, batch 32, one seed. Scratch code, not in the repository.
      token, not only the most recent one. This matters in the tiled layout, where there are several such tokens.
      Pilot 1 used the old score.
 
+9. **Pilot 2 on the server** (DR2b-pilot2). The 24 objects with 3 heads per layer failed: d_model 64 is not
+   divisible by 3. That was a configuration error, now fixed and guarded by a test. In the 24 with 2 heads:
+   * The tiled layout formed the circuit in 6 of 6 two-layer runs (previous-token score 0.88 to 0.91, induction
+     score 0.93 to 0.96, repeat loss about 0.01).
+   * The controls failed as expected: without repeats, chance (4.159); 1 layer, 1.65 to 1.89, roughly what
+     in-context token counting alone achieves.
+   * **Phase change.** The repeat loss stays near 3.2 and then falls below 1:
+     * at learning rate 3e-4, between steps 300 and 430;
+     * at 1e-3, at about step 200.
+
+     The induction scores jump at the same time. The previous-token head becomes clean (≥ 0.5) much later: steps
+     5,900 to 7,500 at 3e-4.
+10. **3 heads per layer, locally** (d_model 96, seeds 310–312, both learning rates, 6 runs in pattern mode).
+    * Circuit in 6 of 6: one previous-token head (0.91 to 0.95) and two or three induction heads.
+    * **Mechanism preview.** At the last checkpoint, take the AUC with which a measure ranks circuit pairs
+      (composition and redundancy) above pairs that involve a head outside the circuit (conditional reference,
+      uniform ablation design).
+      * θ: 0.63 to 0.94 (mean about 0.85).
+      * η: 0.76 to 1.00 (mean about 0.94), both values.
+      * η is ahead in 6 of 6.
+    * **Prediction preview.** The first checkpoint where a composition pair reaches 0.001 nats:
+      * η: at or one checkpoint after the loss falls below 1 (Gaussian at it; bounded one checkpoint later at
+        3e-4);
+      * θ: one or two checkpoints later still.
+
+      No measure gave a lead before the loss drop at this checkpoint spacing.
+    * **Expectation.** With these previews, a second θ-versus-η test on this task is expected to favour η again.
+      Like everything in this section, this is disclosed in the Part B pre-registration.
+
 ## 3. Pilot 2 design
 
 `configs/sky_v2b_pilot2.yaml`, 48 objects:
