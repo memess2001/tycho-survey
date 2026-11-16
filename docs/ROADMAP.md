@@ -27,6 +27,20 @@ gates before it can say anything useful about language models:
 
 ## Change log
 
+### 16 November 2026 (later): Part B becomes a formation study; gate 2 stays open
+
+* **Review of the first Part B draft** ([v2_analysis/v2b_prereg_review.md](results/v2_analysis/v2b_prereg_review.md)).
+  * On this task no prediction referee can tell θ and η apart: the circuit forms abruptly, and every measure crosses
+    any control-calibrated threshold at the same early checkpoint.
+  * The mechanism referee's expected η win came from counting a functional layer-0 "context" head (it attends to
+    t − 2) as outside the circuit. Excluding it gives a tie.
+  * The design draft does not let a mechanism referee alone pass gate 2.
+* **Decision** (the researcher, 16 November). Part B is a study of how the induction circuit forms and how this
+  changes with size (B1, B2). The θ/η comparison of how well each agrees with head roles is reported, but does not
+  count toward gate 2. Gate 2 stays open for a later test with a real prediction or intervention referee, designed
+  with Prof. Sugiyama.
+* **Next.** A consistency check of the revised pre-registration; the analysis code and its verification; the run.
+
 ### 16 November 2026: Part B pilot 1 analysed; tiled layout; pilot 2 ready
 
 * **Pilot 1** (DR2b-pilot, 48 objects). The controls behaved as expected. The two-layer circuit formed fully in

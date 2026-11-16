@@ -76,5 +76,18 @@ It also reanalysed the local 3-head runs and DR2b-pilot2.
 * **Engineering (both done in this commit):**
   * a t − 2 attention score (`prev2_…`) in the induction task's light curve;
   * the final weights stored with the pattern observations (`param/<name>` arrays), and so in data releases.
-* **The design decision** that follows from findings 1 and 3 (whether Part B can be a second test of gate 2 at all)
-  was put to the researcher before the pre-registration is revised.
+* **The design decision** that follows from findings 1 and 3, whether Part B can be a second test of gate 2 at all,
+  was put to the researcher. The answer (16 November 2026): run Part B as a study of how the circuit forms (B1,
+  B2), and report the θ/η mechanism comparison without counting it toward gate 2. Gate 2 stays open for a later test
+  with a real prediction or intervention referee, designed with Prof. Sugiyama.
+* **The revised pre-registration** applies the remaining findings:
+  * R2 is descriptive, with three calibrations.
+  * The mechanism comparison uses two referees, the context head counted as role-less or excluded. Being ahead
+    under one only is "referee-dependent".
+  * §0 discloses everything in finding 4 and the review's own runs.
+  * Smaller fixes:
+    * the pattern grid equals the evaluation grid;
+    * a tie tolerance;
+    * η at C_U and M_U noted as not independent;
+    * exact wording for B1, B2, the bootstrap, M_U and IC-2;
+    * the final weights are stored.
