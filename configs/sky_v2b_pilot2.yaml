@@ -1,0 +1,47 @@
+# Sky v2, Part B pilot 2: induction heads with the tiled layout (CPU server).
+# Plan: docs/results/v2b_pilot_plan.md (§2 explains why pilot 1's single-repeat layout was replaced). Not a
+# pre-registration: the Part B pre-registration follows and discloses both pilots. Pattern mode over head-ablation
+# patterns at 40 log-spaced checkpoints. Run with: bash ops/linux/start_v2b_pilot2.sh
+version: sky-v2b-pilot2
+description: >
+  Part B pilot 2. Attention-only TinyGPT (d_model 64) with 1 (control) or 2 layers and 2 or 3 heads per layer, trained
+  on sequences that tile a random segment of length 4 to 16 (p_repeat = 1), or on uniform random tokens
+  (p_repeat = 0, control), at learning rate 1e-3 or 3e-4 (the slower rate delays the phase change, which the
+  prediction referee needs). 12,000 steps. Seeds 310-312 with data_seed equal to the seed. No refinement, no
+  follow-ups.
+#
+# Erratum (16 November 2026). As first run on the server, this file crossed n_head {2, 3} with d_model 64. All 24
+# objects with 3 heads failed when the model was built (64 is not divisible by 3); the 24 with 2 heads are DR2b-pilot2.
+# The 3-head configurations now form their own region with d_model 96 (32 dimensions per head, as with 2 heads); the
+# 2-head objects keep their identities. tests/test_sky.py now builds the model of every point of every sky file.
+regions:
+  - name: induction-tiled
+    task: induction
+    seeds: 3
+    seed_base: 310
+    data_seed_from_seed: true
+    priority: 1.0
+    ri_policy: always
+    ri: {mode: patterns, n_probe: 1024, n_points: 40}
+    fixed: {vocab: 64, seq_len: 64, rep_min: 4, rep_max: 16, layout: tiled, d_model: 64, attn_only: true,
+            probe_size: 128, n_head: 2}
+    train: {steps: 12000, batch_size: 32, optimizer: adam, n_log_evals: 80, n_lin_evals: 0, ntk_every: 0}
+    knobs:
+      n_layer: {values: [1, 2], kind: ordinal}
+      train.lr: {values: [0.0003, 0.001], kind: log}
+      p_repeat: {values: [0.0, 1.0], kind: categorical}
+  - name: induction-tiled-h3
+    task: induction
+    seeds: 3
+    seed_base: 310
+    data_seed_from_seed: true
+    priority: 1.0
+    ri_policy: always
+    ri: {mode: patterns, n_probe: 1024, n_points: 40}
+    fixed: {vocab: 64, seq_len: 64, rep_min: 4, rep_max: 16, layout: tiled, d_model: 96, attn_only: true,
+            probe_size: 128, n_head: 3}
+    train: {steps: 12000, batch_size: 32, optimizer: adam, n_log_evals: 80, n_lin_evals: 0, ntk_every: 0}
+    knobs:
+      n_layer: {values: [1, 2], kind: ordinal}
+      train.lr: {values: [0.0003, 0.001], kind: log}
+      p_repeat: {values: [0.0, 1.0], kind: categorical}

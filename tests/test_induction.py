@@ -1,6 +1,8 @@
 """Sky v2 Part B: the induction task (random repeat positions, controls, head scores) and TinyGPT head ablation."""
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import pytest
 import torch
@@ -101,6 +103,44 @@ def test_runner_pattern_mode_on_head_ablations(tmp_path):
     assert res.status == "done", res.error
     pat = res.patterns
     assert pat["logodds"].shape == (pat["steps"].size, 16) and "truth" not in pat
-    assert "x_ind_l1h0" in res.light_curve
+    assert "x_ind_l1h0" in res.light_curve and "x_prev2_l0h1" in res.light_curve
+    # the final weights are stored and rebuild the network exactly
+    from tycho.tasks import make_task as _mk
+    m = _mk("induction", spec.task_cfg, 0).build_model()
+    m.load_state_dict({k[len("param/"):]: torch.as_tensor(v) for k, v in pat.items() if k.startswith("param/")})
+    z_final = _mk("induction", spec.task_cfg, 0).pattern_logodds(m)
+    assert np.allclose(z_final, pat["logodds"][-1])
     again = run_object(spec, work_dir=tmp_path / "b", ri=ri)
     assert np.array_equal(again.patterns["logodds"], pat["logodds"])
+
+
+def test_tiled_sequences_repeat_with_random_period_and_phase():
+    from tycho.tasks.induction import tiled_sequences
+    x, rep, src = tiled_sequences(100, 40, 50, 4, 12, 1.0, torch.Generator().manual_seed(3))
+    periods = set()
+    for i in range(100):
+        t = torch.nonzero(rep[i]).flatten()
+        L = int(t[0])
+        periods.add(L)
+        assert 4 <= L <= 12 and torch.equal(x[i, L:], x[i, :40 - L])  # period L
+        assert torch.all(t == torch.arange(L, 39)) and torch.equal(src[i, t], t - L + 1)
+    assert len(periods) > 5
+    _, rep0, _ = tiled_sequences(20, 40, 50, 4, 12, 0.0, torch.Generator().manual_seed(4))
+    assert not rep0.any()
+
+
+def test_induction_and_duplicate_key_sets():
+    t = make_task("induction", {"vocab": 8, "seq_len": 12, "rep_min": 3, "rep_max": 3, "layout": "tiled",
+                                "d_model": 8, "n_layer": 2, "n_head": 1, "probe_size": 2}, 0)
+    pr = t._probe
+    x, ind, dup = pr["x"][0], pr["ind_keys"][0], pr["dup_keys"][0]
+    for q in range(x.numel()):
+        for j in range(x.numel()):
+            assert bool(ind[q, j]) == (1 <= j <= q and int(x[j - 1]) == int(x[q]))
+            assert bool(dup[q, j]) == (j < q and int(x[j]) == int(x[q]))
+    m = t.build_model()
+    metrics = t.extra_metrics(m)
+    assert {"dup_l0h0", "ind_l1h0", "prev_l1h0"} <= set(metrics)
+    assert math.isnan(metrics["loss_other"]) or metrics["loss_other"] > 0
+    with pytest.raises(ValueError):
+        make_task("induction", {"layout": "spiral"}, 0)

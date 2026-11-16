@@ -39,7 +39,8 @@ records instead of a scan: the float64 log-odds of output 1 on every input patte
 ``ri.n_probe`` probe codes drawn from the task's training distribution D with the generator ``(spec.seed, "ri",
 t)``. The result's ``patterns`` dict holds ``steps``, ``logodds (steps × 2^d)``, ``counts (steps × 2^d)``, the
 pmfs ``pmf_D``, ``pmf_U``, ``pmf_S``, ``truth`` (true P(output 1 | pattern); absent for tasks without one, such as
-head-ablation patterns) and ``input_names``.
+head-ablation patterns) and ``input_names``; tasks with ``store_final_weights`` add the model's final state as
+``param/<name>`` arrays.
 
 Interruption and resume
 -----------------------
@@ -334,6 +335,9 @@ class _Run:
         truth = task.pattern_truth()
         if truth is not None:  # tasks without a ground-truth conditional (head-ablation patterns) omit it
             out["truth"] = np.asarray(truth, dtype=np.float64)
+        if getattr(task, "store_final_weights", False):  # the weights at the end of this result, for re-analysis
+            for name, tensor in self.model.state_dict().items():
+                out[f"param/{name}"] = tensor.detach().to("cpu").numpy().copy()
         return out
 
     # ------------------------------------------------------------------------------------------ checkpoints

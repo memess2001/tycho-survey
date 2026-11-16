@@ -27,6 +27,23 @@ gates before it can say anything useful about language models:
 
 ## Change log
 
+### 16 November 2026: Part B pilot 1 analysed; tiled layout; pilot 2 ready
+
+* **Pilot 1** (DR2b-pilot, 48 objects). The controls behaved as expected. The two-layer circuit formed fully in
+  only 2 of 12 runs, and never at minimum repeat 12. In both full circuits, η's top head pair was the composition;
+  θ's was not.
+* **Local experiments.** Variants of the single-repeat layout (shorter minimum repeat, shorter repeats, a higher
+  learning rate, longer training) formed the circuit in 0 to 1 of 3 to 6 runs each. Tiling a random segment over
+  the whole sequence formed it in 6 of 6, and the 1-layer control formed none. On those circuits:
+  * with 4 heads per layer, η's top pair was the composition in 3 of 3 and θ's in 1 of 3;
+  * with 2 heads per layer, every measure put the redundant induction-head pair first.
+
+  So the mechanism referee must count both composition and redundancy pairs.
+* **Built.** The tiled layout in the induction task; an induction score that counts every matching earlier
+  position; a duplicate-token score; `configs/sky_v2b_pilot2.yaml` and `ops/linux/start_v2b_pilot2.sh`.
+* **Next.** Pilot 2 on the server, which sets the learning rate for the prediction referee; then the Part B
+  pre-registration.
+
 ### 15 November 2026 (later): Part B started, pilot ready
 
 * **Plan** ([v2b_pilot_plan.md](results/v2b_pilot_plan.md)). Part B studies induction heads in small
