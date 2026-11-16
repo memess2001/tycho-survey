@@ -73,6 +73,27 @@ bash ops/linux/stop_survey.sh
 To restore the earlier settings afterwards: `.venv/bin/python scripts/set_config.py survey.sky=configs/sky_v1.yaml
 scheduler.boundary_refine=true scheduler.followups_per_day=10000`.
 
+## Sky v2, Part B
+
+Part B is a fixed, pre-registered design of 100 objects ([v2b_preregistration.md](results/v2b_preregistration.md)),
+run in pattern mode over head-ablation patterns, with the final weights stored.
+
+```bash
+cd ~/tycho-survey
+git pull
+bash ops/linux/start_v2b.sh
+```
+
+When all 100 objects are done, check for failed ones first. Re-run any failure before the analysis, because objects
+that did not finish count as not formed. Then:
+
+```bash
+bash ops/linux/stop_survey.sh
+.venv/bin/python scripts/analysis_v2/v2a_manifest.py --root . --sky-version sky-v2b --out work/v2b/manifest.jsonl
+setsid nohup .venv/bin/python scripts/analysis_v2/v2b_analysis.py --manifest work/v2b/manifest.jsonl \
+  --out work/v2b/analysis.json --cache work/v2b/stage1 --jobs 80 > work/v2b/analysis.log 2>&1 < /dev/null &
+```
+
 ## Data releases
 
 ```bash

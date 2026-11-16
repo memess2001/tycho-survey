@@ -76,5 +76,51 @@ It also reanalysed the local 3-head runs and DR2b-pilot2.
 * **Engineering (both done in this commit):**
   * a t − 2 attention score (`prev2_…`) in the induction task's light curve;
   * the final weights stored with the pattern observations (`param/<name>` arrays), and so in data releases.
-* **The design decision** that follows from findings 1 and 3 (whether Part B can be a second test of gate 2 at all)
-  was put to the researcher before the pre-registration is revised.
+* **The design decision** that follows from findings 1 and 3, whether Part B can be a second test of gate 2 at all,
+  was put to the researcher. The answer (16 November 2026): run Part B as a study of how the circuit forms (B1,
+  B2), and report the θ/η mechanism comparison without counting it toward gate 2. Gate 2 stays open for a later test
+  with a real prediction or intervention referee, designed with Prof. Sugiyama.
+* **The revised pre-registration** applies the remaining findings:
+  * R2 is descriptive, with three calibrations.
+  * The mechanism comparison uses two referees, the context head counted as role-less or excluded. Being ahead
+    under one only is "referee-dependent".
+  * §0 discloses everything in finding 4 and the review's own runs.
+  * Smaller fixes:
+    * the pattern grid equals the evaluation grid;
+    * a tie tolerance;
+    * η at C_U and M_U noted as not independent;
+    * exact wording for B1, B2, the bootstrap, M_U and IC-2;
+    * the final weights are stored.
+
+## Consistency check of the revision (16 November 2026)
+
+A second agent checked the revised text (commit 5009258) against this record and the pilot data. It edited nothing.
+It confirmed:
+* the counts, the pattern grid (all 71 evaluation steps with `n_points` 80) and the gate-2 reading of the design
+  draft;
+* most numbers, including bounded η being identical at C_U and M_U (largest difference 2e-16);
+* the context-head rule picking the ablation helper in 3 of 3 models with saved weights.
+
+It found, and the pre-registration now fixes:
+
+| # | finding | fix |
+|---|---|---|
+| 1 | "No R2 can tell the views apart" and "an R3 would be circular" overstated the review. With 1-layer 3-head thresholds, θ crossed 2 to 3 checkpoints after η at d_model 96 and 2 to 8 at 48. | Reworded: what the review found, and why an ablation-based R3 on the same output would be circular. |
+| 2 | The onset preview said every calibration crossed together. | The three calibrations are reported separately. |
+| 3 | The previous-token head timing at d_model 96 was wrong (it is 4,600 to 5,200; the quoted 5,900 to 7,500 is from the 2-head d_model 64 runs). | Corrected. |
+| 4 | "9 of 9 attend to t − 2" overstated: attention was measured only in 3 models. | Reworded. New evidence added: the 6 local d_model 64 models each have one such head (0.29 to 0.46). |
+| 5 | The formation precondition required a non-context role-less head. That fails in a run that formed the circuit (d_model 48, seed 331) and in every 2-head model. | Separated into **formation** (B1, B2) and **M eligibility**. The (ii) preview corrected to −0.007 (5 runs); the M_U (ii) preview −0.027 added. |
+| 6 | Pair definitions could be read two ways (two context heads as a same-role pair). | Circuit pairs and both referees' non-circuit pairs defined exactly. |
+| 7 | "Tie" was described as equal agreement. | "No difference under both referees and both η values; referee- or value-dependent differences reported with it." |
+
+Minor points also applied:
+* labels for partial patterns;
+* the composition-only preview (−0.15);
+* the rank tie tolerance;
+* the τ pool;
+* the probe size (6,700 to 6,800 tokens);
+* IC-1, one replay per configuration group, including the weights;
+* the review's d_model 48 steps (614, 692);
+* the ceiling of bounded η's AUC, which makes "θ ahead" nearly unreachable;
+* the 2-head preview marked as referee (i);
+* the run-time note.
