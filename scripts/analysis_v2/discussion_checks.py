@@ -26,6 +26,12 @@ F. The stored light-curve indicators across task families (DR1: parity k = 2, 3,
    induction) has completed the same fraction. A universal sequence of events would give each indicator about the
    same ratio in every family. Also: the hidden effective rank of the 2-layer induction runs against the 1-layer
    controls, which cannot form the circuit.
+   Corrected on 17 November after review. (i) The total change was taken to the end of training; where the event is
+   over early and training runs on without weight decay (Markov language), the indicators keep drifting and their
+   "25 %" lands long after the event. ``ratio_windowed`` takes the total up to three times the event's half-time
+   instead; the original ``ratio`` is kept for the record. (ii) The stored representation drift is per evaluation
+   interval and the intervals grow along the log-spaced grid, so its peak sat late; the peak is now also given for the
+   drift per step, its square root per step and the drift per log-step. Where the peak falls depends on that choice.
 
 Usage, from the repository root: ``python scripts/analysis_v2/discussion_checks.py``. Numpy and the standard library
 only (it loads ``hierarchy_projections.py`` from its own directory for the logistic fit). Writes
@@ -306,14 +312,20 @@ def two_heads() -> list[dict]:
 # ---------------------------------------------------------------------------------------------------- F
 INDICATORS = ("erank_hidden", "erank_weights", "dist_from_init", "param_norm", "ntk_align", "ntk_trace",
               "ntk_top_eig", "ntk_erank")
+#: The windowed ratios take an indicator's total change up to this many times the event's half-time.
+WINDOW = 3.0
 
 
-def frac_time(steps: np.ndarray, y: np.ndarray, frac: float) -> float:
+def frac_time(steps: np.ndarray, y: np.ndarray, frac: float, until: float | None = None) -> float:
+    """Step at which ``y`` has completed ``frac`` of its total change. The total runs to the end of training (mean of
+    the last five evaluations) or, with ``until``, to the last evaluation at or before that step."""
     ok = np.isfinite(y)
+    if until is not None:
+        ok &= steps <= until
     steps, y = steps[ok], y[ok]
     if len(y) < 6:
         return float("nan")
-    y0, y1 = float(y[0]), float(np.mean(y[-5:]))
+    y0, y1 = float(y[0]), float(np.mean(y[-5:]) if until is None else y[-1])
     if abs(y1 - y0) < 1e-12:
         return float("nan")
     prog = (y - y0) / (y1 - y0)
@@ -332,14 +344,27 @@ def photometry_families(releases: Path, work: Path) -> dict:
             step = f["step"].astype(float)
             ev = f[event_key].astype(float)
             r = {"event": {fr: frac_time(step, ev, fr) for fr in (0.25, 0.5)}}
+            window = WINDOW * r["event"][0.5]
             for k in INDICATORS:
                 y = f[k].astype(float)
                 yy = y[np.isfinite(y)]
                 r[k] = {fr: frac_time(step, y, fr) for fr in (0.25, 0.5)}
+                r[k]["windowed"] = {fr: frac_time(step, y, fr, until=window) if math.isfinite(window) else float("nan")
+                                    for fr in (0.25, 0.5)}
                 r[k]["rises"] = bool(np.mean(yy[-5:]) > yy[0]) if len(yy) > 5 else None
             drift = 1.0 - f["rep_cka_prev"].astype(float)
             ok = np.isfinite(drift) & (step >= 5)
             r["rep_drift_peak"] = float(step[ok][int(np.argmax(drift[ok]))])
+            # the stored drift is per evaluation interval, and the intervals grow along the log-spaced grid
+            dt = np.diff(step, prepend=np.nan)
+            dlog = np.diff(np.log(np.maximum(step, 0.5)), prepend=np.nan)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                rates = {"per_interval": drift, "per_step": drift / dt,
+                         "sqrt_per_step": np.sqrt(np.maximum(drift, 0.0)) / dt, "per_log_step": drift / dlog}
+            r["rep_drift_peaks"] = {}
+            for name, v in rates.items():
+                okv = np.isfinite(v) & (step >= 5)
+                r["rep_drift_peaks"][name] = float(step[okv][int(np.argmax(v[okv]))]) if okv.any() else float("nan")
         fam[family].append(r)
 
     lc1 = lightcurves(releases / "DR1", work / "dr1")
@@ -375,16 +400,27 @@ def photometry_families(releases: Path, work: Path) -> dict:
     for name, rs in fam.items():
         entry = {"runs": len(rs), "t_event": {str(fr): med(r["event"][fr] for r in rs) for fr in (0.25, 0.5)},
                  "rep_drift_peak_over_t_event50": med(r["rep_drift_peak"] / r["event"][0.5] for r in rs),
+                 "rep_drift_peak_over_t_event50_by_normalisation": {
+                     nm: med(r["rep_drift_peaks"][nm] / r["event"][0.5] for r in rs)
+                     for nm in ("per_interval", "per_step", "sqrt_per_step", "per_log_step")},
                  "indicators": {}}
         for k in INDICATORS:
             rises = [r[k]["rises"] for r in rs if r[k]["rises"] is not None]
             entry["indicators"][k] = {
                 "ratio": {str(fr): med(r[k][fr] / r["event"][fr] for r in rs) for fr in (0.25, 0.5)},
+                "ratio_windowed": {str(fr): med(r[k]["windowed"][fr] / r["event"][fr] for r in rs)
+                                   for fr in (0.25, 0.5)},
                 "share_of_runs_in_which_it_rises": float(np.mean(rises)) if rises else None}
         out["families"][name] = entry
-    ratios = [e["indicators"][k]["ratio"]["0.25"] for e in out["families"].values() for k in INDICATORS]
-    ratios = [r for r in ratios if r is not None]
-    out["ratio_range_at_25_percent"] = [min(ratios), max(ratios)]
+
+    def span(key: str) -> list[float]:
+        vals = [e["indicators"][k][key]["0.25"] for e in out["families"].values() for k in INDICATORS]
+        vals = [v for v in vals if v is not None]
+        return [min(vals), max(vals)]
+
+    out["ratio_range_at_25_percent"] = span("ratio")
+    out["window_in_units_of_t_event50"] = WINDOW
+    out["ratio_windowed_range_at_25_percent"] = span("ratio_windowed")
     return out
 
 
@@ -424,10 +460,19 @@ def main(argv: list[str] | None = None) -> int:
     for r in result["E_two_heads"]:
         print(f"E: {r['table']:<46s} theta {r['theta_nats']:.4f}  eta {r['eta_bounded_nats']:.4f}")
     fmt = lambda v: "   n/a" if v is None else f"{v:6.2f}"  # noqa: E731
-    print("F: t_indicator / t_event at 25 %: " + " ".join(k[:9] for k in INDICATORS))
-    for name, e in result["F_photometry_across_families"]["families"].items():
-        print(f"F: {name:>40s} ({e['runs']:>3d} runs) "
-              + " ".join(fmt(e["indicators"][k]["ratio"]["0.25"]) for k in INDICATORS))
+    fam = result["F_photometry_across_families"]
+    for key, label in (("ratio", "total to the end of training"),
+                       ("ratio_windowed", "total to 3 x the event's half-time")):
+        print(f"F: t_indicator / t_event at 25 % ({label}): " + " ".join(k[:9] for k in INDICATORS))
+        for name, e in fam["families"].items():
+            print(f"F: {name:>40s} ({e['runs']:>3d} runs) "
+                  + " ".join(fmt(e["indicators"][k][key]["0.25"]) for k in INDICATORS))
+    print("F: ranges at 25 %:", [round(v, 3) for v in fam["ratio_range_at_25_percent"]], "windowed",
+          [round(v, 3) for v in fam["ratio_windowed_range_at_25_percent"]])
+    print("F: representation-drift peak / t_event(50 %), by normalisation of the drift")
+    for name, e in fam["families"].items():
+        print(f"F: {name:>40s} " + "  ".join(f"{nm} {fmt(v)}" for nm, v in
+                                             e["rep_drift_peak_over_t_event50_by_normalisation"].items()))
     return 0
 
 

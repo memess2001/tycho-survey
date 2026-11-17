@@ -40,6 +40,11 @@ standard library only; they do not import tycho). Numbers:
 * **Not new as a phenomenon.** That networks learn low-order statistics first is established (§5). What may be worth
   testing is the exact, in-advance version: plateau heights, which shortcut appears, and how long the network waits.
   §6 gives predictions for configurations that have not been run.
+* **Added 17 November: a first test of the delay rule (§6.1; local pilot, exploratory).** On new seeds and with the
+  predictions of §6 fixed first, the rule holds where it predicts a delay of at most 1.5 (measured 1.03, 1.10 and
+  1.35 to 1.48 against 1.02, 1.09 and 1.49) and overshoots for stronger lower-order terms (predicted 6.0, measured
+  2.7 to 3.6). With plain SGD in place of Adam the measured delays stay within about a quarter of the rule up to a
+  predicted 6: the rule describes gradient flow, and Adam shortens the delay.
 
 ## 1. Definitions
 
@@ -323,7 +328,8 @@ Ratios at 25 % in the five configurations where the indicators follow the transi
   term before a three-lag term is what a simplicity bias predicts. The content is in the numbers: how close, which
   term, at what loss.
 * **The delay rule rests on four twin comparisons** in iid contexts, three of them fitted after the fact, and it
-  fails as a cross-context rule (§2.6).
+  fails as a cross-context rule (§2.6). A local pilot has since tested it on new seeds and configurations (§6.1): it
+  holds for weak lower-order terms and, under Adam, not for strong ones.
 * **Time resolution.** The 60 checkpoints are a factor of 1.14 apart, with twelve gaps of about 1.3 from step 74
   on. Half-times are interpolated in log(step), and several of them fall next to a gap. A delay of 1.3 to 1.5 is two
   to three grid steps, so the second decimal of the delays is not resolved.
@@ -390,6 +396,63 @@ the gain-weighted analysis leaves, about 1.0 to 1.25. This is the one test here 
 than on the data, and the fixed seeds make it a paired comparison: same initial weights and data, only the loss
 changed.
 
+### 6.1 First outcome: a local pilot of the delay sweep (17 November)
+
+Status: exploratory. Local runs with the repository's runner (`scripts/analysis_v2/delay_sweep_pilot.py` →
+[delay_sweep_pilot.json](v2_analysis/delay_sweep_pilot.json)); seeds 600 to 607, outside every registered range;
+sky v2a's Markov settings, 30,000 steps, pattern mode at 60 checkpoints; 200 runs. Not pre-registered by the project
+and not recomputed independently. The table of predictions above was committed on 16 November, before these runs.
+A second arm with plain SGD (learning rate 0.03, no momentum) was added because a reviewer proposed that the part of
+the delay the gain does not explain is an effect of Adam's second-moment estimate and should vanish under SGD. The
+rules' values are the same for SGD, but they were written with Adam in mind, so the SGD rows are not predictions on
+record.
+
+Delay of the higher-order term's order content: the median over 8 seeds of the per-seed ratio "with the lower-order
+term" over "alone", at 25 / 50 / 75 % of the final value. Gain-weighted: the same ratio for the term's Walsh
+coefficient in gain-weighted time (§2.6).
+
+| with | rule A | Adam | SGD | gain-weighted, Adam | gain-weighted, SGD |
+|---|---|---|---|---|---|
+| {1}:0.25 + {1,3}:0.8 | 1.02 | 1.03 / 1.03 / 1.05 | not run | 1.03 / 1.02 / 1.02 | not run |
+| {1}:0.5 + {1,3}:0.8 | 1.09 | 1.10 / 1.11 / 1.11 | 1.11 / 1.14 / 1.18 | 1.08 / 1.04 / 1.05 | 1.02 / 1.04 / 1.07 |
+| {1}:1.0 + {1,3}:0.8 (DR2a twin, new seeds) | 1.49 | 1.47 / 1.51 / 1.60 | 1.50 / 1.66 / 1.77 | 1.19 / 1.14 / 1.15 | 1.10 / 1.12 / 1.21 |
+| {1}:1.5 + {1,3}:0.8 | 2.69 | 1.88 / 2.12 / 2.54 | 2.41 / 2.77 / 3.21 | 1.19 / 1.07 / 1.07 | 1.16 / 1.12 / 1.20 |
+| {1}:2.0 + {1,3}:0.8 | 6.02 | 2.73 / 3.19 / 3.90 | 4.43 / 5.58 / 7.25 | 1.27 / 1.05 / 0.98 | 1.34 / 1.07 / 1.19 |
+| {4}:1.0 + {1,3}:0.8 | 1.49 | 1.35 / 1.48 / 1.56 | 1.59 / 1.74 / 1.86 | 1.10 / 1.08 / 1.14 | 1.13 / 1.16 / 1.26 |
+| {4}:2.0 + {1,3}:0.8 | 6.02 | 3.03 / 3.55 / 3.85 | 5.99 / 7.09 / 8.67 | 1.22 / 1.08 / 1.04 | 1.39 / 1.29 / 1.39 |
+| {1}:1.0 + {1,2,3}:1.0 (DR2a twin, new seeds) | 1.30 | 1.27 / 1.35 / 1.42 | 1.49 / 1.56 / 1.65 | 0.97 / 1.00 / 1.07 | 1.09 / 1.15 / 1.22 |
+| {1}:2.0 + {1,2,3}:1.0 | 4.38 | 2.77 / 3.12 / 3.82 | 4.81 / 5.56 / 6.60 | 0.78 / 0.78 / 0.88 | 0.93 / 1.15 / 1.39 |
+
+* **Weak lower-order terms: the rule holds.** §6 stated the prediction at 25 %. There the three configurations
+  predicted on record with a rule A of at most 1.5 give 1.03, 1.10 and 1.35, against 1.02, 1.09 and 1.49. The third,
+  with the lower-order term on lag 4, is 9 % low at 25 % and within 1 % at 50 %. The two DR2a twins give 1.47 and
+  1.27 on the new seeds (DR2a: 1.48 and 1.33).
+* **Strong lower-order terms: it overshoots under Adam**, as §6 expected. At 25 %: 2.69 → 1.88, 6.02 → 2.73 and
+  3.03, 4.38 → 2.77. Rule B overshoots more in every row.
+* **Under SGD the rule holds much further.** The SGD delays are within −26 % and +15 % of rule A at 25 %, and
+  within −7 % and +27 % at 50 %, over the whole table. Paired by seed, the delay at 50 % under SGD is 1.01, 1.08,
+  1.29 and 1.72 times the delay under Adam as the lower-order strength goes from 0.5 to 2.0 (8 of 8 seeds above 1
+  from 1.5 on). The sketch behind rule A is a gradient-flow argument. Adam's normalisation of the step makes up for
+  part of the lost gain; it does not add delay.
+* **Gain-weighted time.** §6 expected the ratio to stay within 1.0 to 1.25. For the {1,3} twins under Adam it is 0.98
+  to 1.27. It fails for {1}:2.0 + {1,2,3}:1.0 (0.78 to 0.88: in gain-weighted time the term arrives early). Under
+  SGD it is 1.02 to 1.39 with one value of 0.93: the part of the delay that the gain does not explain is there
+  without Adam.
+* **The lag of the lower-order term matters a little, and against "competition for shared inputs".** Paired by seed,
+  the half-time with the lower-order term on lag 4 over the same with lag 1 is, at 25 / 50 / 75 %: under SGD 1.03 /
+  1.07 / 1.05 at strength 1.0 and 1.35 / 1.27 / 1.20 at strength 2.0 (8 of 8 seeds above 1); under Adam 0.91 / 0.92
+  / 0.98 at strength 1.0 (7 of 8 seeds below 1 at 25 and 50 %) and 1.07 / 1.10 / 1.00 at strength 2.0. Neither
+  rule has a lag dependence. A lower-order term on an input that the higher-order term also uses delays it less
+  under SGD, not more.
+* **Not usable.** The three configurations with {1}:3.0 leave 0.003 to 0.006 nats for the higher-order term. The
+  seeds disagree by more than a factor of two for {1,3} (both optimisers), the term's content ends 13 % short of its
+  target in one Adam seed for {1,2,3}, and the SGD runs of that twin have not converged in 30,000 steps. The JSON
+  marks them `reliable: false`; rule A's 28 and 40 are untested.
+* **Limits.** One width and depth, one learning rate per optimiser, iid contexts, eight seeds that share initial
+  networks across configurations (a pairing, as in §4), local runs, no independent recomputation. The squared-error
+  intervention proposed above has not been done; the SGD arm shows that the optimiser is a second place to
+  intervene.
+
 ## 7. Checks and reproduction
 
 * **Internal checks** (`checks` in the JSON; the script stops if they fail).
@@ -410,6 +473,8 @@ changed.
 * **Reproduce.** From the repository root, `python scripts/analysis_v2/hierarchy_projections.py` (about 90 s) and
   `python scripts/analysis_v2/lightcurve_lead_lag.py` (seconds). Both extract the DR2a archives into `work/dr2a`
   when needed and rewrite their JSON files; reruns reproduce the committed files byte for byte.
+* **The pilot of §6.1** needs torch: `PYTHONPATH=. python scripts/analysis_v2/delay_sweep_pilot.py --jobs 4`
+  (200 runs, cached in `work/delay_sweep`; `--skip-runs` analyses the cache). It was not recomputed independently.
 
 ## References
 
