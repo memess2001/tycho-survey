@@ -45,6 +45,10 @@ standard library only; they do not import tycho). Numbers:
   1.35 to 1.48 against 1.02, 1.09 and 1.49) and overshoots for stronger lower-order terms (predicted 6.0, measured
   2.7 to 3.6). With plain SGD in place of Adam the measured delays stay within about a quarter of the rule up to a
   predicted 6: the rule describes gradient flow, and Adam shortens the delay.
+* **Added 17 November, second round (§6.2): the rule is an outcome, not a mechanism.** Under SGD the rate of the
+  higher-order term factorises into a probability residual and a tangent kernel. The lower-order term cuts the
+  residual by more than the rule says and raises the kernel, more so when the two terms share an input; the delay is
+  the product.
 
 ## 1. Definitions
 
@@ -453,6 +457,54 @@ coefficient in gain-weighted time (§2.6).
   intervention proposed above has not been done; the SGD arm shows that the optimiser is a second place to
   intervene.
 
+### 6.2 Second round: what the delay is made of (17 November)
+
+Status as in §6.1: exploratory, local runs, not recomputed independently. A reviewer answered §6.1 with proposed
+mechanisms and predictions; the second round of `scripts/analysis_v2/delay_sweep_pilot.py` (64 further runs) and
+`scripts/analysis_v2/kernel_gate_pilot.py` (40 runs → [kernel_gate_pilot.json](v2_analysis/kernel_gate_pilot.json))
+test them. The predictions and their outcomes are in `notes/discussion_2026-11-16_outside_reviews.md`, §10.5 and
+§10.6; this section keeps what bears on the delay rule.
+
+Notation, for the term {1,3} under plain SGD: F is the coefficient of the log-odds in the term's Walsh direction χ
+(its target is the term's strength), λ = ‖∇_θ F‖² is the tangent kernel in that direction, ρ = E[(p* − q) χ] is the
+probability residual in it. Under gradient flow dF/dt = lr · λ ρ up to cross terms; the exact population rate over
+λ ρ is 0.85 to 1.07 here. So at equal progress F two runs differ in rate by a residual factor and a kernel factor.
+
+| lower-order strength 2.0; at 10 / 25 / 50 / 75 % of the target | with {1} (shared input) | with {4} |
+|---|---|---|
+| steps, over the alone twin's | 6.3 / 5.6 / 6.6 / 8.2 | 6.2 / 6.9 / 8.4 / 10.5 |
+| residual, alone over with | 9.1 / 9.8 / 11.6 / 14.4 | 9.1 / 9.8 / 12.7 / 17.6 |
+| kernel, alone over with | 0.54 / 0.61 / 0.77 / 0.85 | 0.78 / 0.85 / 0.93 / 0.96 |
+
+At strength 1.0 the residual factor is 1.9 to 2.6 (shared) and 1.9 to 2.9, the kernel factor 0.88 to 0.97 and 0.95
+to 0.99. Rule A is 1.49 and 6.02 for the two strengths, rule B 1.77 and 8.35.
+
+* **The output side costs more than rule A.** The residual factor starts at about rule B (1.9 against 1.77, 9.1
+  against 8.35) and grows as the term is learned.
+* **The kernel works the other way.** The lower-order term does not lower the kernel in the {1,3} direction, it raises
+  it: by a factor of up to 1.85 when the lower-order term is on lag 1, up to 1.28 when it is on lag 4.
+* **So the delay rule of §2.6 is the net of two factors of opposite sign.** That it comes out within a quarter of
+  1 / gain under SGD (§6.1) is an outcome. It should not be stated as the mechanism, and "what the gain does not
+  explain" (the 1.02 to 1.39 of §6.1) is not a kernel loss.
+* **Why the lag matters.** At step 150 the kernel of the lag-1 twin is 1.37 times that of the lag-4 twin at strength
+  2.0 (8 of 8 seeds, 1.29 to 1.43; the reviewer's prediction was at least 1.20) and 1.08 times at strength 1.0. The
+  kernel's part from the first-layer weights on s_3 equals Σ_j a_j² E[gate_j · s_1]²: a unit turns a weight on s_3
+  into s_1 s_3 to the extent that its gate is correlated with s_1. At 10 % of the target that part is 0.020 alone,
+  0.075 with {4} and 0.203 with {1}. The reviewer's stronger form, units whose gate is set by the lower-order input
+  and are dead for the term otherwise, does not happen: no unit's gate is a function of s_1 alone or of s_4 alone in
+  any run, and the share of gates that flip with s_3 stays at its initial 0.26 to 0.27.
+* **Two lower-order terms.** Under SGD the order-3 term {1,2,3}:1.0 is delayed by 3.29 (at 50 %) with {1}:1.0 and
+  {2}:1.0, and by 1.52 with {4}:1.0 and {5}:1.0; paired by seed the second half-time is 0.46 times the first (0 of 8
+  seeds above 1). The order-1 rungs differ: with the lower-order terms on the term's own lags the best first-order
+  fit also uses lag 3 (log-odds coefficient −1.22), leaves 0.092 nats instead of 0.183, and rule A is 2.17 against
+  1.63. The reviewer had predicted the opposite order; the analyst had taken the two rules to be equal.
+* **Adam's second moment.** On {1}:2.0 + {1,3}:0.8 the delay at 50 % is 3.19 with β₂ = 0.999, 3.23 with 0.9999, 2.19
+  with 0.9, and 1.74 with β₂ = 0.9 and a batch of 4,096 (SGD: 5.58). A second moment that follows the gradient faster,
+  and a less noisy gradient, shorten the delay; a longer memory does not lengthen it.
+* **Limits.** One term, one width, SGD at one learning rate for the factorisation, eight seeds; the progress variable
+  here is the log-odds coefficient, in §6.1 it is the order content, and the two give different delays (6.6 against
+  5.6 at 50 % for the lag-1 twin at strength 2.0).
+
 ## 7. Checks and reproduction
 
 * **Internal checks** (`checks` in the JSON; the script stops if they fail).
@@ -474,7 +526,9 @@ coefficient in gain-weighted time (§2.6).
   `python scripts/analysis_v2/lightcurve_lead_lag.py` (seconds). Both extract the DR2a archives into `work/dr2a`
   when needed and rewrite their JSON files; reruns reproduce the committed files byte for byte.
 * **The pilot of §6.1** needs torch: `PYTHONPATH=. python scripts/analysis_v2/delay_sweep_pilot.py --jobs 4`
-  (200 runs, cached in `work/delay_sweep`; `--skip-runs` analyses the cache). It was not recomputed independently.
+  (264 runs with the second round, cached in `work/delay_sweep`; `--skip-runs` analyses the cache). §6.2 also needs
+  `PYTHONPATH=. python scripts/analysis_v2/kernel_gate_pilot.py --jobs 4` (40 runs). Neither was recomputed
+  independently.
 
 ## References
 

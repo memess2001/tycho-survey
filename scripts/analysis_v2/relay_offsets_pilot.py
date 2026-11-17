@@ -122,7 +122,8 @@ def run_one(args: tuple[dict, str]) -> str:
         return f"FAILED {job['name']}: {res.error}"
     pat, lc = res.patterns, res.light_curve
     arrays = {k: np.asarray(v) for k, v in pat.items() if k.startswith("param/")}
-    arrays.update({f"lc_{k}": np.asarray(lc[k]) for k in lc if k.startswith(("x_prev", "x_ind", "x_dup"))})
+    arrays.update({f"lc_{k}": np.asarray(lc[k]) for k in lc
+                   if k.startswith(("x_prev", "x_ind", "x_dup", "x_loss_other"))})
     np.savez_compressed(out, logodds=np.asarray(pat["logodds"]), steps=np.asarray(pat["steps"]),
                         lc_step=np.asarray(lc["step"]), lc_loss_rep=np.asarray(lc["x_loss_rep"]),
                         object_id=np.asarray(spec.object_id()), **arrays)
@@ -138,28 +139,20 @@ def run_lengths(x: np.ndarray, lag: int) -> np.ndarray:
     return r
 
 
-def key_ladder(layout: str, rep_min: int, rep_max: int, n_seq: int) -> dict:
-    """Loss and mean probability of the correct token, on the predictable targets, of the predictors with a key of
-    m tokens (module docstring), for m in KEY_LENGTHS; from ``n_seq`` sequences drawn by the task's own generator.
+def ladder_probabilities(xs: np.ndarray, layout: str, rep_min: int, rep_max: int) -> dict:
+    """For sequences ``xs`` (N, 64) and every key length m in KEY_LENGTHS: the probability that the predictor with a
+    key of m tokens (module docstring) gives to the true next token, at every input position (N, 63).
 
     A hypothesis is a repeat length L (and, in the single layout, a start s). Given a prefix x[0..t] it has n copied
     positions; the prefix has likelihood ∝ 64^n if they all match their sources and 0 otherwise. With a key of m
     tokens only the last min(n, m) positions of a copy that is still running are checked (and count); the posterior
     over hypotheses then predicts x[t + 1 − L] where the next position is a copy and a uniform token elsewhere.
     """
-    from tycho.tasks.base import torch_generator
-    from tycho.tasks.induction import Induction
-
-    task = Induction({"vocab": VOCAB, "seq_len": SEQ_LEN, "rep_min": rep_min, "rep_max": rep_max, "layout": layout}, 0)
-    x, rep, _ = task._draw(n_seq, torch_generator(12345, "induction/key-ladder"), 1.0)
-    xs, rep = x.numpy(), rep.numpy()
     S, T = SEQ_LEN, SEQ_LEN - 1                         # inputs 0..T−1, targets 1..T
     lags = np.arange(rep_min, rep_max + 1)
     t = np.arange(T)
-    probs = {m: [] for m in KEY_LENGTHS}
-    others = {m: [] for m in KEY_LENGTHS}
-    for i in range(n_seq):
-        seq = xs[i]
+    out = {m: np.empty((len(xs), T)) for m in KEY_LENGTHS}
+    for i, seq in enumerate(xs):
         acc = {m: [np.zeros(T), np.zeros(T)] for m in KEY_LENGTHS}   # [mass on the true token, total mass]
         for L in lags:
             r = run_lengths(seq, L)
@@ -192,12 +185,24 @@ def key_ladder(layout: str, rep_min: int, rep_max: int, n_seq: int) -> dict:
                 acc[m][0] += a * hit + b / VOCAB
                 acc[m][1] += a + b
         for m in KEY_LENGTHS:
-            probs[m].append((acc[m][0] / acc[m][1])[rep[i]])
-            others[m].append((acc[m][0] / acc[m][1])[~rep[i]])
+            out[m][i] = acc[m][0] / acc[m][1]
+    return out
+
+
+def key_ladder(layout: str, rep_min: int, rep_max: int, n_seq: int) -> dict:
+    """Loss and mean probability of the correct token of the predictors with a key of m tokens, on the predictable
+    targets and (loss only) on the other targets; from ``n_seq`` sequences drawn by the task's own generator."""
+    from tycho.tasks.base import torch_generator
+    from tycho.tasks.induction import Induction
+
+    task = Induction({"vocab": VOCAB, "seq_len": SEQ_LEN, "rep_min": rep_min, "rep_max": rep_max, "layout": layout}, 0)
+    x, rep, _ = task._draw(n_seq, torch_generator(12345, "induction/key-ladder"), 1.0)
+    rep = rep.numpy()
+    probs = ladder_probabilities(x.numpy(), layout, rep_min, rep_max)
     out = {"n_sequences": n_seq, "n_predictable_targets": int(rep.sum()), "n_other_targets": int((~rep).sum()),
            "loss_other_uniform": float(np.log(VOCAB)), "key_length": {}}
     for m in KEY_LENGTHS:
-        p, q = np.concatenate(probs[m]), np.concatenate(others[m])
+        p, q = probs[m][rep], probs[m][~rep]
         out["key_length"]["inf" if m is None else str(m)] = {"loss": float(-np.log(p).mean()), "p": float(p.mean()),
                                                              "loss_other": float(-np.log(q).mean())}
     return out

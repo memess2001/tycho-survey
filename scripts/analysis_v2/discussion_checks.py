@@ -32,6 +32,7 @@ F. The stored light-curve indicators across task families (DR1: parity k = 2, 3,
    instead; the original ``ratio`` is kept for the record. (ii) The stored representation drift is per evaluation
    interval and the intervals grow along the log-spaced grid, so its peak sat late; the peak is now also given for the
    drift per step, its square root per step and the drift per log-step. Where the peak falls depends on that choice.
+   Added after a second review round: the windowed ratio at 25 % with windows of 2 and 5 half-times as well.
 
 Usage, from the repository root: ``python scripts/analysis_v2/discussion_checks.py``. Numpy and the standard library
 only (it loads ``hierarchy_projections.py`` from its own directory for the logistic fit). Writes
@@ -314,6 +315,8 @@ INDICATORS = ("erank_hidden", "erank_weights", "dist_from_init", "param_norm", "
               "ntk_top_eig", "ntk_erank")
 #: The windowed ratios take an indicator's total change up to this many times the event's half-time.
 WINDOW = 3.0
+#: Other windows, to see how much the choice matters.
+OTHER_WINDOWS = (2.0, 5.0)
 
 
 def frac_time(steps: np.ndarray, y: np.ndarray, frac: float, until: float | None = None) -> float:
@@ -351,6 +354,8 @@ def photometry_families(releases: Path, work: Path) -> dict:
                 r[k] = {fr: frac_time(step, y, fr) for fr in (0.25, 0.5)}
                 r[k]["windowed"] = {fr: frac_time(step, y, fr, until=window) if math.isfinite(window) else float("nan")
                                     for fr in (0.25, 0.5)}
+                r[k]["other_windows"] = {w: frac_time(step, y, 0.25, until=w * r["event"][0.5])
+                                         if math.isfinite(window) else float("nan") for w in OTHER_WINDOWS}
                 r[k]["rises"] = bool(np.mean(yy[-5:]) > yy[0]) if len(yy) > 5 else None
             drift = 1.0 - f["rep_cka_prev"].astype(float)
             ok = np.isfinite(drift) & (step >= 5)
@@ -410,6 +415,8 @@ def photometry_families(releases: Path, work: Path) -> dict:
                 "ratio": {str(fr): med(r[k][fr] / r["event"][fr] for r in rs) for fr in (0.25, 0.5)},
                 "ratio_windowed": {str(fr): med(r[k]["windowed"][fr] / r["event"][fr] for r in rs)
                                    for fr in (0.25, 0.5)},
+                "ratio_at_25_percent_with_other_windows": {
+                    str(w): med(r[k]["other_windows"][w] / r["event"][0.25] for r in rs) for w in OTHER_WINDOWS},
                 "share_of_runs_in_which_it_rises": float(np.mean(rises)) if rises else None}
         out["families"][name] = entry
 
@@ -421,6 +428,17 @@ def photometry_families(releases: Path, work: Path) -> dict:
     out["ratio_range_at_25_percent"] = span("ratio")
     out["window_in_units_of_t_event50"] = WINDOW
     out["ratio_windowed_range_at_25_percent"] = span("ratio_windowed")
+
+    def span_single_transition(get) -> list[float]:      # parity and the Markov language: one fast transition
+        vals = [get(e["indicators"][k]) for name, e in out["families"].items()
+                if name.startswith(("parity", "markov")) for k in INDICATORS]
+        vals = [v for v in vals if v is not None]
+        return [min(vals), max(vals)]
+
+    out["parity_and_markov_range_at_25_percent_by_window"] = {
+        str(WINDOW): span_single_transition(lambda ind: ind["ratio_windowed"]["0.25"]),
+        **{str(w): span_single_transition(lambda ind, w=w: ind["ratio_at_25_percent_with_other_windows"][str(w)])
+           for w in OTHER_WINDOWS}}
     return out
 
 
@@ -469,6 +487,8 @@ def main(argv: list[str] | None = None) -> int:
                   + " ".join(fmt(e["indicators"][k][key]["0.25"]) for k in INDICATORS))
     print("F: ranges at 25 %:", [round(v, 3) for v in fam["ratio_range_at_25_percent"]], "windowed",
           [round(v, 3) for v in fam["ratio_windowed_range_at_25_percent"]])
+    print("F: parity and Markov, range at 25 % by window:",
+          {w: [round(x, 2) for x in v] for w, v in fam["parity_and_markov_range_at_25_percent_by_window"].items()})
     print("F: representation-drift peak / t_event(50 %), by normalisation of the drift")
     for name, e in fam["families"].items():
         print(f"F: {name:>40s} " + "  ".join(f"{nm} {fmt(v)}" for nm, v in
