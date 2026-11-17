@@ -30,8 +30,23 @@ coefficient, at the two strengths of the first round and at two more (0.5 and 1.
 values were on record, and divides the measured delay by the delay the residual alone would give: what is left is
 the kernel's contribution.
 
+Third round (the reviewer's fourth reply, to commit f6dedbf). Three things. (1) Where the closed form's deviation at
+75 % comes from: the measured residual factor over the closed form is split into three factors that multiply to it
+(``deviation_split``): the alone twin's residual over its one-coefficient formula, the effect of the lower-order
+coefficient being off the value the closed form assumes, and the with twin's two-coefficient formula at the measured
+coefficients over its exact residual. (2) The start. The reviewer's correction assumes that the tangent kernel at
+initialisation is the same in the lower-order direction and in the term's direction. ``initial_kernel`` measures
+it (it is about ten times larger in a first-order direction), and ``start_path`` follows the two coefficients from
+zero under a constant kernel with that measured ratio; no constant is fitted. (3) The kernel's contribution K
+(steps over the alone twin's, divided by the delay the residual alone would give): the reviewer's formula
+K = 1 / (1 + α F_1(0)²), with F_1(0) the lower-order coefficient at the start of the closed form and four constants
+α fitted to strengths 0.5–2.0, is compared at the strengths it predicted in advance (1.25 and 1.75, between the
+fitted ones) and at one beyond them (2.5, added here), next to the plainest alternative: a straight line through the
+two nearest fitted strengths.
+
 Runs: sky v2a's Markov settings with plain SGD (learning rate 0.03, no momentum, batch 64), iid contexts; the term
-{1,3}:0.8 alone and with {1} or {4} at strengths 0.5, 1.0, 1.5 and 2.0; seeds 600–607; 12,000 steps. The loop
+{1,3}:0.8 alone and with {1} or {4} at strengths 0.5, 1.0, 1.25, 1.5, 1.75, 2.0 and 2.5; seeds 600–607; 12,000
+steps. The loop
 mirrors the runner's update: on 4:2.0;1,3:0.8, seed 600, it reproduces the log-odds of the
 ``delay_sweep_pilot.py`` run at its 46 checkpoints up to step 3,000 to 1.2e-6.
 
@@ -58,11 +73,17 @@ _spec.loader.exec_module(hp)
 SEEDS = tuple(range(600, 608))
 STEPS = 12_000
 ALONE = "1,3:0.8"
-#: Strengths 1.0 and 2.0 are the first round. 0.5 and 1.5 were added for the closed form's prediction (second round).
-WITH = {"0.5": {"lag 1": "1:0.5;1,3:0.8", "lag 4": "4:0.5;1,3:0.8"},
-        "1.0": {"lag 1": "1:1.0;1,3:0.8", "lag 4": "4:1.0;1,3:0.8"},
-        "1.5": {"lag 1": "1:1.5;1,3:0.8", "lag 4": "4:1.5;1,3:0.8"},
-        "2.0": {"lag 1": "1:2.0;1,3:0.8", "lag 4": "4:2.0;1,3:0.8"}}
+#: Strengths 1.0 and 2.0 are the first round. 0.5 and 1.5 were added for the closed form's prediction (second round),
+#: 1.25, 1.75 and 2.5 for the formula for the kernel's contribution (third round).
+FITTED = ("0.5", "1.0", "1.5", "2.0")                  # the strengths the reviewer's constants were fitted to
+PREDICTED = ("1.25", "1.75")                           # the strengths it predicted in advance
+BEYOND = ("2.5",)                                      # one strength outside the fitted range, added here
+WITH = {st: {"lag 1": f"1:{st};1,3:0.8", "lag 4": f"4:{st};1,3:0.8"} for st in FITTED + PREDICTED + BEYOND}
+#: The reviewer's constants: K = 1 / (1 + ALPHA F_1(0)²); kernel factor = 1 / (1 + KERNEL_C F_1(0)²) at 10/25/50/75 %.
+ALPHA = {"25 %": {"lag 1": 0.0640, "lag 4": 0.0320}, "50 %": {"lag 1": 0.0575, "lag 4": 0.0230}}
+KERNEL_C = {"lag 1": (0.0862, 0.0666, 0.0305, 0.0185), "lag 4": (0.0302, 0.0194, 0.0082, 0.0046)}
+#: The straight line through the two nearest fitted strengths: (strength a, weight a, strength b, weight b).
+LINE = {"1.25": ("1.0", 0.5, "1.5", 0.5), "1.75": ("1.5", 0.5, "2.0", 0.5), "2.5": ("1.5", -1.0, "2.0", 2.0)}
 TERM_STRENGTH = 0.8
 SOURCES = (ALONE,) + tuple(c for by_lag in WITH.values() for c in by_lag.values())
 MASK_13 = 0b000101                                     # the Walsh direction of the term {1,3}: lags 1 and 3
@@ -187,7 +208,58 @@ def closed_form(beta1: float, beta2: float = TERM_STRENGTH) -> dict:
         low, rw, ra = point(pr)
         out["progress"][f"{int(pr * 100)} %"] = {
             "first_order_coefficient": float(low), "residual_factor": float(ra / rw),
+            "residual_alone": float(ra), "residual_with": float(rw),
             "delay_from_the_residual_alone": float(np.interp(pr, grid, cum_w) / np.interp(pr, grid, cum_a))}
+    return out
+
+
+def residuals(f1: float, f: float, beta1: float, beta2: float = TERM_STRENGTH) -> tuple[float, float]:
+    """The residuals along the lower-order direction and along the term's direction when the log-odds are
+    z = f1 ψ + f χ and the source has strengths beta1 and beta2."""
+    t1, t2 = 2.0 * beta1, 2.0 * beta2
+    den, d = math.cosh(t1) + math.cosh(t2), math.cosh(f1) + math.cosh(f)
+    return 0.5 * (math.sinh(t1) / den - math.sinh(f1) / d), 0.5 * (math.sinh(t2) / den - math.sinh(f) / d)
+
+
+def initial_kernel(seed: int) -> np.ndarray:
+    """The tangent kernel at initialisation in the Walsh basis (64 × 64): entry (a, b) is the inner product of the
+    parameter gradients of the log-odds coefficients a and b. It does not depend on the source."""
+    import torch
+
+    from tycho.tasks import make_task
+    from tycho.tasks.patterns import pattern_bits
+
+    torch.set_num_threads(1)
+    cfg = {"couplings": ALONE, "data_seed": seed, "depth": 1, "exact_metrics": True, "n_tokens": 200_000,
+           "shift_rho": -0.5, "train_context": "iid", "width": 128, "window": 6}
+    task = make_task("markov_lang", cfg, seed)
+    model = task.build_model()
+    params = [p for p in model.parameters() if p.requires_grad]
+    logits = model(task._model_inputs(pattern_bits(task.window)))
+    z = logits[:, 1] - logits[:, 0]
+    phi, _ = hp.features(task.window)
+    rows = []
+    for mask in range(phi.shape[1]):
+        g = torch.autograd.grad((z * torch.as_tensor(phi[:, mask], dtype=torch.float32)).mean(), params,
+                                retain_graph=True)
+        rows.append(torch.cat([t.reshape(-1).to(torch.float64) for t in g]))
+    g_all = torch.stack(rows)
+    return (g_all @ g_all.T).numpy()
+
+
+def start_path(beta1: float, ratio: float, levels: tuple[float, ...] = (0.1, 0.25), n: int = 20_000) -> list[float]:
+    """The lower-order coefficient when the term's coefficient reaches each level (a share of its target), if both
+    start at zero and the kernel is constant and diagonal, ``ratio`` times larger in the lower-order direction:
+    dF_1/dF = ratio · ρ_1 / ρ. Euler steps in F."""
+    f_end = max(levels) * 2.0 * TERM_STRENGTH
+    df = f_end / n
+    f1, out, todo = 0.0, [], sorted(levels)
+    for i in range(n):
+        r1, r2 = residuals(f1, i * df, beta1)
+        f1 += df * ratio * r1 / r2
+        if todo and (i + 1) * df >= todo[0] * 2.0 * TERM_STRENGTH - 1e-12:
+            out.append(f1)
+            todo.pop(0)
     return out
 
 
@@ -217,7 +289,7 @@ def load(work: Path, couplings: str, seed: int, phi: np.ndarray) -> dict:
            "at_step_150": {"kernel": at(d["kernel"], 150.0), "progress": at(coef, 150.0) / target,
                            **{g: at(d[g], 150.0) for g in GATES},
                            **{name: at(parts[:, i], 150.0) for i, name in enumerate(PARTS)}},
-           "at_step_0": {"kernel": float(d["kernel"][0]), **{g: float(d[g][0]) for g in GATES},
+           "at_step_0": {"kernel": float(d["kernel"][0]), "coef": float(coef[0]), **{g: float(d[g][0]) for g in GATES},
                          **{name: float(parts[0, i]) for i, name in enumerate(PARTS)}}}
     for pr in PROGRESS:
         t = crossing(steps, coef, pr * target)
@@ -338,7 +410,108 @@ def main(argv: list[str] | None = None) -> int:
                 name: {k: (block[name]["steps_over_alone"][k]["median"]
                            / cf["progress"][k]["delay_from_the_residual_alone"]) for k in keys}
                 for name in ("lag 1", "lag 4")}}
+
+        def split(r: dict, pr: float) -> dict:          # three factors whose product is measured / closed form
+            c = cf["progress"][f"{int(pr * 100)} %"]
+            rows = []
+            for s in SEEDS:
+                two = residuals(r[s][pr]["low"], pr * 2.0 * TERM_STRENGTH, float(strength))[1]
+                rows.append((a[s][pr]["rho"] / c["residual_alone"], c["residual_with"] / two, two / r[s][pr]["rho"],
+                             a[s][pr]["rho"] / r[s][pr]["rho"] / c["residual_factor"]))
+            med = np.median(np.asarray(rows), axis=0)
+            return {"alone_twin_exact_over_its_formula": float(med[0]),
+                    "lower_order_coefficient_off_the_assumed_value": float(med[1]),
+                    "with_twin_formula_at_the_measured_coefficients_over_exact": float(med[2]),
+                    "measured_over_closed_form_median_of_seeds": float(med[3])}
+
+        block["closed_form"]["deviation_split"] = {name: {k: split(w[name], pr) for k, pr in zip(keys, PROGRESS)}
+                                                   for name in ("lag 1", "lag 4")}
         result["strength"][strength] = block
+
+    # the start: the kernel at initialisation by Walsh order, and the two coefficients under that constant kernel
+    kernels = np.asarray([initial_kernel(s) for s in SEEDS])
+    diag = np.einsum("smm->sm", kernels)
+    order = np.asarray([bin(mask).count("1") for mask in range(64)])
+    direction = {"lag 1": 0b000001, "lag 4": 0b001000}
+    ratio = {name: diag[:, mask] / diag[:, MASK_13] for name, mask in direction.items()}
+    start = {"kernel_at_initialisation_by_order": {str(o): stats(diag[:, order == o].mean(1)) for o in range(7)},
+             "kernel_at_initialisation": {"{1}": stats(diag[:, 0b000001]), "{4}": stats(diag[:, 0b001000]),
+                                          "{1,3}": stats(diag[:, MASK_13])},
+             "lower_order_direction_over_the_term": {name: stats(v) for name, v in ratio.items()},
+             "cross_kernel_over_root_of_product": {
+                 name: stats(kernels[:, mask, MASK_13] / np.sqrt(diag[:, mask] * diag[:, MASK_13]))
+                 for name, mask in direction.items()},
+             "term_coefficient_at_step_0": stats([a[s]["at_step_0"]["coef"] for s in SEEDS]),
+             "lower_order_coefficient": {}}
+    for strength in WITH:
+        cf = result["strength"][strength]["closed_form"]
+        paths = {name: np.asarray([start_path(float(strength), float(x)) for x in v]) for name, v in ratio.items()}
+        start["lower_order_coefficient"][strength] = {
+            k: {"closed_form": cf["progress"][k]["first_order_coefficient"],
+                "measured": {name: result["strength"][strength][name]["low_order_coefficient"][k]["median"]
+                             for name in direction},
+                "constant_kernel_from_the_initialisation": {name: float(np.median(paths[name][:, i]))
+                                                            for name in direction},
+                "equal_kernels": start_path(float(strength), 1.0)[i]}
+            for i, k in enumerate(("10 %", "25 %"))}
+    result["start"] = start
+
+    # the kernel's contribution: the reviewer's formula and a straight line through the two nearest fitted strengths
+    def k_measured(strength: str, name: str, k: str) -> float:
+        return result["strength"][strength]["closed_form"][
+            "steps_over_alone_divided_by_the_delay_from_the_residual_alone"][name][k]
+
+    def kernel_measured(strength: str, name: str, k: str) -> float:
+        return result["strength"][strength][name]["kernel_alone_over_with"][k]["median"]
+
+    def on_line(fn, strength: str, name: str, k: str) -> float:
+        sa, wa, sb, wb = LINE[strength]
+        return wa * fn(sa, name, k) + wb * fn(sb, name, k)
+
+    contribution = {"cells": {}, "kernel_factor_cells": {}}
+    for strength in WITH:
+        f1sq = result["strength"][strength]["closed_form"]["first_order_coefficient_at_the_start"] ** 2
+        for name in ("lag 1", "lag 4"):
+            for k in ALPHA:
+                cell = {"measured": k_measured(strength, name, k), "formula": 1.0 / (1.0 + ALPHA[k][name] * f1sq)}
+                if strength in LINE:
+                    cell["straight_line"] = on_line(k_measured, strength, name, k)
+                contribution["cells"][f"{strength} {name} {k}"] = cell
+            for i, k in enumerate(keys):
+                cell = {"measured": kernel_measured(strength, name, k),
+                        "formula": 1.0 / (1.0 + KERNEL_C[name][i] * f1sq)}
+                if strength in LINE:
+                    cell["straight_line"] = on_line(kernel_measured, strength, name, k)
+                contribution["kernel_factor_cells"][f"{strength} {name} {k}"] = cell
+
+    def errors(cells: dict, strengths: tuple[str, ...], which: str, only: tuple[str, ...] = ()) -> dict:
+        e = [abs(c[which] - c["measured"]) for key, c in cells.items()
+             if key.split()[0] in strengths and (not only or key.split(" ", 3)[3] in only)]
+        return {"mean_abs_error": float(np.mean(e)), "max_abs_error": float(np.max(e)), "n": len(e)}
+
+    contribution["summary"] = {
+        "passes_if": "mean abs error <= 0.025 and every cell <= 0.040 on the 8 cells of strengths 1.25 and 1.75",
+        "fails_if": "mean abs error > 0.030 or any cell > 0.050",
+        "K": {group: {which: errors(contribution["cells"], strengths, which)
+                      for which in (("formula",) if group == "fitted" else ("formula", "straight_line"))}
+              for group, strengths in (("fitted", FITTED), ("predicted", PREDICTED), ("beyond", BEYOND))},
+        "kernel_factor_at_25_and_50": {
+            group: {which: errors(contribution["kernel_factor_cells"], strengths, which, ("25 %", "50 %"))
+                    for which in (("formula",) if group == "fitted" else ("formula", "straight_line"))}
+            for group, strengths in (("fitted", FITTED), ("predicted", PREDICTED), ("beyond", BEYOND))}}
+
+    def least_squares_alpha(name: str, k: str) -> float:   # the formula's constant, refitted on the fitted strengths
+        f1sq = np.asarray([result["strength"][st]["closed_form"]["first_order_coefficient_at_the_start"] ** 2
+                           for st in FITTED])
+        km = np.asarray([k_measured(st, name, k) for st in FITTED])
+        grid = np.linspace(0.001, 0.2, 3981)
+        return float(grid[int(np.argmin([((1.0 / (1.0 + al * f1sq) - km) ** 2).sum() for al in grid]))])
+
+    refit = contribution["least_squares_alpha_on_the_fitted_strengths"] = {}
+    for k in keys:
+        al = {name: least_squares_alpha(name, k) for name in ("lag 1", "lag 4")}
+        refit[k] = {**al, "lag_1_over_lag_4": al["lag 1"] / al["lag 4"]}
+    result["kernel_contribution"] = contribution
     args.out.write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
 
     def fmt(h: dict) -> str:
@@ -404,6 +577,38 @@ def main(argv: list[str] | None = None) -> int:
               + "; lower-order coefficient, lag 1 minus lag 4: "
               + " / ".join(f"{v['median']:+.3f} ({v['n_above_0']}/8)"
                            for v in cf["low_order_coefficient_lag1_minus_lag4"].values()))
+        for name in ("lag 1", "lag 4"):
+            print(f"  {name}: measured / closed form = alone twin x lower-order coefficient x with twin: "
+                  + " / ".join(f"{v['measured_over_closed_form_median_of_seeds']:.3f} = "
+                               f"{v['alone_twin_exact_over_its_formula']:.3f} x "
+                               f"{v['lower_order_coefficient_off_the_assumed_value']:.3f} x "
+                               f"{v['with_twin_formula_at_the_measured_coefficients_over_exact']:.3f}"
+                               for v in cf["deviation_split"][name].values()))
+    st = result["start"]
+    print("== the start")
+    print("  kernel at initialisation by Walsh order 0..6 (median): "
+          + " / ".join(f"{v['median']:.3f}" for v in st["kernel_at_initialisation_by_order"].values()))
+    print("  kernel at initialisation, lower-order direction over the term's: "
+          + "; ".join(f"{name} {fmt(v)}" for name, v in st["lower_order_direction_over_the_term"].items())
+          + " | cross kernel over the root of the product: "
+          + "; ".join(f"{name} {v['median']:+.3f} [{v['min']:+.3f}, {v['max']:+.3f}]"
+                      for name, v in st["cross_kernel_over_root_of_product"].items()))
+    for strength, by_k in st["lower_order_coefficient"].items():
+        print(f"  strength {strength}: lower-order coefficient at 10 % / 25 %: " + " / ".join(
+            f"measured {v['measured']['lag 1']:.3f}, {v['measured']['lag 4']:.3f}; closed form {v['closed_form']:.3f}; "
+            f"constant kernel {v['constant_kernel_from_the_initialisation']['lag 1']:.3f}, "
+            f"{v['constant_kernel_from_the_initialisation']['lag 4']:.3f}; equal kernels {v['equal_kernels']:.3f}"
+            for v in by_k.values()))
+    kc = result["kernel_contribution"]
+    print("== the kernel's contribution K: measured / formula / straight line")
+    for key, c in kc["cells"].items():
+        print(f"  {key}: {c['measured']:.4f} / {c['formula']:.4f}"
+              + (f" / {c['straight_line']:.4f}" if "straight_line" in c else ""))
+    print("  summary:", json.dumps(kc["summary"]["K"]))
+    print("  least-squares constants on the fitted strengths, lag 1 / lag 4 (ratio), at 10/25/50/75 %: "
+          + "; ".join(f"{v['lag 1']:.4f} / {v['lag 4']:.4f} ({v['lag_1_over_lag_4']:.2f})"
+                      for v in kc["least_squares_alpha_on_the_fitted_strengths"].values()))
+    print("  kernel factor at 25 and 50 %:", json.dumps(kc["summary"]["kernel_factor_at_25_and_50"]))
     return 0
 
 

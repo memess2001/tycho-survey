@@ -53,6 +53,13 @@ standard library only; they do not import tycho). Numbers:
   factor from the source alone. It matches the measurements within 6 % up to half of the term's growth at four
   strengths, two of them run after the formula's values were on record, and is off by up to 27 % at three quarters.
   For a weak lower-order term it gives the measured delay within 1 %; for strong ones the kernel takes off up to 38 %.
+* **Added 17 November, fourth round (§6.4): where the closed form bends, and the kernel's part.** At seven strengths
+  the closed form holds within 6 % up to half of the term's growth. Its deviation at three quarters is traced to the
+  lower-order coefficient being off its assumed value by up to 0.05. At initialisation the tangent kernel is about
+  ten times larger in a first-order direction than in the term's direction, and that ratio alone reproduces where
+  the lower-order coefficient is when the term starts to grow. The kernel's contribution K varies smoothly with the
+  strength; the reviewer's formula for it passes its own test, and so does a straight line between neighbouring
+  strengths.
 
 ## 1. Definitions
 
@@ -560,6 +567,88 @@ m_2 = sinh F / (cosh F_1 + cosh F). Assume that while F grows, F_1 stays where t
   §6.1 it is the order content); the closed form assumes two coefficients and a lower-order coefficient that is
   always in place.
 
+### 6.4 Fourth round: where the closed form bends, the start, and the kernel's part (17 November)
+
+Status as in §6.1. The reviewer's fourth reply (to commit `f6dedbf`) explained the two deviations of §6.3 and proposed
+a formula for K. `scripts/analysis_v2/kernel_gate_pilot.py` now runs three more strengths (1.25, 1.75 and 2.5; 48
+runs) and makes three checks. Record: `notes/discussion_2026-11-16_outside_reviews.md`, §12.3.
+
+* **Seven strengths.** Up to half of the term's growth the measured residual factor is within 6.2 % of the closed
+  form at all seven strengths, for factors between 1.16 and 32. The three new rows (as in §6.3: at 10 / 25 / 50 /
+  75 %):
+
+  | lower-order strength | rule A / rule B / end | closed form | with {1}: measured / closed | with {4}: measured / closed |
+  |---|---|---|---|---|
+  | 1.25 | 1.93 / 2.43 / 4.70 | 2.52 / 2.70 / 3.16 / 3.83 | 1.04 / 1.00 / 0.99 / 0.94 | 1.04 / 1.01 / 1.04 / 1.05 |
+  | 1.75 | 3.94 / 5.35 / 12.22 | 5.62 / 6.19 / 7.62 / 9.67 | 1.04 / 1.00 / 0.97 / 1.10 | 1.05 / 1.00 / 1.06 / 1.15 |
+  | 2.5 | 15.11 / 21.46 / 53.75 | 22.74 / 25.45 / 32.27 / 41.93 | 1.04 / 1.01 / 0.97 / 0.81 | 1.04 / 1.00 / 1.01 / 1.01 |
+
+* **Why it bends at 75 %.** The ratio measured / closed form is the product of three factors, each measured: (a) the
+  alone twin's residual over its one-coefficient formula; (b) the effect of the lower-order coefficient not being at
+  the value the closed form assumes; (c) the with twin's two-coefficient formula, evaluated at its measured
+  coefficients, over its exact residual. Ranges over the seven strengths and two lags (medians over seeds):
+
+  | progress | (a) alone twin | (b) lower-order coefficient off | (c) with twin, other directions |
+  |---|---|---|---|
+  | 10 % | 1.00 | 1.00 to 1.05 | 1.00 to 1.01 |
+  | 25 % | 1.00 | 0.98 to 1.01 | 1.00 to 1.02 |
+  | 50 % | 1.01 | 0.92 to 1.02 | 0.99 to 1.03 |
+  | 75 % | 1.03 | 0.71 to 1.18 | 0.98 to 1.12 |
+
+  The two-coefficient picture holds to about 10 %. What fails at 75 % is the assumption that the lower-order
+  coefficient sits exactly where its own residual vanishes. It is off by up to 0.05, behind in some twins and
+  ahead in others (further ahead when the input is shared), and the residual is by then so small that this is
+  amplified up to 30 %. This is the reviewer's first explanation, and it is larger than the reviewer estimated (6 to
+  11 %). Its second explanation, log-odds in the other 62 Walsh directions, is the smaller part: factors (a) and (c).
+* **The start.** The tangent kernel at initialisation, by the order of the Walsh direction (median over 8 seeds of
+  the mean within the order): 22.3, 4.06, 0.40, 0.024, 0.024, 0.019, 0.019 for orders 0 to 6. In the lower-order
+  direction it is 10.2 times (range over seeds 8.5 to 14.2; input {1}) and 10.7 times (7.8 to 13.6; input {4}) the
+  kernel in the term's direction; the cross terms between the two directions are within ±0.13 of the root of the
+  product. The reviewer's start correction took the two kernels to be equal; in none of its readings does it
+  reproduce the measured coefficient. Following the two coefficients from zero under a constant diagonal kernel
+  with the measured ratio does, with no fitted constant. Lower-order coefficient when the term is at 10 %:
+
+  | lower-order strength | measured, with {1} / with {4} | closed form (assumes it is in place) | constant kernel from the initialisation | equal kernels |
+  |---|---|---|---|---|
+  | 0.5 | 0.45 / 0.45 | 0.59 | 0.45 / 0.46 | 0.08 |
+  | 1.0 | 1.05 / 1.04 | 1.31 | 1.10 / 1.12 | 0.24 |
+  | 1.25 | 1.42 / 1.43 | 1.72 | 1.51 / 1.53 | 0.41 |
+  | 1.5 | 1.91 / 1.86 | 2.16 | 1.97 / 1.99 | 0.67 |
+  | 1.75 | 2.41 / 2.39 | 2.63 | 2.44 / 2.46 | 1.07 |
+  | 2.0 | 2.91 / 2.96 | 3.10 | 2.93 / 2.95 | 1.61 |
+  | 2.5 | 3.91 / 3.95 | 4.08 | 3.92 / 3.94 | 2.77 |
+
+  The closed form is 0.13 to 0.31 too high there; the constant-kernel path is within −0.01 to +0.13. From 25 % on
+  the closed form is the better of the two (within 0.03; the constant-kernel path is 0.005 to 0.05 too low). Caveat:
+  the network's log-odds are not zero at initialisation (the term's coefficient starts between −0.03 and +0.08), so
+  the 10 % point (0.16) is noisy per seed; the table gives medians. The separation by a factor of ten is what makes
+  "the lower-order coefficient is in place" a good assumption after the start. That on binary inputs every Walsh
+  direction is an eigenfunction of the kernel of a wide network, with an eigenvalue that depends only on its order,
+  is known (Yang and Salman 2019); what is used here is the measured ratio for this network.
+* **The kernel's contribution K.** The reviewer's formula is K = 1 / (1 + α F_1(0)²), with F_1(0) the lower-order
+  coefficient at the start of the closed form and α fitted, per lag and progress, to the four strengths of §6.3
+  (0.064 and 0.032 at 25 %, 0.0575 and 0.023 at 50 %, for inputs {1} and {4}). Its prediction for 1.25 and 1.75 was on
+  record before those runs; 2.5 was added here as a point outside the fitted range, together with the plainest
+  alternative, a straight line in the strength through the two nearest fitted strengths (computed from §6.3's
+  table).
+
+  | lower-order strength | K at 25 % and 50 %, with {1}: measured / formula / line | with {4}: measured / formula / line |
+  |---|---|---|
+  | 1.25 | 0.846 / 0.842 / 0.842 and 0.837 / 0.856 / 0.849 | 0.913 / 0.914 / 0.913 and 0.939 / 0.937 / 0.930 |
+  | 1.75 | 0.695 / 0.695 / 0.692 and 0.710 / 0.718 / 0.714 | 0.820 / 0.820 / 0.817 and 0.867 / 0.864 / 0.859 |
+  | 2.5 | 0.489 / 0.486 / 0.487 and 0.521 / 0.512 / 0.510 | 0.697 / 0.654 / 0.668 and 0.772 / 0.724 / 0.756 |
+
+  On the eight predicted cells the formula's mean absolute error is 0.005 and its largest 0.018, inside the
+  reviewer's bounds (0.025 and 0.040). The straight line gives 0.005 and 0.011: the predicted strengths lie between
+  fitted ones, so this test does not tell the formula from interpolation. At 2.5 the formula holds for the shared
+  input (0.003 and 0.008) and is 0.043 and 0.047 too low for the other; the line's errors are 0.002 to 0.029. So K is
+  a smooth function of the strength that can be interpolated; a quadratic law in F_1(0) describes the shared-input
+  twin up to 2.5 and bends for the other. The ratio of the two α that the reviewer gave as 2 and 2.5 is a fitted
+  number: least squares on the four strengths give 0.9, 2.0, 2.5 and 2.6 at 10, 25, 50 and 75 %.
+* **Limits.** As in §6.3. The start uses the kernel at initialisation only, while the kernel in the term's direction
+  grows by a factor of three during the term's growth; the split into three factors is exact per seed but is
+  reported as medians; no alternative with a derivation was tested against the formula for K.
+
 ## 7. Checks and reproduction
 
 * **Internal checks** (`checks` in the JSON; the script stops if they fail).
@@ -582,8 +671,8 @@ m_2 = sinh F / (cosh F_1 + cosh F). Assume that while F grows, F_1 stays where t
   when needed and rewrite their JSON files; reruns reproduce the committed files byte for byte.
 * **The pilot of §6.1** needs torch: `PYTHONPATH=. python scripts/analysis_v2/delay_sweep_pilot.py --jobs 4`
   (264 runs with the second round, cached in `work/delay_sweep`; `--skip-runs` analyses the cache). §6.2 also needs
-  `PYTHONPATH=. python scripts/analysis_v2/kernel_gate_pilot.py --jobs 4` (72 runs with the two strengths of §6.3).
-  Neither was recomputed independently.
+  `PYTHONPATH=. python scripts/analysis_v2/kernel_gate_pilot.py --jobs 4` (120 runs with the two strengths of §6.3
+  and the three of §6.4). Neither was recomputed independently.
 
 ## References
 
@@ -599,4 +688,5 @@ m_2 = sinh F / (cosh F_1 + cosh F). Assume that while F grows, F_1 stays where t
   *NeurIPS*. arXiv:2506.06489.
 * Pezeshki, M., Kaba, S.-O., Bengio, Y., Courville, A., Precup, D., Lajoie, G. (2021). Gradient starvation: a
   learning proclivity in neural networks. *NeurIPS*. arXiv:2011.09468.
+* Yang, G., Salman, H. (2019). A fine-grained spectral perspective on neural networks. arXiv:1907.10599.
 * Amari, S. (2001). Information geometry on hierarchy of probability distributions. *IEEE Trans. Inf. Theory*.

@@ -56,9 +56,8 @@ rp = fp.rp
 REP_MINS, HEADS, SEEDS = (8, 12, 16, 20), (2, 4), (300, 301, 302)
 EARLY_STEPS = (0, 100, 200, 300, 400, 600)
 BLOCK_STEPS, NEAR, FULL_STEPS = 500, 4, 12_000
-BAND_MAX = 31                                           # rep_max − 1: the largest offset of the band
 #: Interventions: (prefix of the cached run, rep_min, restricted layer, forbidden offsets: "far" = NEAR and beyond,
-#: "band" = rep_min − 1 .. BAND_MAX).
+#: "band" = rep_min − 1 .. rep_max − 1).
 ARMS = {"near": ("blocked", 12, 0, "far"), "band": ("bandblocked", 12, 0, "band"),
         "mirror": ("l1blocked", 20, 1, "far")}
 CHECK = "single_rm12_h2_s300"                           # the run whose loop is checked against the runner
@@ -86,7 +85,7 @@ def band_stats(model, task) -> dict:
     out = {}
     for layer, a in enumerate(maps):
         band = np.zeros((len(bi), a.shape[1]))
-        for d in range(task.rep_min - 1, BAND_MAX + 1):
+        for d in range(task.rep_min - 1, task.rep_max):   # the band: offsets rep_min − 1 .. rep_max − 1
             ok = ti >= d
             band[ok] += a[bi[ok], :, ti[ok], ti[ok] - d]
         near = a[bi, :, ti, np.maximum(ti - 1, 0)] * (ti >= 1)[:, None] + a[bi, :, ti, np.maximum(ti - 2, 0)] * (
@@ -100,10 +99,11 @@ def band_stats(model, task) -> dict:
 
 
 def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int = 0, keep_state_at: int | None = None,
-          layer: int = 0, forbid: str = "far"):
-    """The runner's update loop on one induction job. While step < block_until, ``layer`` may not attend to the
-    forbidden offsets ("far": NEAR and beyond; "band": rep_min − 1 .. BAND_MAX). Measurements are taken without the
-    restriction. Returns (model, task, {step: band_stats}, state at ``keep_state_at``)."""
+          layer: int = 0, forbid: str = "far", block_from: int = 0):
+    """The runner's update loop on one induction job. While block_from <= step < block_until, ``layer`` may not
+    attend to the forbidden offsets: "far" = NEAR and beyond; "band" = rep_min − 1 .. rep_max − 1; "sham" =
+    everything except the near offsets and the band. Measurements are taken without the restriction.
+    Returns (model, task, {step: band_stats}, state at ``keep_state_at``)."""
     import torch
 
     from tycho.tasks import make_task
@@ -123,7 +123,8 @@ def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int =
     plain = attn.forward
     idx = torch.arange(model.max_len)
     offset = idx[:, None] - idx[None, :]
-    allowed = offset < NEAR if forbid == "far" else ~((offset >= task.rep_min - 1) & (offset <= BAND_MAX))
+    band = (offset >= task.rep_min - 1) & (offset <= task.rep_max - 1)
+    allowed = {"far": offset < NEAR, "band": ~band, "sham": (offset < NEAR) | band}[forbid]
     blocked = {"on": False}
 
     def restricted(x, mask):
@@ -141,7 +142,7 @@ def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int =
             kept = {k: v.detach().clone() for k, v in model.state_dict().items()}
         if step == steps:
             break
-        blocked["on"] = step < block_until
+        blocked["on"] = block_from <= step < block_until
         x, y = task.sample_batch(tc.batch_size, gen)
         loss = task.loss(model(x), y)
         opt.step(list(torch.autograd.grad(loss, params, allow_unused=True, materialize_grads=True)), tc.lr)
