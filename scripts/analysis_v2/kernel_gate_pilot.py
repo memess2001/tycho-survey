@@ -24,10 +24,16 @@ s_3, and the share of units whose gate is a function of s_1 alone or of s_4 alon
 parameter group. Its part from the first layer's weights on s_3 is Σ_j a_j² E[gate_j · s_1]²: a unit turns a weight
 on s_3 into s_1 s_3 to the extent that its gate is correlated with s_1, which needs no gate to be set by s_1 alone.
 
+Second round (the reviewer's third reply, to commit b656849): a closed form for the residual factor, from the source
+alone (``closed_form``). The script compares it with the measured residual factor and with the lower-order
+coefficient, at the two strengths of the first round and at two more (0.5 and 1.5) that were run after the formula's
+values were on record, and divides the measured delay by the delay the residual alone would give: what is left is
+the kernel's contribution.
+
 Runs: sky v2a's Markov settings with plain SGD (learning rate 0.03, no momentum, batch 64), iid contexts; the term
-{1,3}:0.8 alone and with {1} or {4} at strengths 1.0 and 2.0; seeds 600–607; 12,000 steps. The loop mirrors the
-runner's update: on 4:2.0;1,3:0.8, seed 600, it reproduces the log-odds of the ``delay_sweep_pilot.py`` run at its
-46 checkpoints up to step 3,000 to 1.2e-6.
+{1,3}:0.8 alone and with {1} or {4} at strengths 0.5, 1.0, 1.5 and 2.0; seeds 600–607; 12,000 steps. The loop
+mirrors the runner's update: on 4:2.0;1,3:0.8, seed 600, it reproduces the log-odds of the
+``delay_sweep_pilot.py`` run at its 46 checkpoints up to step 3,000 to 1.2e-6.
 
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/kernel_gate_pilot.py
 --jobs 4``. Runs are cached in ``work/kernel_gate``. Writes ``docs/results/v2_analysis/kernel_gate_pilot.json``.
@@ -52,8 +58,12 @@ _spec.loader.exec_module(hp)
 SEEDS = tuple(range(600, 608))
 STEPS = 12_000
 ALONE = "1,3:0.8"
-WITH = {"1.0": {"lag 1": "1:1.0;1,3:0.8", "lag 4": "4:1.0;1,3:0.8"},
+#: Strengths 1.0 and 2.0 are the first round. 0.5 and 1.5 were added for the closed form's prediction (second round).
+WITH = {"0.5": {"lag 1": "1:0.5;1,3:0.8", "lag 4": "4:0.5;1,3:0.8"},
+        "1.0": {"lag 1": "1:1.0;1,3:0.8", "lag 4": "4:1.0;1,3:0.8"},
+        "1.5": {"lag 1": "1:1.5;1,3:0.8", "lag 4": "4:1.5;1,3:0.8"},
         "2.0": {"lag 1": "1:2.0;1,3:0.8", "lag 4": "4:2.0;1,3:0.8"}}
+TERM_STRENGTH = 0.8
 SOURCES = (ALONE,) + tuple(c for by_lag in WITH.values() for c in by_lag.values())
 MASK_13 = 0b000101                                     # the Walsh direction of the term {1,3}: lags 1 and 3
 PROGRESS = (0.1, 0.25, 0.5, 0.75)
@@ -143,10 +153,51 @@ def crossing(steps: np.ndarray, y: np.ndarray, level: float) -> float:
     return math.exp(a + (level - y[i - 1]) / (y[i] - y[i - 1]) * (b - a))
 
 
-def load(work: Path, couplings: str, seed: int, chi: np.ndarray) -> dict:
+def closed_form(beta1: float, beta2: float = TERM_STRENGTH) -> dict:
+    """The reviewer's closed form for the residual factor (third reply of 17 November), from the source alone.
+
+    Log-odds z = F_1 ψ + F χ with ψ the lower-order input and χ the term's direction; targets F_1* = 2 β_1 and
+    F* = 2 β_2. The means are m_1 = sinh F_1 / (cosh F_1 + cosh F) and m_2 = sinh F / (cosh F_1 + cosh F). While F
+    grows, F_1 is taken to follow the value at which the first-order residual vanishes (m_1 = m_1*). Then the
+    residual along χ is known at every progress r = F / F*, for the twin with the lower-order term and for the term
+    alone, and so is their ratio. It starts at rule B and ends at (1 + cosh F_1* cosh F*) / (1 + cosh F*).
+    Also returned: rule A, which is 1 / (1 − m_1*²), and the delay the residual alone would give if the kernel
+    were the same in both twins and constant, ∫_0^r dr'/ρ_with over ∫_0^r dr'/ρ_alone.
+    """
+    f1, f2 = 2.0 * beta1, 2.0 * beta2
+    den = math.cosh(f1) + math.cosh(f2)
+    m1, m2 = math.sinh(f1) / den, math.sinh(f2) / den
+
+    def point(r):
+        c, sh = np.cosh(r * f2), np.sinh(r * f2)
+        big_d = (c + np.sqrt(1.0 + m1 * m1 * sh * sh)) / (1.0 - m1 * m1)
+        return np.arcsinh(m1 * big_d), 0.5 * (m2 - sh / big_d), 0.5 * (math.tanh(f2 / 2.0) - np.tanh(r * f2 / 2.0))
+
+    grid = np.linspace(0.0, 0.999, 9991)
+    _, rho_w, rho_a = point(grid)
+
+    def cum(rho: np.ndarray) -> np.ndarray:             # ∫ dr / ρ along the grid, trapezoid rule
+        return np.concatenate([[0.0], np.cumsum(0.5 * (1 / rho[1:] + 1 / rho[:-1]) * np.diff(grid))])
+
+    cum_w, cum_a = cum(rho_w), cum(rho_a)
+    out = {"rule_A": 1.0 / (1.0 - m1 * m1), "rule_B": math.tanh(f2 / 2.0) / m2,
+           "residual_factor_at_the_end": (1.0 + math.cosh(f1) * math.cosh(f2)) / (1.0 + math.cosh(f2)),
+           "first_order_coefficient_at_the_start": float(point(0.0)[0]), "first_order_target": f1, "progress": {}}
+    for pr in PROGRESS:
+        low, rw, ra = point(pr)
+        out["progress"][f"{int(pr * 100)} %"] = {
+            "first_order_coefficient": float(low), "residual_factor": float(ra / rw),
+            "delay_from_the_residual_alone": float(np.interp(pr, grid, cum_w) / np.interp(pr, grid, cum_a))}
+    return out
+
+
+def load(work: Path, couplings: str, seed: int, phi: np.ndarray) -> dict:
     with np.load(work / f"{slug(couplings)}_s{seed}.npz") as f:
         d = {k: f[k] for k in f.files}
     steps, z, truth = d["steps"].astype(float), d["z"], d["truth"]
+    chi = phi[:, MASK_13]
+    singles = [part.split(":")[0] for part in couplings.split(";") if "," not in part.split(":")[0]]
+    low = (z * phi[:, 1 << (int(singles[0]) - 1)][None, :]).mean(1) if singles else np.full(len(steps), np.nan)
     coef = (z * chi[None, :]).mean(1)                                    # F: the log-odds coefficient
     target = float((np.log(truth / (1.0 - truth)) * chi).mean())
     m = np.tanh(0.5 * z)
@@ -171,6 +222,7 @@ def load(work: Path, couplings: str, seed: int, chi: np.ndarray) -> dict:
     for pr in PROGRESS:
         t = crossing(steps, coef, pr * target)
         out[pr] = {"t": t, "kernel": at(d["kernel"], t), "rho": at(rho, t), "drift": at(d["drift"], t),
+                   "low": at(low, t),
                    **{g: at(d[g], t) for g in GATES}, **{name: at(parts[:, i], t) for i, name in enumerate(PARTS)}}
     # the sweep's own half-time (the mean's coefficient at half its final value) and three clocks at that time
     t_half = crossing(steps, walsh, 0.5 * float(np.mean(walsh[-5:])))
@@ -191,8 +243,7 @@ def main(argv: list[str] | None = None) -> int:
             if i % 10 == 0:
                 print(f"[{i}/{len(SOURCES) * len(SEEDS)}] {msg}", flush=True)
     phi, _ = hp.features(6)
-    chi = phi[:, MASK_13]
-    runs = {c: {s: load(args.work, c, s, chi) for s in SEEDS} for c in SOURCES}
+    runs = {c: {s: load(args.work, c, s, phi) for s in SEEDS} for c in SOURCES}
 
     def stats(xs) -> dict:
         xs = np.asarray(xs, dtype=float)
@@ -210,7 +261,15 @@ def main(argv: list[str] | None = None) -> int:
                   "clock": "with the kernel in the clock, the delay at 50 % of the lag-4 twin over that of the lag-1 "
                            "twin (1.27 in gain-weighted time) lies within [0.95, 1.08]",
                   "mechanism": "units whose gate is set by the lower-order input: first-order route to {1,3} when "
-                               "that input is s_1, none when it is s_4"},
+                               "that input is s_1, none when it is s_4",
+                  "third reply, 2A": "the lower-order log-odds coefficient at 10/25/50/75 % of the term follows the "
+                                     "closed form within 0.10 (strength 2.0) and 0.06 (strength 1.0), and at 50 and "
+                                     "75 % it is larger in the lag-1 twin than in the lag-4 twin in at least 6 of 8 "
+                                     "seeds (strength 2.0); fails beyond 0.15 or if lag 1 is not ahead",
+                  "third reply, 2B": "new strengths: the residual factor follows the closed form within 8 % at "
+                                     "strength 0.5 (each lag, all four points, rising) and within 10 % at strength "
+                                     "1.5 (mean of the two lags), with lag 4 above lag 1 at 75 %; fails beyond 15 % "
+                                     "at strength 1.5"},
               "seeds": list(SEEDS), "steps": STEPS,
               "final_over_target": {c: stats([runs[c][s]["final_over_target"] for s in SEEDS]) for c in SOURCES},
               "alone": {"kernel": {"at step 0": stats([a[s]["at_step_0"]["kernel"] for s in SEEDS]),
@@ -252,7 +311,33 @@ def main(argv: list[str] | None = None) -> int:
                 "gates": {g: {"at step 150": stats([r[s]["at_step_150"][g] for s in SEEDS]),
                               "at 10 %": stats([r[s][0.1][g] for s in SEEDS])} for g in GATES},
                 "kernel_parts": {name: {"at 10 %": stats([r[s][0.1][name] for s in SEEDS]),
-                                        "at 25 %": stats([r[s][0.25][name] for s in SEEDS])} for name in PARTS}}
+                                        "at 25 %": stats([r[s][0.25][name] for s in SEEDS])} for name in PARTS},
+                "low_order_coefficient": per_progress(lambda s, pr: r[s][pr]["low"])}
+        # the closed form for the residual factor, and what it leaves for the kernel
+        cf = closed_form(float(strength))
+        keys = [f"{int(pr * 100)} %" for pr in PROGRESS]
+        measured = {k: 0.5 * (block["lag 1"]["residual_alone_over_with"][k]["median"]
+                              + block["lag 4"]["residual_alone_over_with"][k]["median"]) for k in keys}
+        ahead = {k: [w["lag 1"][s][pr]["low"] - w["lag 4"][s][pr]["low"] for s in SEEDS]
+                 for k, pr in zip(keys, PROGRESS)}
+        block["closed_form"] = {
+            **cf,
+            "residual_factor_measured_over_closed_form": {
+                name: {k: block[name]["residual_alone_over_with"][k]["median"] / cf["progress"][k]["residual_factor"]
+                       for k in keys} for name in ("lag 1", "lag 4")},
+            "mean_of_the_two_lags_over_closed_form": {k: measured[k] / cf["progress"][k]["residual_factor"]
+                                                      for k in keys},
+            "low_order_coefficient_minus_closed_form": {
+                name: {k: (block[name]["low_order_coefficient"][k]["median"]
+                           - cf["progress"][k]["first_order_coefficient"]) for k in keys}
+                for name in ("lag 1", "lag 4")},
+            "low_order_coefficient_lag1_minus_lag4": {
+                k: {"median": float(np.median(v)), "min": float(min(v)), "max": float(max(v)),
+                    "n_above_0": int(sum(x > 0 for x in v)), "n": len(v)} for k, v in ahead.items()},
+            "steps_over_alone_divided_by_the_delay_from_the_residual_alone": {
+                name: {k: (block[name]["steps_over_alone"][k]["median"]
+                           / cf["progress"][k]["delay_from_the_residual_alone"]) for k in keys}
+                for name in ("lag 1", "lag 4")}}
         result["strength"][strength] = block
     args.out.write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
 
@@ -298,6 +383,27 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  {name}: kernel by parameter group (median) at 10 % / 25 %: "
                   + "; ".join(f"{part} " + "/".join(f"{v['median']:.3f}" for v in r["kernel_parts"][part].values())
                               for part in PARTS))
+        cf = block["closed_form"]
+        ks = list(cf["progress"])
+        print(f"  closed form: rule A {cf['rule_A']:.3f}, rule B {cf['rule_B']:.3f}, end "
+              f"{cf['residual_factor_at_the_end']:.3f}; residual factor at 10/25/50/75 %: "
+              + " / ".join(f"{cf['progress'][k]['residual_factor']:.3f}" for k in ks)
+              + "; delay from the residual alone: "
+              + " / ".join(f"{cf['progress'][k]['delay_from_the_residual_alone']:.2f}" for k in ks))
+        for name in ("lag 1", "lag 4"):
+            print(f"  {name}: residual factor measured / closed form: "
+                  + " / ".join(f"{cf['residual_factor_measured_over_closed_form'][name][k]:.3f}" for k in ks)
+                  + "; lower-order coefficient " + " / ".join(f"{block[name]['low_order_coefficient'][k]['median']:.3f}"
+                                                              for k in ks)
+                  + " (closed form " + " / ".join(f"{cf['progress'][k]['first_order_coefficient']:.3f}" for k in ks)
+                  + "); steps over alone / residual-only delay: "
+                  + " / ".join(f"{cf['steps_over_alone_divided_by_the_delay_from_the_residual_alone'][name][k]:.2f}"
+                               for k in ks))
+        print("  mean of the two lags / closed form: "
+              + " / ".join(f"{cf['mean_of_the_two_lags_over_closed_form'][k]:.3f}" for k in ks)
+              + "; lower-order coefficient, lag 1 minus lag 4: "
+              + " / ".join(f"{v['median']:+.3f} ({v['n_above_0']}/8)"
+                           for v in cf["low_order_coefficient_lag1_minus_lag4"].values()))
     return 0
 
 

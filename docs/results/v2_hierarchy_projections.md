@@ -49,6 +49,10 @@ standard library only; they do not import tycho). Numbers:
   higher-order term factorises into a probability residual and a tangent kernel. The lower-order term cuts the
   residual by more than the rule says and raises the kernel, more so when the two terms share an input; the delay is
   the product.
+* **Added 17 November, third round (§6.3): the residual part has a closed form.** A reviewer derived the residual
+  factor from the source alone. It matches the measurements within 6 % up to half of the term's growth at four
+  strengths, two of them run after the formula's values were on record, and is off by up to 27 % at three quarters.
+  For a weak lower-order term it gives the measured delay within 1 %; for strong ones the kernel takes off up to 38 %.
 
 ## 1. Definitions
 
@@ -505,6 +509,57 @@ to 0.99. Rule A is 1.49 and 6.02 for the two strengths, rule B 1.77 and 8.35.
   here is the log-odds coefficient, in §6.1 it is the order content, and the two give different delays (6.6 against
   5.6 at 50 % for the lag-1 twin at strength 2.0).
 
+### 6.3 Third round: a closed form for the output side (17 November)
+
+Status as in §6.1. The reviewer's third reply gave a closed form for the residual factor of §6.2;
+`scripts/analysis_v2/kernel_gate_pilot.py` computes it and compares it with the runs, including two strengths (0.5
+and 1.5) that were run after the formula's values were on record. Record: `notes/discussion_2026-11-16_outside_reviews.md`,
+§11.3. The derivation is the reviewer's; it was checked here and its numbers reproduced.
+
+Take the log-odds to have two coefficients, z = F_1 ψ + F χ, with ψ the lower-order input, χ the term's direction and
+targets F_1* = 2 β_1, F* = 2 β_2. The means along ψ and χ are m_1 = sinh F_1 / (cosh F_1 + cosh F) and
+m_2 = sinh F / (cosh F_1 + cosh F). Assume that while F grows, F_1 stays where the first-order residual vanishes
+(m_1 = m_1*). Then at progress r = F / F*
+
+    ρ_with(r) = [m_2* − sinh(r F*) / D(r)] / 2,   D(r) = [cosh(r F*) + √(1 + m_1*² sinh²(r F*))] / (1 − m_1*²),
+    ρ_alone(r) = [tanh(F*/2) − tanh(r F*/2)] / 2.
+
+* **The two rules of §2.6 are two numbers of this solution.** Rule A is 1 / (1 − m_1*²), the ratio of the slopes of
+  the two residuals at the plateau. Rule B is ρ_alone(0) / ρ_with(0), the ratio of the residuals there. Since B
+  exceeds A, the residual factor ρ_alone / ρ_with starts at rule B and grows; it ends at
+  (1 + cosh F_1* cosh F*) / (1 + cosh F*).
+* **Measured residual factor over the closed form** (SGD, medians over 8 seeds, at 10 / 25 / 50 / 75 % of the term):
+
+  | lower-order strength | rule A / rule B / end | closed form | with {1}: measured / closed | with {4}: measured / closed |
+  |---|---|---|---|---|
+  | 0.5 (values on record first) | 1.09 / 1.15 / 1.39 | 1.16 / 1.18 / 1.22 / 1.29 | 1.01 / 1.00 / 1.00 / 0.99 | 1.01 / 1.00 / 0.99 / 0.99 |
+  | 1.0 | 1.49 / 1.77 / 2.99 | 1.82 / 1.92 / 2.16 / 2.52 | 1.03 / 1.00 / 0.98 / 1.01 | 1.03 / 1.01 / 1.00 / 1.17 |
+  | 1.5 (values on record first) | 2.69 / 3.54 / 7.53 | 3.69 / 4.02 / 4.84 / 6.03 | 1.05 / 1.00 / 0.98 / 1.15 | 1.05 / 1.01 / 1.02 / 1.27 |
+  | 2.0 | 6.02 / 8.35 / 19.95 | 8.81 / 9.78 / 12.21 / 15.68 | 1.04 / 1.00 / 0.95 / 0.92 | 1.03 / 1.01 / 1.04 / 1.12 |
+
+  Within 6 % up to 50 %. At 75 % the deviations reach +27 %, and the reviewer's own bound for strength 1.5 (10 %,
+  failure beyond 15 %) is missed there (+21 % for the mean of the two lags). At 10 % the measured values are 3 to
+  5 % high: the lower-order coefficient is still 0.14 to 0.31 below the assumed value, because the lower-order term
+  has not reached the plateau when the higher-order one is at 10 %. From 25 % on the lower-order coefficient follows
+  the closed form within 0.04.
+* **The delay as a product.** If the kernel were the same in both twins, the delay would be
+  D(r) = ∫_0^r dr′ / ρ_with ÷ ∫_0^r dr′ / ρ_alone, from the closed form. The measured ratio of steps over D is the
+  kernel's contribution K:
+
+  | lower-order strength | D at 10 / 25 / 50 / 75 % | K with {1} | K with {4} |
+  |---|---|---|---|
+  | 0.5 | 1.16 / 1.16 / 1.19 / 1.23 | 1.00 / 0.99 / 0.99 / 0.99 | 0.99 / 0.99 / 0.99 / 1.01 |
+  | 1.0 | 1.80 / 1.84 / 1.96 / 2.17 | 0.97 / 0.92 / 0.92 / 0.91 | 0.95 / 0.96 / 0.97 / 0.96 |
+  | 1.5 | 3.61 / 3.77 / 4.17 / 4.87 | 0.87 / 0.76 / 0.78 / 0.81 | 0.84 / 0.87 / 0.89 / 0.90 |
+  | 2.0 | 8.58 / 9.03 / 10.22 / 12.29 | 0.73 / 0.62 / 0.65 / 0.67 | 0.72 / 0.77 / 0.82 / 0.85 |
+
+  For the weak lower-order term the source alone gives the delay within 1 %. The stronger the lower-order term, the
+  more the kernel takes off, and more so when the input is shared. So under SGD the delay is D × K, with D computed
+  from the source before training and K the part that belongs to the learner; K is measured here, not predicted.
+* **Limits.** One term, one width, SGD at one learning rate, eight seeds; progress is the log-odds coefficient (in
+  §6.1 it is the order content); the closed form assumes two coefficients and a lower-order coefficient that is
+  always in place.
+
 ## 7. Checks and reproduction
 
 * **Internal checks** (`checks` in the JSON; the script stops if they fail).
@@ -527,8 +582,8 @@ to 0.99. Rule A is 1.49 and 6.02 for the two strengths, rule B 1.77 and 8.35.
   when needed and rewrite their JSON files; reruns reproduce the committed files byte for byte.
 * **The pilot of §6.1** needs torch: `PYTHONPATH=. python scripts/analysis_v2/delay_sweep_pilot.py --jobs 4`
   (264 runs with the second round, cached in `work/delay_sweep`; `--skip-runs` analyses the cache). §6.2 also needs
-  `PYTHONPATH=. python scripts/analysis_v2/kernel_gate_pilot.py --jobs 4` (40 runs). Neither was recomputed
-  independently.
+  `PYTHONPATH=. python scripts/analysis_v2/kernel_gate_pilot.py --jobs 4` (72 runs with the two strengths of §6.3).
+  Neither was recomputed independently.
 
 ## References
 
