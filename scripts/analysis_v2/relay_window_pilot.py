@@ -33,6 +33,10 @@ layer-0 head with its top offset in 11–13 and no layer-0 head with more than 0
 on the source at most 0.06; repeat loss between 0.035 and 0.095. Fails if a run returns to δ = 0, if δ leaves 1–3,
 if a layer-0 head has 0.40 or more at offset 1, or if the loss is outside 0.025–0.20.
 
+Note on the record: the reviewer had run predictions 2a–2c itself before stating them (its appended script: about
+2,000 steps for 2a and 2b, 12,000 for 2c), so here they are a reproduction at 12,000 steps. The four controls were
+not in that script.
+
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/relay_window_pilot.py
 --jobs 4`` (``--skip-runs`` analyses the cache; runs that are missing are left out and listed). Needs the outputs
 of ``relay_followup_pilot.py`` and ``relay_band_pilot.py``. Runs are cached in ``work/relay_band``. Writes
