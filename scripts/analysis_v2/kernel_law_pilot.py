@@ -22,7 +22,9 @@ Checks here.
   widths 64 and 256.
 * Statement 3: Σ_j a_j² against F_1 while a strong first-order term is being learned (strength 3.0 on input {4} or
   {1}, and 1.5 on {4}), next to S(F_1; λ1) and to F_1².
-* What statement 1 does give (added here; no fitted constant). Write g_j for unit j's own coefficient in the
+* What statement 1 does give (no fitted constant; this exact version was added after the runs above, whose
+  outcome matched the scaling recorded before them, with a constant of 0.10 in place of the rough 0.05). Write
+  g_j for unit j's own coefficient in the
   direction (so F = Σ_j a_j g_j) and n_j = ‖∇ g_j‖² for the squared gradient of g_j with respect to the unit's
   weights and bias; n_j depends on the unit's direction only. If the directions stay as they are at initialisation
   and the residual has that one direction, then for every unit a_j' = 2 g_j and g_j' = n_j a_j, so
