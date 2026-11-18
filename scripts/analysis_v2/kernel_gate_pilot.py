@@ -44,9 +44,21 @@ K = 1 / (1 + α F_1(0)²), with F_1(0) the lower-order coefficient at the start 
 fitted ones) and at one beyond them (2.5, added here), next to the plainest alternative: a straight line through the
 two nearest fitted strengths.
 
+Fourth round (the reviewer's fifth reply, to commit 4b44e01): a second formula for K, with a derivation. Write
+S = 2 λ1 (√(1 + F_1(0)² / λ1) − 1), with λ1 the kernel at initialisation in a first-order direction (4.0617). Then
+K = 1 / (1 + b_un S) when the lower-order term does not share an input with the term, and
+K = 1 / (1 + b_un S / 2 + b_al F_1(0)²) when it does; b_un and b_al are fitted per progress to strengths 0.5–2.0
+(a variant takes them from quantities at initialisation). The reviewer stated values for five strengths that it
+had not run (0.25, 0.35, 2.25, 2.75, 3.0), all outside the fitted range: K passes if the mean absolute error is at
+most 0.015 with no cell beyond 0.030 and if it beats a straight line through the two nearest fitted strengths;
+it fails beyond 0.020 or 0.035, or if it does not beat the line. Recorded here before the runs: that line is drawn
+through 1.5 and 2.0 although 2.5 has been measured, so a second line through the two nearest measured strengths
+(2.0 and 2.5) is added; and at 0.25 and 0.35 every candidate is within 0.01 of 1, so the two ends are reported
+separately.
+
 Runs: sky v2a's Markov settings with plain SGD (learning rate 0.03, no momentum, batch 64), iid contexts; the term
-{1,3}:0.8 alone and with {1} or {4} at strengths 0.5, 1.0, 1.25, 1.5, 1.75, 2.0 and 2.5; seeds 600–607; 12,000
-steps. The loop
+{1,3}:0.8 alone and with {1} or {4} at strengths 0.25, 0.35, 0.5, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75 and
+3.0; seeds 600–607; 12,000 steps (30,000 for strengths 2.75 and 3.0, where the term needs longer). The loop
 mirrors the runner's update: on 4:2.0;1,3:0.8, seed 600, it reproduces the log-odds of the
 ``delay_sweep_pilot.py`` run at its 46 checkpoints up to step 3,000 to 1.2e-6.
 
@@ -78,12 +90,25 @@ ALONE = "1,3:0.8"
 FITTED = ("0.5", "1.0", "1.5", "2.0")                  # the strengths the reviewer's constants were fitted to
 PREDICTED = ("1.25", "1.75")                           # the strengths it predicted in advance
 BEYOND = ("2.5",)                                      # one strength outside the fitted range, added here
-WITH = {st: {"lag 1": f"1:{st};1,3:0.8", "lag 4": f"4:{st};1,3:0.8"} for st in FITTED + PREDICTED + BEYOND}
+BLIND = ("0.25", "0.35", "2.25", "2.75", "3.0")       # fourth round: strengths the reviewer had not run
+WITH = {st: {"lag 1": f"1:{st};1,3:0.8", "lag 4": f"4:{st};1,3:0.8"} for st in FITTED + PREDICTED + BEYOND + BLIND}
+LONG, LONG_STEPS = ("2.75", "3.0"), 30_000             # strengths at which the term needs more than STEPS
 #: The reviewer's constants: K = 1 / (1 + ALPHA F_1(0)²); kernel factor = 1 / (1 + KERNEL_C F_1(0)²) at 10/25/50/75 %.
 ALPHA = {"25 %": {"lag 1": 0.0640, "lag 4": 0.0320}, "50 %": {"lag 1": 0.0575, "lag 4": 0.0230}}
 KERNEL_C = {"lag 1": (0.0862, 0.0666, 0.0305, 0.0185), "lag 4": (0.0302, 0.0194, 0.0082, 0.0046)}
 #: The straight line through the two nearest fitted strengths: (strength a, weight a, strength b, weight b).
 LINE = {"1.25": ("1.0", 0.5, "1.5", 0.5), "1.75": ("1.5", 0.5, "2.0", 0.5), "2.5": ("1.5", -1.0, "2.0", 2.0)}
+#: The reviewer's second formula (fourth round): constants (b_un, b_al) per progress, and λ1.
+LAMBDA_1 = 4.0617
+SECOND = {"calibrated": {"25 %": (0.04335, 0.04775), "50 %": (0.03109, 0.04643)},
+          "no fitted constant": {"25 %": (0.04684, 0.04006), "50 %": (0.03421, 0.03861)},
+          "kernel factor": {"25 %": (0.02650, 0.05686), "50 %": (0.01119, 0.02636)}}
+#: Straight lines for the blind strengths: the reviewer's, through the two nearest fitted strengths, and one through
+#: the two nearest strengths that were measured before these runs.
+LINE_REVIEWER = {"0.25": ("0.5", 1.5, "1.0", -0.5), "0.35": ("0.5", 1.3, "1.0", -0.3),
+                 "2.25": ("1.5", -0.5, "2.0", 1.5), "2.75": ("1.5", -1.5, "2.0", 2.5), "3.0": ("1.5", -2.0, "2.0", 3.0)}
+LINE_NEAREST = {"0.25": ("0.5", 1.5, "1.0", -0.5), "0.35": ("0.5", 1.3, "1.0", -0.3),
+                "2.25": ("2.0", 0.5, "2.5", 0.5), "2.75": ("2.0", -0.5, "2.5", 1.5), "3.0": ("2.0", -1.0, "2.5", 2.0)}
 TERM_STRENGTH = 0.8
 SOURCES = (ALONE,) + tuple(c for by_lag in WITH.values() for c in by_lag.values())
 MASK_13 = 0b000101                                     # the Walsh direction of the term {1,3}: lags 1 and 3
@@ -95,6 +120,10 @@ PARTS = ("weights_on_s1", "weights_on_s3", "weights_on_s4", "weights_on_other_in
 
 def slug(couplings: str) -> str:
     return couplings.replace(";", "_").replace(":", "-").replace(",", "")
+
+
+def steps_for(couplings: str) -> int:
+    return LONG_STEPS if any(couplings in WITH[st].values() for st in LONG) else STEPS
 
 
 def run_one(job: tuple[str, int, str]) -> str:
@@ -114,7 +143,8 @@ def run_one(job: tuple[str, int, str]) -> str:
     torch.set_num_threads(1)
     cfg = {"couplings": couplings, "data_seed": seed, "depth": 1, "exact_metrics": True, "n_tokens": 200_000,
            "shift_rho": -0.5, "train_context": "iid", "width": 128, "window": 6}
-    train = TrainConfig(steps=STEPS, batch_size=64, weight_decay=0.0, optimizer="sgd", lr=0.03, momentum=0.0,
+    n_steps = steps_for(couplings)
+    train = TrainConfig(steps=n_steps, batch_size=64, weight_decay=0.0, optimizer="sgd", lr=0.03, momentum=0.0,
                         n_log_evals=80, n_lin_evals=0, ntk_every=0)
     task = make_task("markov_lang", cfg, seed)
     model = task.build_model()
@@ -130,10 +160,11 @@ def run_one(job: tuple[str, int, str]) -> str:
     pmf = torch.as_tensor(task.pattern_pmfs()["D"], dtype=torch.float32)
     codes = np.arange(64)
     lo3 = codes[(codes >> 2) & 1 == 0]                   # codes with s_3 = −1; their partner has s_3 = +1
-    log_steps = sorted(set(np.unique(np.round(np.geomspace(1, STEPS, 140)).astype(int)).tolist()) | {0, 150, STEPS})
+    log_steps = sorted(set(np.unique(np.round(np.geomspace(1, n_steps, 140)).astype(int)).tolist())
+                       | {0, 150, n_steps})
     rows: dict[str, list] = {k: [] for k in ("z", "kernel", "drift", "kernel_parts") + GATES}
     step_set = set(log_steps)
-    for step in range(STEPS + 1):
+    for step in range(n_steps + 1):
         if step in step_set:
             logits = model(x_all)
             z = logits[:, 1] - logits[:, 0]
@@ -153,7 +184,7 @@ def run_one(job: tuple[str, int, str]) -> str:
                 off, on = gate[(codes >> bit) & 1 == 0], gate[(codes >> bit) & 1 == 1]
                 same = (off.min(0) == off.max(0)) & (on.min(0) == on.max(0)) & (off[0] != on[0])
                 rows[name].append(float(same.mean()))
-        if step == STEPS:
+        if step == n_steps:
             break
         x, y = task.sample_batch(train.batch_size, gen)
         loss = task.loss(model(x), y)
@@ -512,6 +543,64 @@ def main(argv: list[str] | None = None) -> int:
         al = {name: least_squares_alpha(name, k) for name in ("lag 1", "lag 4")}
         refit[k] = {**al, "lag_1_over_lag_4": al["lag 1"] / al["lag 4"]}
     result["kernel_contribution"] = contribution
+
+    # fourth round: the second formula, at all strengths; the blind ones against two straight lines
+    second = {"cells": {}}
+    for strength in WITH:
+        f1 = result["strength"][strength]["closed_form"]["first_order_coefficient_at_the_start"]
+        s_hyp = 2.0 * LAMBDA_1 * (math.sqrt(1.0 + f1 * f1 / LAMBDA_1) - 1.0)
+        for name in ("lag 1", "lag 4"):
+            for k in ALPHA:
+                def value(kind: str) -> float:
+                    b_un, b_al = SECOND[kind][k]
+                    extra = 0.5 * b_un * s_hyp + b_al * f1 * f1 if name == "lag 1" else b_un * s_hyp
+                    return 1.0 / (1.0 + extra)
+
+                cell = {"measured": k_measured(strength, name, k), "formula": value("calibrated"),
+                        "formula_without_fitted_constants": value("no fitted constant"),
+                        "first_formula": contribution["cells"][f"{strength} {name} {k}"]["formula"],
+                        "kernel_factor_measured": kernel_measured(strength, name, k),
+                        "kernel_factor_formula": value("kernel factor")}
+                if strength in BLIND:
+                    for label, line in (("line_reviewer", LINE_REVIEWER), ("line_nearest", LINE_NEAREST)):
+                        sa, wa, sb, wb = line[strength]
+                        cell[label] = wa * k_measured(sa, name, k) + wb * k_measured(sb, name, k)
+                second["cells"][f"{strength} {name} {k}"] = cell
+
+    def second_errors(strengths: tuple[str, ...], which: str, measured: str = "measured") -> dict | None:
+        e = [abs(c[which] - c[measured]) for key, c in second["cells"].items()
+             if key.split()[0] in strengths and which in c and not math.isnan(c[measured])]
+        return {"mean_abs_error": float(np.mean(e)), "max_abs_error": float(np.max(e)), "n": len(e)} if e else None
+
+    groups = {"fitted": FITTED, "measured before": PREDICTED + BEYOND, "blind, high end": ("2.25", "2.75", "3.0"),
+              "blind, low end": ("0.25", "0.35"), "blind, all": BLIND}
+    candidates = ("formula", "formula_without_fitted_constants", "first_formula", "line_reviewer", "line_nearest")
+    second["summary"] = {
+        "passes_if": "blind cells: mean abs error <= 0.015, no cell > 0.030, and mean and maximum below the reviewer's "
+                     "line; K without a shared input at 25 % within [0.635, 0.680] at 2.75 and [0.600, 0.650] at 3.0",
+        "fails_if": "mean abs error > 0.020, or a cell > 0.035, or the mean not below the reviewer's line",
+        "K": {g: {which: second_errors(sts, which) for which in candidates} for g, sts in groups.items()},
+        "kernel_factor": {g: second_errors(sts, "kernel_factor_formula", "kernel_factor_measured")
+                          for g, sts in groups.items()},
+        "stated_intervals": {"2.75 lag 4 25 %": [0.635, 0.680, second["cells"]["2.75 lag 4 25 %"]["measured"]],
+                             "3.0 lag 4 25 %": [0.600, 0.650, second["cells"]["3.0 lag 4 25 %"]["measured"]]}}
+    # the reviewer's table behind the second formula: how much each part of the kernel exceeds the alone twin's at
+    # 25 % (differences of medians), over S and over F_1(0)²
+    alone_parts = {name: result["alone"]["kernel_parts"][name]["at 25 %"]["median"] for name in PARTS}
+    second["kernel_parts_at_25_percent"] = {}
+    for strength in WITH:
+        f1 = result["strength"][strength]["closed_form"]["first_order_coefficient_at_the_start"]
+        s_hyp = 2.0 * LAMBDA_1 * (math.sqrt(1.0 + f1 * f1 / LAMBDA_1) - 1.0)
+        more = {name: {part: result["strength"][strength][name]["kernel_parts"][part]["at 25 %"]["median"]
+                       - alone_parts[part] for part in PARTS} for name in ("lag 1", "lag 4")}
+        second["kernel_parts_at_25_percent"][strength] = {
+            "S": s_hyp, "first_order_coefficient_squared": f1 * f1,
+            "not_shared_total_over_S": sum(more["lag 4"].values()) / s_hyp,
+            "not_shared_total_over_f1_squared": sum(more["lag 4"].values()) / (f1 * f1),
+            "shared_weights_on_s1_over_S": more["lag 1"]["weights_on_s1"] / s_hyp,
+            "shared_weights_on_s3_over_f1_squared": more["lag 1"]["weights_on_s3"] / (f1 * f1),
+            "shared_read_out_over_f1_squared": more["lag 1"]["read_out"] / (f1 * f1)}
+    result["kernel_contribution_second_formula"] = second
     args.out.write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
 
     def fmt(h: dict) -> str:
@@ -609,6 +698,27 @@ def main(argv: list[str] | None = None) -> int:
           + "; ".join(f"{v['lag 1']:.4f} / {v['lag 4']:.4f} ({v['lag_1_over_lag_4']:.2f})"
                       for v in kc["least_squares_alpha_on_the_fitted_strengths"].values()))
     print("  kernel factor at 25 and 50 %:", json.dumps(kc["summary"]["kernel_factor_at_25_and_50"]))
+    sf = result["kernel_contribution_second_formula"]
+    print("== the second formula: K measured / formula / without fitted constants / first formula / reviewer's line / "
+          "nearest line | kernel factor measured / formula")
+    for key, c in sf["cells"].items():
+        if key.split()[0] in FITTED:
+            continue
+        print(f"  {key}: {c['measured']:.4f} / {c['formula']:.4f} / {c['formula_without_fitted_constants']:.4f} / "
+              f"{c['first_formula']:.4f}" + (f" / {c['line_reviewer']:.4f} / {c['line_nearest']:.4f}"
+                                             if "line_reviewer" in c else " / - / -")
+              + f" | {c['kernel_factor_measured']:.4f} / {c['kernel_factor_formula']:.4f}")
+    for g, by in sf["summary"]["K"].items():
+        print(f"  {g}: " + "; ".join(f"{which} {v['mean_abs_error']:.4f} (max {v['max_abs_error']:.4f})"
+                                      for which, v in by.items() if v))
+    print("  kernel factor:", json.dumps(sf["summary"]["kernel_factor"]))
+    print("  stated intervals [low, high, measured]:", json.dumps(sf["summary"]["stated_intervals"]))
+    print("  kernel parts above the alone twin's at 25 %: not shared, total / S (and / F_1(0)²) | shared: weights on "
+          "s1 / S, weights on s3 / F_1(0)², read-out / F_1(0)²")
+    for strength, v in sorted(sf["kernel_parts_at_25_percent"].items(), key=lambda kv: float(kv[0])):
+        print(f"    {strength}: {v['not_shared_total_over_S']:.4f} ({v['not_shared_total_over_f1_squared']:.4f}) | "
+              f"{v['shared_weights_on_s1_over_S']:.4f}, {v['shared_weights_on_s3_over_f1_squared']:.4f}, "
+              f"{v['shared_read_out_over_f1_squared']:.4f}")
     return 0
 
 

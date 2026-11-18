@@ -60,6 +60,14 @@ standard library only; they do not import tycho). Numbers:
   the lower-order coefficient is when the term starts to grow. The kernel's contribution K varies smoothly with the
   strength; the reviewer's formula for it passes its own test, and so does a straight line between neighbouring
   strengths.
+* **Added 18 November, fifth round (§6.5): a second formula for K, and what its derivation rests on.** On five
+  strengths that the reviewer had not run, the second formula is within 0.018 on 19 of 20 values of K and 0.039 off
+  on one, which is beyond its own failure bound; outside the fitted range it follows the bend that the first
+  formula missed. Of the three statements it is derived from, the conserved quantity holds; the law for the growth
+  of the kernel "with no fitted constant" holds at the width of the pilots only (at half or twice that width it is
+  off by up to a third); the growth of the read-out norm has the stated shape at half the stated size. What the
+  conserved quantity does give, with no fitted constant, is the growth of the kernel for small coefficients at every
+  width tried, and the whole curve for wide networks.
 
 ## 1. Definitions
 
@@ -649,6 +657,88 @@ runs) and makes three checks. Record: `notes/discussion_2026-11-16_outside_revie
   grows by a factor of three during the term's growth; the split into three factors is exact per seed but is
   reported as medians; no alternative with a derivation was tested against the formula for K.
 
+### 6.5 Fifth round: a second formula for K, and what its derivation rests on (18 November)
+
+Status as in §6.1. The reviewer's fifth reply (to commit `4b44e01`) gave a second formula for K with a derivation, and
+values of K for five strengths that it stated it had not run. `scripts/analysis_v2/kernel_gate_pilot.py` now runs
+them (0.25, 0.35, 2.25, 2.75 and 3.0; 80 runs), and `scripts/analysis_v2/kernel_law_pilot.py` (new; 64 runs →
+[kernel_law_pilot.json](v2_analysis/kernel_law_pilot.json)) tests the three statements the derivation rests on.
+Record: `notes/discussion_2026-11-16_outside_reviews.md`, §13.3.
+
+* **The formula.** S = 2 λ1 (√(1 + F_1(0)² / λ1) − 1), with λ1 = 4.06 the tangent kernel at initialisation in a
+  first-order direction. Then K = 1 / (1 + b_un S) when the lower-order term does not share an input with the
+  term, and K = 1 / (1 + b_un S / 2 + b_al F_1(0)²) when it does. The two constants are fitted per progress to
+  strengths 0.5 to 2.0. For a small F_1(0), S is F_1(0)² and this is the first formula; for a large one S grows
+  linearly.
+* **The blind test.** K at 25 % and 50 %: measured / second formula / a straight line through the two nearest
+  strengths measured before (2.0 and 2.5). The reviewer's own comparison line goes through 1.5 and 2.0; both lines
+  were fixed before the runs.
+
+  | lower-order strength | with {1}: measured / formula / line | with {4}: measured / formula / line |
+  |---|---|---|
+  | 2.25 | 0.547 / 0.558 / 0.556 and 0.575 / 0.580 / 0.583 | 0.730 / 0.732 / 0.732 and 0.784 / 0.792 / 0.798 |
+  | 2.75 | 0.430 / 0.444 / 0.421 and 0.473 / 0.465 / 0.458 | 0.649 / 0.658 / 0.661 and 0.745 / 0.729 / 0.745 |
+  | 3.0 | 0.393 / 0.397 / 0.354 and 0.429 / 0.416 / 0.396 | 0.631 / 0.625 / 0.626 and 0.739 / 0.699 / 0.719 |
+
+  Over the 20 blind values the formula's mean absolute error is 0.010 (the reviewer's bound: 0.015); 19 are within
+  0.018 and one is 0.039 off (strength 3.0, input {4}, 50 %), which is beyond the bound the reviewer set for any
+  single value (0.030, failure beyond 0.035). On the 12 values of the high end: second formula 0.011 (largest
+  0.039), first formula 0.033 (0.109), the reviewer's line 0.028 (0.063), the line through 2.0 and 2.5 0.014
+  (0.039). With the shared input the formula is the best of these (0.009 against 0.019 for the nearer line); without
+  it the nearer line is better (0.009 against 0.014). At the low end (0.25 and 0.35) the measured K is between
+  0.997 and 1.012 and every candidate is within 0.02. So the second formula follows the bend that the first one
+  missed, and for the shared input it holds out to 3.0; against a line through the two nearest measurements it is
+  no better overall.
+* **The three statements behind it**, for the network z = Σ_j a_j relu(w_j·s + b_j) with a_j the difference of unit
+  j's two read-out weights.
+  1. *a_j² − 2 (‖w_j‖² + b_j²) is conserved for every unit.* This is the balance property of homogeneous networks
+     (Du, Hu and Lee 2018). Under the SGD of these pilots it drifts by less than 0.15 % of its mean size while the
+     term grows, and by 2 to 3 % over 12,000 steps, at widths 32 to 512.
+  2. *The kernel in a direction grows as λ0 + S(F; λ0), with no fitted constant.* For the term alone this holds at
+     the width of the pilots, along the whole growth and within 1.2 % in the median (2 to 9 % per seed). It does not
+     hold at other widths. Measured kernel over the law at F = 0.4, 0.8 and 1.5 (medians over 8 seeds):
+
+     | width | kernel at step 0 | measured / law | growth / F² at small F: measured, from the conserved quantity |
+     |---|---|---|---|
+     | 32 | 0.121 | 1.75 / 1.84 / 1.83 | 3.02, 3.00 |
+     | 64 | 0.215 | 1.26 / 1.35 / 1.37 | 1.66, 1.84 |
+     | 128 | 0.388 | 1.01 / 1.00 / 0.99 | 0.93, 1.01 |
+     | 256 | 0.786 | 0.93 / 0.83 / 0.74 | 0.50, 0.53 |
+     | 512 | 1.51 | 0.93 / 0.80 / 0.64 | 0.27, 0.27 |
+
+     The last column is what statement 1 gives (added here; no fitted constant; "small F" is F = 0.16, and 0.4 at
+     width 512). Write g_j for unit j's own coefficient in the direction and n_j for the squared gradient of g_j with
+     respect to the unit's weights and bias. If the units keep their directions, a_j' = 2 g_j and g_j' = n_j a_j, so
+     each unit's share of the kernel, P_j = 2 g_j² + n_j a_j², and of the coefficient, Q_j = a_j g_j, obey
+     P_j² − 8 n_j Q_j² = const and Q_j' = P_j. For small F this gives λ − λ0 ≈ 4 (Σ_j n_j P_j) F² / λ0². The
+     share-weighted mean of n_j is 0.09 to 0.10 at every width, a property of single units, while λ0 is proportional
+     to the width; the coefficient of F² is therefore about 0.4 / λ0, and it is 1, as S has it, only near width 128.
+     The whole curve computed this way from the network at initialisation is within 2 % of the measured kernel at
+     width 512 and within 6 % at width 256; at widths 32 to 128 it is 15 to 24 % low by the end of the growth,
+     because there the units turn towards the term's inputs (the lazy and the feature-learning regimes of Chizat,
+     Oyallon and Bach 2019).
+  3. *Learning a first-order coefficient F_1 raises the read-out norm Σ_j a_j² by S(F_1; λ1), not by an amount
+     proportional to F_1².* Measured while a term of strength 3.0 is learned: the growth of the read-out norm over
+     S is 0.40, 0.46, 0.49, 0.50, 0.51, 0.52 at F_1 = 0.5, 1, 2, 3, 4, 5, and over F_1² it is 0.40, 0.44, 0.41,
+     0.36, 0.32, 0.28. So the growth is proportional to S within 6 % from F_1 = 1 on, at half of S, and it is linear
+     rather than quadratic for large F_1: that is the bend. The conserved quantity with half of the gates open
+     gives 2 (√(λ1² + 2 F_1²) − λ1) with no fitted constant; the measured growth is 0.83 to 1.00 of it.
+
+  The parts of the kernel that exceed the alone twin's at 25 % agree with the reviewer's account at all twelve
+  strengths: without a shared input the excess over S is 0.0136 to 0.0144 for strengths 1.5 to 3.0 (over F_1(0)² it
+  falls from 0.0115 to 0.0073); with the shared input the part from the first layer's weights on the term's other
+  input is 0.0195 to 0.0226 times F_1(0)² from 0.5 to 3.0. So the structure of the derivation stands: a conserved
+  quantity, a read-out norm that grows linearly in a large first-order coefficient, and an extra term in F_1(0)²
+  when the input is shared. Its particular function S with λ1 as the only scale, and the claim that nothing is
+  fitted, do not: the variant of the formula with constants taken from the initialisation has a mean error of 0.03
+  at the high end (largest 0.06).
+* **Also from the five strengths.** The closed form of §6.3 is within 9 % of the measured residual factor up to
+  half of the term's growth at all twelve strengths (factors from 1.04 to 87); at three quarters the ratio is 0.81
+  to 1.33. The constant-kernel start of §6.4, which was written before these runs, gives the lower-order coefficient
+  at 10 % within −0.08 to +0.04 on the five new strengths (the closed form is 0.05 to 0.18 too high).
+* **Limits.** As in §6.3. The law pilot varies the width for the term alone only; K itself was measured at one
+  width. The frozen-direction calculation assumes a residual with the term's direction alone.
+
 ## 7. Checks and reproduction
 
 * **Internal checks** (`checks` in the JSON; the script stops if they fail).
@@ -671,8 +761,9 @@ runs) and makes three checks. Record: `notes/discussion_2026-11-16_outside_revie
   when needed and rewrite their JSON files; reruns reproduce the committed files byte for byte.
 * **The pilot of §6.1** needs torch: `PYTHONPATH=. python scripts/analysis_v2/delay_sweep_pilot.py --jobs 4`
   (264 runs with the second round, cached in `work/delay_sweep`; `--skip-runs` analyses the cache). §6.2 also needs
-  `PYTHONPATH=. python scripts/analysis_v2/kernel_gate_pilot.py --jobs 4` (120 runs with the two strengths of §6.3
-  and the three of §6.4). Neither was recomputed independently.
+  `PYTHONPATH=. python scripts/analysis_v2/kernel_gate_pilot.py --jobs 4` (200 runs with the strengths of §6.3 to
+  §6.5) and, for §6.5, `PYTHONPATH=. python scripts/analysis_v2/kernel_law_pilot.py --jobs 4` (64 runs, cached in
+  `work/kernel_law`). None of these was recomputed independently.
 
 ## References
 
@@ -689,4 +780,8 @@ runs) and makes three checks. Record: `notes/discussion_2026-11-16_outside_revie
 * Pezeshki, M., Kaba, S.-O., Bengio, Y., Courville, A., Precup, D., Lajoie, G. (2021). Gradient starvation: a
   learning proclivity in neural networks. *NeurIPS*. arXiv:2011.09468.
 * Yang, G., Salman, H. (2019). A fine-grained spectral perspective on neural networks. arXiv:1907.10599.
+* Du, S. S., Hu, W., Lee, J. D. (2018). Algorithmic regularization in learning deep homogeneous models: layers are
+  automatically balanced. *NeurIPS*. arXiv:1806.00900.
+* Chizat, L., Oyallon, E., Bach, F. (2019). On lazy training in differentiable programming. *NeurIPS*.
+  arXiv:1812.07956.
 * Amari, S. (2001). Information geometry on hierarchy of probability distributions. *IEEE Trans. Inf. Theory*.

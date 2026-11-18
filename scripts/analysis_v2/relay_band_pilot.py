@@ -99,11 +99,12 @@ def band_stats(model, task) -> dict:
 
 
 def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int = 0, keep_state_at: int | None = None,
-          layer: int = 0, forbid: str = "far", block_from: int = 0):
+          layer: int = 0, forbid: str = "far", block_from: int = 0, stats_fn=None):
     """The runner's update loop on one induction job. While block_from <= step < block_until, ``layer`` may not
     attend to the forbidden offsets: "far" = NEAR and beyond; "band" = rep_min − 1 .. rep_max − 1; "sham" =
-    everything except the near offsets and the band. Measurements are taken without the restriction.
-    Returns (model, task, {step: band_stats}, state at ``keep_state_at``)."""
+    everything except the near offsets and the band. Measurements are taken without the restriction, with
+    ``stats_fn(model, task)`` (default: :func:`band_stats`).
+    Returns (model, task, {step: statistics}, state at ``keep_state_at``)."""
     import torch
 
     from tycho.tasks import make_task
@@ -136,7 +137,7 @@ def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int =
         if step in measure_at:
             blocked["on"] = False
             model.eval()
-            stats[step] = band_stats(model, task)
+            stats[step] = (stats_fn or band_stats)(model, task)
             model.train()
         if step == keep_state_at:
             kept = {k: v.detach().clone() for k, v in model.state_dict().items()}
