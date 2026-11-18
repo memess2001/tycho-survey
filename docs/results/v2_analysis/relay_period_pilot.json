@@ -432,6 +432,12 @@
       1500
      ]
     }
+   },
+   "step_300_source_criterion": {
+    "threshold": 0.031,
+    "of": 6,
+    "correct": 1,
+    "textbook_without_mask": 6
    }
   },
   "lr2e-3": {
@@ -695,7 +701,64 @@
       null,
       700
      ]
+    },
+    "lr2e-3_w400_900": {
+     "window": [
+      400,
+      900
+     ],
+     "textbook": 1,
+     "relays": 5,
+     "not_formed": 0,
+     "of": 6,
+     "complete": true,
+     "relay_deltas": [
+      14,
+      0,
+      12,
+      0,
+      0,
+      11
+     ],
+     "deep_decoy_over_clean": [
+      0.49953295585847696,
+      0.4445718064048959,
+      0.5482856317076931,
+      0.5716666646053704,
+      0.9780304763224315,
+      0.6865298204495861
+     ],
+     "loss_all": [
+      3.2230477451332544,
+      3.150394633428396,
+      3.266873209692422,
+      3.2183704644102913,
+      2.9114156582723587,
+      3.072339352213581
+     ],
+     "d2_l0_max": [
+      0.011465011164546013,
+      0.016178224235773087,
+      0.0015429418999701738,
+      0.014198836870491505,
+      0.6042565703392029,
+      0.022611748427152634
+     ],
+     "first_step_with_loss_rep_below_2": [
+      1350,
+      950,
+      1100,
+      1300,
+      1650,
+      1050
+     ]
     }
+   },
+   "step_300_source_criterion": {
+    "threshold": 0.031,
+    "of": 6,
+    "correct": 6,
+    "textbook_without_mask": 0
    }
   },
   "d128": {
@@ -960,6 +1023,12 @@
       600
      ]
     }
+   },
+   "step_300_source_criterion": {
+    "threshold": 0.031,
+    "of": 6,
+    "correct": 3,
+    "textbook_without_mask": 3
    }
   },
   "d32": {
@@ -1224,6 +1293,348 @@
       1900
      ]
     }
+   },
+   "step_300_source_criterion": {
+    "threshold": 0.031,
+    "of": 6,
+    "correct": 6,
+    "textbook_without_mask": 0
+   }
+  },
+  "b128": {
+   "formula_steps": {
+    "loss": [
+     100,
+     300
+    ],
+    "attention": [
+     200,
+     300
+    ]
+   },
+   "unperturbed_runs": {
+    "single_rm12_h2_s300": {
+     "band_l0_at_300": 0.5034693043729269,
+     "offsets_1_2_l0_at_300": 0.10434628278017044,
+     "loss_drop_at_300": 2.520440174652574,
+     "t_crit_loss": 115.11585961827402,
+     "t_crit_attn": null,
+     "measured": {
+      "loss_drop_reaches_0.295": 196.85933427025836,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 291.4297346111866
+     }
+    },
+    "single_rm12_h2_s301": {
+     "band_l0_at_300": 0.7592535968580044,
+     "offsets_1_2_l0_at_300": 0.040477607399225235,
+     "loss_drop_at_300": 0.5982850976022136,
+     "t_crit_loss": 174.2396541696045,
+     "t_crit_attn": null,
+     "measured": {
+      "loss_drop_reaches_0.295": 184.4966704608376,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 340.51776337404226
+     }
+    },
+    "single_rm12_h2_s302": {
+     "band_l0_at_300": 0.5642223028279351,
+     "offsets_1_2_l0_at_300": 0.07983247935771942,
+     "loss_drop_at_300": 1.1565355890612299,
+     "t_crit_loss": 135.48302477800365,
+     "t_crit_attn": null,
+     "measured": {
+      "loss_drop_reaches_0.295": 185.91414035774793,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 326.70821386447153
+     }
+    },
+    "single_rm12_h4_s300": {
+     "band_l0_at_300": 0.797941022432706,
+     "offsets_1_2_l0_at_300": 0.01408494170755148,
+     "loss_drop_at_300": 0.4016272149014264,
+     "t_crit_loss": 227.35957250041417,
+     "t_crit_attn": 382.33866007876156,
+     "measured": {
+      "loss_drop_reaches_0.295": 204.96997759847113,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 428.3555884161191
+     }
+    },
+    "single_rm12_h4_s301": {
+     "band_l0_at_300": 0.6699069454471475,
+     "offsets_1_2_l0_at_300": 0.04560060426592827,
+     "loss_drop_at_300": 0.4217904442338365,
+     "t_crit_loss": 218.7276248374609,
+     "t_crit_attn": null,
+     "measured": {
+      "loss_drop_reaches_0.295": 192.17442182791788,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 384.7977305387779
+     }
+    },
+    "single_rm12_h4_s302": {
+     "band_l0_at_300": 0.7210683664619808,
+     "offsets_1_2_l0_at_300": 0.017957761883735657,
+     "loss_drop_at_300": 0.4273554872211167,
+     "t_crit_loss": 218.72676299375973,
+     "t_crit_attn": 449.3514311352638,
+     "measured": {
+      "loss_drop_reaches_0.295": 193.0890728762605,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 442.2999137725352
+     }
+    }
+   },
+   "medians": {
+    "band_l0_at_300": 0.6954876559545642,
+    "offsets_1_2_l0_at_300": 0.04303910583257675,
+    "loss_drop_at_300": 0.5128202924116652,
+    "t_crit_loss": 196.4832085816821,
+    "t_crit_attn": 415.8450456070127,
+    "measured": {
+     "loss_drop_reaches_0.295": 192.63174735208918,
+     "offsets_1_2_l0_falls_to_0.0085": null,
+     "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+     "band_l1_falls_to_0.33": null,
+     "loss_rep_falls_below_2": 362.65774695641005
+    }
+   },
+   "arms": {
+    "b128_natural": {
+     "window": null,
+     "textbook": 6,
+     "relays": 0,
+     "not_formed": 0,
+     "of": 6,
+     "complete": true,
+     "relay_deltas": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "deep_decoy_over_clean": [
+      0.9929247488531109,
+      0.9907195590380677,
+      0.9920939068663472,
+      0.9905186555976089,
+      0.9806986609767665,
+      0.9881231537805618
+     ],
+     "loss_all": [
+      2.8833165115235357,
+      2.8826170802394175,
+      2.8834210609936513,
+      2.8858375572448622,
+      2.884824151714088,
+      2.8847665222402874
+     ],
+     "d2_l0_max": [
+      0.7844756841659546,
+      0.7202668190002441,
+      0.7598668932914734,
+      0.7802714109420776,
+      0.6247706413269043,
+      0.777808666229248
+     ],
+     "first_step_with_loss_rep_below_2": [
+      300,
+      350,
+      350,
+      450,
+      400,
+      450
+     ]
+    }
+   },
+   "step_300_source_criterion": {
+    "threshold": 0.031,
+    "of": 6,
+    "correct": 5,
+    "textbook_without_mask": 6
+   }
+  },
+  "lr5e-4_b8": {
+   "formula_steps": {
+    "loss": [
+     150,
+     350
+    ],
+    "attention": [
+     150,
+     350
+    ]
+   },
+   "unperturbed_runs": {
+    "single_rm12_h2_s300": {
+     "band_l0_at_300": 0.4891125416524515,
+     "offsets_1_2_l0_at_300": 0.04825008288025856,
+     "loss_drop_at_300": 0.017142472234498385,
+     "t_crit_loss": 10822.708337448104,
+     "t_crit_attn": 120512.58945388776,
+     "measured": {
+      "loss_drop_reaches_0.295": 1532.975501121636,
+      "offsets_1_2_l0_falls_to_0.0085": 1382.6911446349022,
+      "last_step_with_layer_1_ahead_in_the_band": 600.0,
+      "band_l1_falls_to_0.33": 1325.449267510188,
+      "loss_rep_falls_below_2": 4699.251101382357
+     }
+    },
+    "single_rm12_h2_s301": {
+     "band_l0_at_300": 0.48203077614888634,
+     "offsets_1_2_l0_at_300": 0.04746439680457115,
+     "loss_drop_at_300": 0.010775354299695117,
+     "t_crit_loss": 8198.678555515153,
+     "t_crit_attn": 126619.45393860563,
+     "measured": {
+      "loss_drop_reaches_0.295": 1623.7870866655235,
+      "offsets_1_2_l0_falls_to_0.0085": 1471.380934603636,
+      "last_step_with_layer_1_ahead_in_the_band": 750.0,
+      "band_l1_falls_to_0.33": 1520.8614165713398,
+      "loss_rep_falls_below_2": 5383.969460255963
+     }
+    },
+    "single_rm12_h2_s302": {
+     "band_l0_at_300": 0.48755257304128624,
+     "offsets_1_2_l0_at_300": 0.04776814952492714,
+     "loss_drop_at_300": 0.019771656455451314,
+     "t_crit_loss": 3896.0670704108634,
+     "t_crit_attn": 148022.9304731279,
+     "measured": {
+      "loss_drop_reaches_0.295": 1523.671348891578,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 2715.516107621103
+     }
+    },
+    "single_rm12_h4_s300": {
+     "band_l0_at_300": 0.488306228131124,
+     "offsets_1_2_l0_at_300": 0.04822340980172157,
+     "loss_drop_at_300": 0.017024012886837525,
+     "t_crit_loss": 12281.232828514321,
+     "t_crit_attn": 160207.39063874306,
+     "measured": {
+      "loss_drop_reaches_0.295": 1688.397269687943,
+      "offsets_1_2_l0_falls_to_0.0085": 1665.0981489647365,
+      "last_step_with_layer_1_ahead_in_the_band": 700.0,
+      "band_l1_falls_to_0.33": 1504.2918464774962,
+      "loss_rep_falls_below_2": 7432.603668987054
+     }
+    },
+    "single_rm12_h4_s301": {
+     "band_l0_at_300": 0.481713162880497,
+     "offsets_1_2_l0_at_300": 0.047527190297842026,
+     "loss_drop_at_300": 0.01076367650539467,
+     "t_crit_loss": 8647.093369623964,
+     "t_crit_attn": 280309.5638011893,
+     "measured": {
+      "loss_drop_reaches_0.295": 1791.4103719354011,
+      "offsets_1_2_l0_falls_to_0.0085": 2418.7617487470075,
+      "last_step_with_layer_1_ahead_in_the_band": 1350.0,
+      "band_l1_falls_to_0.33": 2432.109264233474,
+      "loss_rep_falls_below_2": 7039.581198387718
+     }
+    },
+    "single_rm12_h4_s302": {
+     "band_l0_at_300": 0.48707015753790744,
+     "offsets_1_2_l0_at_300": 0.04784209281206131,
+     "loss_drop_at_300": 0.01964917059296223,
+     "t_crit_loss": 4059.6619287607873,
+     "t_crit_attn": 329924.12559601374,
+     "measured": {
+      "loss_drop_reaches_0.295": 1715.341702015936,
+      "offsets_1_2_l0_falls_to_0.0085": 3219.737526292472,
+      "last_step_with_layer_1_ahead_in_the_band": 2450.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 6245.496728780486
+     }
+    }
+   },
+   "medians": {
+    "band_l0_at_300": 0.48731136528959684,
+    "offsets_1_2_l0_at_300": 0.047805121168494225,
+    "loss_drop_at_300": 0.017083242560667955,
+    "t_crit_loss": 8422.885962569559,
+    "t_crit_attn": 154115.16055593546,
+    "measured": {
+     "loss_drop_reaches_0.295": 1656.0921781767333,
+     "offsets_1_2_l0_falls_to_0.0085": 1665.0981489647365,
+     "last_step_with_layer_1_ahead_in_the_band": 1050.0,
+     "band_l1_falls_to_0.33": 1512.576631524418,
+     "loss_rep_falls_below_2": 5814.733094518224
+    }
+   },
+   "arms": {
+    "lr5e-4_b8_natural": {
+     "window": null,
+     "textbook": 1,
+     "relays": 5,
+     "not_formed": 0,
+     "of": 6,
+     "complete": true,
+     "relay_deltas": [
+      14,
+      11,
+      0,
+      10,
+      11,
+      10
+     ],
+     "deep_decoy_over_clean": [
+      0.5853493282752291,
+      0.5485312131888654,
+      0.993831662708577,
+      0.5851093354658461,
+      0.5656620116716555,
+      0.4788688452297199
+     ],
+     "loss_all": [
+      3.343546172514231,
+      3.277680339273142,
+      2.9161464797582077,
+      3.3218449552859077,
+      3.304369025647582,
+      3.201073371285181
+     ],
+     "d2_l0_max": [
+      0.0012419678969308734,
+      0.0008174526738002896,
+      0.6061335802078247,
+      0.002590900519862771,
+      5.678639354300685e-05,
+      0.00022740861459169537
+     ],
+     "first_step_with_loss_rep_below_2": [
+      4750,
+      5500,
+      2750,
+      7500,
+      7250,
+      6250
+     ]
+    }
+   },
+   "step_300_source_criterion": {
+    "threshold": 0.031,
+    "of": 6,
+    "correct": 5,
+    "textbook_without_mask": 1
    }
   }
  },
@@ -1266,6 +1677,22 @@
   },
   "fails_by_its_own_criteria": true
  },
+ "textbook_without_mask_lost_with_mask": [
+  {
+   "arm": "lr5e-4_w1050_2050",
+   "run": "single_rm12_h4_s300",
+   "deep_decoy_over_clean": 0.5296221665969929,
+   "relay_delta": 0,
+   "formed": true
+  },
+  {
+   "arm": "d128_w400_900",
+   "run": "single_rm12_h2_s302",
+   "deep_decoy_over_clean": 0.5287300542537946,
+   "relay_delta": 0,
+   "formed": true
+  }
+ ],
  "inside_the_window": {
   "base_natural": {
    "step": [
@@ -11643,6 +12070,1524 @@
     "textbook": true,
     "d1_l0_max": 0.9926171898841858,
     "d2_l0_max": 0.6427857875823975
+   }
+  ],
+  "b128_natural": [
+   {
+    "arm": "b128_natural",
+    "name": "b128_natural_single_rm12_h2_s300",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.909671091884176,
+    "p_best_with_one_layer0_head": 0.8308895220262494,
+    "loss_rep_probe": 0.16367598522144317,
+    "first_step_with_loss_rep_below_2": 300,
+    "at_step_300": {
+     "band_l0": 0.5034693043729269,
+     "band_l1": 0.9329706116425905,
+     "source_l1": 0.589695394039154,
+     "offsets_1_2_l0": 0.10434628278017044,
+     "loss_rep": 1.6523308337640439
+    },
+    "source_l1_at_the_end": 0.9427715539932251,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.974
+       ],
+       [
+        0,
+        0.024
+       ],
+       [
+        3,
+        0.005
+       ]
+      ],
+      "attention_d1": 0.9735129475593567
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.792
+       ],
+       [
+        0,
+        0.034
+       ],
+       [
+        1,
+        0.022
+       ]
+      ],
+      "attention_d1": 0.02153691276907921
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9929247488531109,
+    "loss_all": 2.8833165115235357,
+    "loss_rep": 0.1593094613647416,
+    "loss_other": 4.234017572437696,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9821298718452454,
+    "d2_l0_max": 0.7844756841659546
+   },
+   {
+    "arm": "b128_natural",
+    "name": "b128_natural_single_rm12_h2_s301",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9117044530476521,
+    "p_best_with_one_layer0_head": 0.8358190701381817,
+    "loss_rep_probe": 0.16126606872825877,
+    "first_step_with_loss_rep_below_2": 350,
+    "at_step_300": {
+     "band_l0": 0.7592535968580044,
+     "band_l1": 0.701373146452431,
+     "source_l1": 0.09849687665700912,
+     "offsets_1_2_l0": 0.040477607399225235,
+     "loss_rep": 3.572166014146807
+    },
+    "source_l1_at_the_end": 0.9406073093414307,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.775
+       ],
+       [
+        0,
+        0.041
+       ],
+       [
+        1,
+        0.026
+       ]
+      ],
+      "attention_d1": 0.026033632457256317
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.967
+       ],
+       [
+        0,
+        0.029
+       ],
+       [
+        4,
+        0.007
+       ]
+      ],
+      "attention_d1": 0.9665058255195618
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9907195590380677,
+    "loss_all": 2.8826170802394175,
+    "loss_rep": 0.15942584048704123,
+    "loss_other": 4.232913620915133,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9782696962356567,
+    "d2_l0_max": 0.7202668190002441
+   },
+   {
+    "arm": "b128_natural",
+    "name": "b128_natural_single_rm12_h2_s302",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9217980862391125,
+    "p_best_with_one_layer0_head": 0.798441641742566,
+    "loss_rep_probe": 0.14221376679790254,
+    "first_step_with_loss_rep_below_2": 350,
+    "at_step_300": {
+     "band_l0": 0.5642223028279351,
+     "band_l1": 0.8566804629436657,
+     "source_l1": 0.26962047815322876,
+     "offsets_1_2_l0": 0.07983247935771942,
+     "loss_rep": 3.0204172556020863
+    },
+    "source_l1_at_the_end": 0.9508805871009827,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.79
+       ],
+       [
+        40,
+        0.036
+       ],
+       [
+        1,
+        0.032
+       ]
+      ],
+      "attention_d1": 0.032161954790353775
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.962
+       ],
+       [
+        0,
+        0.029
+       ],
+       [
+        2,
+        0.009
+       ]
+      ],
+      "attention_d1": 0.9621840715408325
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9920939068663472,
+    "loss_all": 2.8834210609936513,
+    "loss_rep": 0.15608664071404,
+    "loss_other": 4.2357720010268745,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9711637496948242,
+    "d2_l0_max": 0.7598668932914734
+   },
+   {
+    "arm": "b128_natural",
+    "name": "b128_natural_single_rm12_h4_s300",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9137783539938189,
+    "p_best_with_one_layer0_head": 0.7682993870013638,
+    "loss_rep_probe": 0.15746032724352935,
+    "first_step_with_loss_rep_below_2": 450,
+    "at_step_300": {
+     "band_l0": 0.797941022432706,
+     "band_l1": 0.6459224494927848,
+     "source_l1": 0.03021305426955223,
+     "offsets_1_2_l0": 0.01408494170755148,
+     "loss_rep": 3.7711521912902692
+    },
+    "source_l1_at_the_end": 0.9484083652496338,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        0,
+        0.307
+       ],
+       [
+        1,
+        0.109
+       ],
+       [
+        2,
+        0.08
+       ]
+      ],
+      "attention_d1": 0.10903719067573547
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.99
+       ],
+       [
+        0,
+        0.02
+       ],
+       [
+        2,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.9901241660118103
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        2,
+        0.809
+       ],
+       [
+        0,
+        0.05
+       ],
+       [
+        1,
+        0.045
+       ]
+      ],
+      "attention_d1": 0.0449015311896801
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        1,
+        0.073
+       ],
+       [
+        2,
+        0.058
+       ],
+       [
+        0,
+        0.053
+       ]
+      ],
+      "attention_d1": 0.07271137833595276
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9905186555976089,
+    "loss_all": 2.8858375572448622,
+    "loss_rep": 0.1597833426243409,
+    "loss_other": 4.237553706284494,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.990868866443634,
+    "d2_l0_max": 0.7802714109420776
+   },
+   {
+    "arm": "b128_natural",
+    "name": "b128_natural_single_rm12_h4_s301",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9073137899109847,
+    "p_best_with_one_layer0_head": 0.7184109392457215,
+    "loss_rep_probe": 0.16546148303602973,
+    "first_step_with_loss_rep_below_2": 400,
+    "at_step_300": {
+     "band_l0": 0.6699069454471475,
+     "band_l1": 0.8799139026332619,
+     "source_l1": 0.04410852491855621,
+     "offsets_1_2_l0": 0.04560060426592827,
+     "loss_rep": 3.7486915990899212
+    },
+    "source_l1_at_the_end": 0.7237920165061951,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.732
+       ],
+       [
+        0,
+        0.089
+       ],
+       [
+        1,
+        0.055
+       ]
+      ],
+      "attention_d1": 0.054663050919771194
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        3,
+        0.181
+       ],
+       [
+        0,
+        0.152
+       ],
+       [
+        1,
+        0.087
+       ]
+      ],
+      "attention_d1": 0.08670810610055923
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        1,
+        0.986
+       ],
+       [
+        0,
+        0.017
+       ],
+       [
+        2,
+        0.006
+       ]
+      ],
+      "attention_d1": 0.9864996671676636
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        0,
+        0.394
+       ],
+       [
+        1,
+        0.162
+       ],
+       [
+        3,
+        0.078
+       ]
+      ],
+      "attention_d1": 0.16162404417991638
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     -4,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9806986609767665,
+    "loss_all": 2.884824151714088,
+    "loss_rep": 0.16871424439809588,
+    "loss_other": 4.231609408072844,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9910324215888977,
+    "d2_l0_max": 0.6247706413269043
+   },
+   {
+    "arm": "b128_natural",
+    "name": "b128_natural_single_rm12_h4_s302",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9223385209351912,
+    "p_best_with_one_layer0_head": 0.7141359128206096,
+    "loss_rep_probe": 0.15036185940618926,
+    "first_step_with_loss_rep_below_2": 450,
+    "at_step_300": {
+     "band_l0": 0.7210683664619808,
+     "band_l1": 0.8553974320296159,
+     "source_l1": 0.031031308695673943,
+     "offsets_1_2_l0": 0.017957761883735657,
+     "loss_rep": 3.7495897333282806
+    },
+    "source_l1_at_the_end": 0.9318940043449402,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.061
+       ],
+       [
+        0,
+        0.059
+       ],
+       [
+        2,
+        0.047
+       ]
+      ],
+      "attention_d1": 0.060892146080732346
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.988
+       ],
+       [
+        0,
+        0.021
+       ],
+       [
+        2,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.9880422353744507
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        0,
+        0.211
+       ],
+       [
+        1,
+        0.136
+       ],
+       [
+        2,
+        0.111
+       ]
+      ],
+      "attention_d1": 0.13590268790721893
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        2,
+        0.806
+       ],
+       [
+        1,
+        0.068
+       ],
+       [
+        0,
+        0.034
+       ]
+      ],
+      "attention_d1": 0.06773678958415985
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9881231537805618,
+    "loss_all": 2.8847665222402874,
+    "loss_rep": 0.1660969592370394,
+    "loss_other": 4.232820985906032,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9902703166007996,
+    "d2_l0_max": 0.777808666229248
+   }
+  ],
+  "lr5e-4_b8_natural": [
+   {
+    "arm": "lr5e-4_b8_natural",
+    "name": "lr5e-4_b8_natural_single_rm12_h2_s300",
+    "n_head": 2,
+    "relay_delta": 14,
+    "p_all": 0.48695665145739586,
+    "p_best_with_one_layer0_head": 0.031592346301465374,
+    "loss_rep_probe": 1.4535476576919357,
+    "first_step_with_loss_rep_below_2": 4750,
+    "at_step_300": {
+     "band_l0": 0.4891125416524515,
+     "band_l1": 0.492689729384754,
+     "source_l1": 0.02435276471078396,
+     "offsets_1_2_l0": 0.04825008288025856,
+     "loss_rep": 4.155628536182119
+    },
+    "source_l1_at_the_end": 0.07129999995231628,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        20,
+        0.125
+       ],
+       [
+        28,
+        0.088
+       ],
+       [
+        17,
+        0.076
+       ]
+      ],
+      "attention_d1": 0.03570796176791191
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        21,
+        0.127
+       ],
+       [
+        29,
+        0.097
+       ],
+       [
+        18,
+        0.082
+       ]
+      ],
+      "attention_d1": 0.03669952228665352
+     }
+    },
+    "layer1_modal_deltas": [
+     14,
+     14
+    ],
+    "deep_decoy_over_clean": 0.5853493282752291,
+    "loss_all": 3.343546172514231,
+    "loss_rep": 1.4339026331693758,
+    "loss_other": 4.290444439319599,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.0014274045825004578,
+    "d2_l0_max": 0.0012419678969308734
+   },
+   {
+    "arm": "lr5e-4_b8_natural",
+    "name": "lr5e-4_b8_natural_single_rm12_h2_s301",
+    "n_head": 2,
+    "relay_delta": 11,
+    "p_all": 0.5624360962709869,
+    "p_best_with_one_layer0_head": 0.025977332086331913,
+    "loss_rep_probe": 1.177664554576836,
+    "first_step_with_loss_rep_below_2": 5500,
+    "at_step_300": {
+     "band_l0": 0.48203077614888634,
+     "band_l1": 0.48376822667970243,
+     "source_l1": 0.02380152978003025,
+     "offsets_1_2_l0": 0.04746439680457115,
+     "loss_rep": 4.1596757574493255
+    },
+    "source_l1_at_the_end": 0.008152264170348644,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        10,
+        0.132
+       ],
+       [
+        11,
+        0.132
+       ],
+       [
+        28,
+        0.082
+       ]
+      ],
+      "attention_d1": 0.01611972786486149
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        11,
+        0.135
+       ],
+       [
+        12,
+        0.134
+       ],
+       [
+        29,
+        0.081
+       ]
+      ],
+      "attention_d1": 0.016198374330997467
+     }
+    },
+    "layer1_modal_deltas": [
+     11,
+     11
+    ],
+    "deep_decoy_over_clean": 0.5485312131888654,
+    "loss_all": 3.277680339273142,
+    "loss_rep": 1.2032310193679792,
+    "loss_other": 4.3062976833601265,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.00015735662600491196,
+    "d2_l0_max": 0.0008174526738002896
+   },
+   {
+    "arm": "lr5e-4_b8_natural",
+    "name": "lr5e-4_b8_natural_single_rm12_h2_s302",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.8960410074641249,
+    "p_best_with_one_layer0_head": 0.4651638810049379,
+    "loss_rep_probe": 0.2281447877489312,
+    "first_step_with_loss_rep_below_2": 2750,
+    "at_step_300": {
+     "band_l0": 0.48755257304128624,
+     "band_l1": 0.49269382281990265,
+     "source_l1": 0.024129299446940422,
+     "offsets_1_2_l0": 0.04776814952492714,
+     "loss_rep": 4.157181188207865
+    },
+    "source_l1_at_the_end": 0.9143827557563782,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.68
+       ],
+       [
+        0,
+        0.054
+       ],
+       [
+        5,
+        0.033
+       ]
+      ],
+      "attention_d1": 0.023736849427223206
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.972
+       ],
+       [
+        0,
+        0.025
+       ],
+       [
+        4,
+        0.008
+       ]
+      ],
+      "attention_d1": 0.9719212651252747
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.993831662708577,
+    "loss_all": 2.9161464797582077,
+    "loss_rep": 0.24885234332140505,
+    "loss_other": 4.238726397326808,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9790160655975342,
+    "d2_l0_max": 0.6061335802078247
+   },
+   {
+    "arm": "lr5e-4_b8_natural",
+    "name": "lr5e-4_b8_natural_single_rm12_h4_s300",
+    "n_head": 4,
+    "relay_delta": 10,
+    "p_all": 0.5119931271110986,
+    "p_best_with_one_layer0_head": 0.021098848046082752,
+    "loss_rep_probe": 1.380422905897924,
+    "first_step_with_loss_rep_below_2": 7500,
+    "at_step_300": {
+     "band_l0": 0.488306228131124,
+     "band_l1": 0.4898541439686029,
+     "source_l1": 0.02423974871635437,
+     "offsets_1_2_l0": 0.04822340980172157,
+     "loss_rep": 4.155755393304858
+    },
+    "source_l1_at_the_end": 0.007762843277305365,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        10,
+        0.132
+       ],
+       [
+        11,
+        0.113
+       ],
+       [
+        29,
+        0.084
+       ]
+      ],
+      "attention_d1": 0.016130918636918068
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        10,
+        0.126
+       ],
+       [
+        11,
+        0.108
+       ],
+       [
+        29,
+        0.076
+       ]
+      ],
+      "attention_d1": 0.016225561499595642
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        11,
+        0.132
+       ],
+       [
+        12,
+        0.114
+       ],
+       [
+        30,
+        0.084
+       ]
+      ],
+      "attention_d1": 0.013299163430929184
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        11,
+        0.13
+       ],
+       [
+        12,
+        0.113
+       ],
+       [
+        30,
+        0.08
+       ]
+      ],
+      "attention_d1": 0.015350203961133957
+     }
+    },
+    "layer1_modal_deltas": [
+     10,
+     10,
+     10,
+     10
+    ],
+    "deep_decoy_over_clean": 0.5851093354658461,
+    "loss_all": 3.3218449552859077,
+    "loss_rep": 1.39309587409219,
+    "loss_other": 4.278216720202484,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 9.300005427217983e-13,
+    "d2_l0_max": 0.002590900519862771
+   },
+   {
+    "arm": "lr5e-4_b8_natural",
+    "name": "lr5e-4_b8_natural_single_rm12_h4_s301",
+    "n_head": 4,
+    "relay_delta": 11,
+    "p_all": 0.5378226545091566,
+    "p_best_with_one_layer0_head": 0.018178594360901575,
+    "loss_rep_probe": 1.2702545112803552,
+    "first_step_with_loss_rep_below_2": 7250,
+    "at_step_300": {
+     "band_l0": 0.481713162880497,
+     "band_l1": 0.4825194190553334,
+     "source_l1": 0.023791953921318054,
+     "offsets_1_2_l0": 0.047527190297842026,
+     "loss_rep": 4.159718366818363
+    },
+    "source_l1_at_the_end": 0.00765943480655551,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        11,
+        0.123
+       ],
+       [
+        10,
+        0.087
+       ],
+       [
+        12,
+        0.082
+       ]
+      ],
+      "attention_d1": 0.015834225341677666
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        11,
+        0.182
+       ],
+       [
+        10,
+        0.096
+       ],
+       [
+        22,
+        0.094
+       ]
+      ],
+      "attention_d1": 0.016102664172649384
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        11,
+        0.184
+       ],
+       [
+        22,
+        0.095
+       ],
+       [
+        10,
+        0.094
+       ]
+      ],
+      "attention_d1": 0.01611754670739174
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        12,
+        0.188
+       ],
+       [
+        23,
+        0.099
+       ],
+       [
+        11,
+        0.094
+       ]
+      ],
+      "attention_d1": 0.016049323603510857
+     }
+    },
+    "layer1_modal_deltas": [
+     11,
+     11,
+     11,
+     11
+    ],
+    "deep_decoy_over_clean": 0.5656620116716555,
+    "loss_all": 3.304369025647582,
+    "loss_rep": 1.2901565106492328,
+    "loss_other": 4.303117902144158,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.0002771521103568375,
+    "d2_l0_max": 5.678639354300685e-05
+   },
+   {
+    "arm": "lr5e-4_b8_natural",
+    "name": "lr5e-4_b8_natural_single_rm12_h4_s302",
+    "n_head": 4,
+    "relay_delta": 10,
+    "p_all": 0.6284181409295069,
+    "p_best_with_one_layer0_head": 0.022557337690924367,
+    "loss_rep_probe": 0.8161402327417525,
+    "first_step_with_loss_rep_below_2": 6250,
+    "at_step_300": {
+     "band_l0": 0.48707015753790744,
+     "band_l1": 0.4895986934566257,
+     "source_l1": 0.024040112271904945,
+     "offsets_1_2_l0": 0.04784209281206131,
+     "loss_rep": 4.157296049956435
+    },
+    "source_l1_at_the_end": 0.00978175550699234,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        8,
+        0.162
+       ],
+       [
+        10,
+        0.149
+       ],
+       [
+        13,
+        0.142
+       ]
+      ],
+      "attention_d1": 0.042222585529088974
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        9,
+        0.143
+       ],
+       [
+        11,
+        0.136
+       ],
+       [
+        14,
+        0.127
+       ]
+      ],
+      "attention_d1": 0.01908085122704506
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        9,
+        0.148
+       ],
+       [
+        14,
+        0.141
+       ],
+       [
+        11,
+        0.134
+       ]
+      ],
+      "attention_d1": 0.017741253599524498
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        13,
+        0.137
+       ],
+       [
+        8,
+        0.135
+       ],
+       [
+        10,
+        0.124
+       ]
+      ],
+      "attention_d1": 0.030531741678714752
+     }
+    },
+    "layer1_modal_deltas": [
+     10,
+     10,
+     10,
+     10
+    ],
+    "deep_decoy_over_clean": 0.4788688452297199,
+    "loss_all": 3.201073371285181,
+    "loss_rep": 0.94970982651178,
+    "loss_other": 4.317413774387892,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.00023534455976914614,
+    "d2_l0_max": 0.00022740861459169537
+   }
+  ],
+  "lr2e-3_w400_900": [
+   {
+    "arm": "lr2e-3_w400_900",
+    "name": "lr2e-3_w400_900_single_rm12_h2_s300",
+    "n_head": 2,
+    "relay_delta": 14,
+    "p_all": 0.6009689692179776,
+    "p_best_with_one_layer0_head": 0.03775518520601595,
+    "loss_rep_probe": 0.986156390509644,
+    "first_step_with_loss_rep_below_2": 1350,
+    "at_step_300": {
+     "band_l0": 0.8426276936290287,
+     "band_l1": 0.23767115315571086,
+     "source_l1": 0.010602125898003578,
+     "offsets_1_2_l0": 0.010419594123959541,
+     "loss_rep": 4.008497920098695
+    },
+    "source_l1_at_the_end": 0.054706405848264694,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        13,
+        0.158
+       ],
+       [
+        15,
+        0.145
+       ],
+       [
+        10,
+        0.131
+       ]
+      ],
+      "attention_d1": 0.101072296500206
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        12,
+        0.147
+       ],
+       [
+        14,
+        0.144
+       ],
+       [
+        9,
+        0.122
+       ]
+      ],
+      "attention_d1": 0.03153432160615921
+     }
+    },
+    "layer1_modal_deltas": [
+     14,
+     9
+    ],
+    "deep_decoy_over_clean": 0.49953295585847696,
+    "loss_all": 3.2230477451332544,
+    "loss_rep": 0.9903625373214858,
+    "loss_other": 4.330126480007641,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.004727237857878208,
+    "d2_l0_max": 0.011465011164546013
+   },
+   {
+    "arm": "lr2e-3_w400_900",
+    "name": "lr2e-3_w400_900_single_rm12_h2_s301",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.6478312239989011,
+    "p_best_with_one_layer0_head": 0.023553265345334667,
+    "loss_rep_probe": 0.740065305387152,
+    "first_step_with_loss_rep_below_2": 950,
+    "at_step_300": {
+     "band_l0": 0.8182377866028965,
+     "band_l1": 0.38447928273323123,
+     "source_l1": 0.014358019456267357,
+     "offsets_1_2_l0": 0.010901098139584064,
+     "loss_rep": 4.022984451223067
+    },
+    "source_l1_at_the_end": 0.5404291152954102,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        0,
+        0.455
+       ],
+       [
+        11,
+        0.098
+       ],
+       [
+        10,
+        0.073
+       ]
+      ],
+      "attention_d1": 0.007276225369423628
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.452
+       ],
+       [
+        12,
+        0.104
+       ],
+       [
+        14,
+        0.062
+       ]
+      ],
+      "attention_d1": 0.45227953791618347
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.4445718064048959,
+    "loss_all": 3.150394633428396,
+    "loss_rep": 0.7311911875323994,
+    "loss_other": 4.34995858490511,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.11378856748342514,
+    "d2_l0_max": 0.016178224235773087
+   },
+   {
+    "arm": "lr2e-3_w400_900",
+    "name": "lr2e-3_w400_900_single_rm12_h2_s302",
+    "n_head": 2,
+    "relay_delta": 12,
+    "p_all": 0.6146838282666302,
+    "p_best_with_one_layer0_head": 0.04018792083515416,
+    "loss_rep_probe": 0.9640601124359197,
+    "first_step_with_loss_rep_below_2": 1100,
+    "at_step_300": {
+     "band_l0": 0.8764943648445152,
+     "band_l1": 0.3039663121053169,
+     "source_l1": 0.012145929038524628,
+     "offsets_1_2_l0": 0.006808230187743902,
+     "loss_rep": 3.9885176276369525
+    },
+    "source_l1_at_the_end": 0.029693549498915672,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        15,
+        0.151
+       ],
+       [
+        13,
+        0.106
+       ],
+       [
+        2,
+        0.098
+       ]
+      ],
+      "attention_d1": 0.030100828036665916
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        14,
+        0.147
+       ],
+       [
+        1,
+        0.11
+       ],
+       [
+        12,
+        0.099
+       ]
+      ],
+      "attention_d1": 0.1102418601512909
+     }
+    },
+    "layer1_modal_deltas": [
+     12,
+     12
+    ],
+    "deep_decoy_over_clean": 0.5482856317076931,
+    "loss_all": 3.266873209692422,
+    "loss_rep": 1.1533015220980818,
+    "loss_other": 4.31488941089329,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.0019622836261987686,
+    "d2_l0_max": 0.0015429418999701738
+   },
+   {
+    "arm": "lr2e-3_w400_900",
+    "name": "lr2e-3_w400_900_single_rm12_h4_s300",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.5928127644886773,
+    "p_best_with_one_layer0_head": 0.021141649136629307,
+    "loss_rep_probe": 1.0666345095062342,
+    "first_step_with_loss_rep_below_2": 1300,
+    "at_step_300": {
+     "band_l0": 0.8458792071206707,
+     "band_l1": 0.28910450709830654,
+     "source_l1": 0.012835941277444363,
+     "offsets_1_2_l0": 0.009194443002343178,
+     "loss_rep": 3.9854597156285068
+    },
+    "source_l1_at_the_end": 0.09566745162010193,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.161
+       ],
+       [
+        15,
+        0.145
+       ],
+       [
+        10,
+        0.098
+       ]
+      ],
+      "attention_d1": 0.16100530326366425
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        0,
+        0.159
+       ],
+       [
+        9,
+        0.044
+       ],
+       [
+        10,
+        0.044
+       ]
+      ],
+      "attention_d1": 0.043470580130815506
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        0,
+        0.171
+       ],
+       [
+        14,
+        0.143
+       ],
+       [
+        9,
+        0.103
+       ]
+      ],
+      "attention_d1": 0.035311706364154816
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        0,
+        0.169
+       ],
+       [
+        14,
+        0.142
+       ],
+       [
+        9,
+        0.102
+       ]
+      ],
+      "attention_d1": 0.038168083876371384
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     14,
+     0
+    ],
+    "deep_decoy_over_clean": 0.5716666646053704,
+    "loss_all": 3.2183704644102913,
+    "loss_rep": 1.0576344233027408,
+    "loss_other": 4.289773147787816,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.013393109664320946,
+    "d2_l0_max": 0.014198836870491505
+   },
+   {
+    "arm": "lr2e-3_w400_900",
+    "name": "lr2e-3_w400_900_single_rm12_h4_s301",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.8926513097670565,
+    "p_best_with_one_layer0_head": 0.5869577143936073,
+    "loss_rep_probe": 0.22112444555321403,
+    "first_step_with_loss_rep_below_2": 1650,
+    "at_step_300": {
+     "band_l0": 0.6449738889670146,
+     "band_l1": 0.4001079653857198,
+     "source_l1": 0.017786432057619095,
+     "offsets_1_2_l0": 0.02989819087088108,
+     "loss_rep": 4.101922709399502
+    },
+    "source_l1_at_the_end": 0.7182831764221191,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.978
+       ],
+       [
+        0,
+        0.021
+       ],
+       [
+        3,
+        0.01
+       ]
+      ],
+      "attention_d1": 0.9775463342666626
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.721
+       ],
+       [
+        0,
+        0.062
+       ],
+       [
+        1,
+        0.022
+       ]
+      ],
+      "attention_d1": 0.02185870334506035
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        1,
+        0.071
+       ],
+       [
+        0,
+        0.052
+       ],
+       [
+        2,
+        0.05
+       ]
+      ],
+      "attention_d1": 0.07122688740491867
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        0,
+        0.264
+       ],
+       [
+        1,
+        0.192
+       ],
+       [
+        2,
+        0.173
+       ]
+      ],
+      "attention_d1": 0.1916176825761795
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9780304763224315,
+    "loss_all": 2.9114156582723587,
+    "loss_rep": 0.21713110056000934,
+    "loss_other": 4.247378797682942,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9726184010505676,
+    "d2_l0_max": 0.6042565703392029
+   },
+   {
+    "arm": "lr2e-3_w400_900",
+    "name": "lr2e-3_w400_900_single_rm12_h4_s302",
+    "n_head": 4,
+    "relay_delta": 11,
+    "p_all": 0.7759257645414048,
+    "p_best_with_one_layer0_head": 0.020280454359914303,
+    "loss_rep_probe": 0.6474185545587917,
+    "first_step_with_loss_rep_below_2": 1050,
+    "at_step_300": {
+     "band_l0": 0.8232766259296013,
+     "band_l1": 0.3670587634741155,
+     "source_l1": 0.013912572525441647,
+     "offsets_1_2_l0": 0.010810483247041702,
+     "loss_rep": 4.017426905029095
+    },
+    "source_l1_at_the_end": 0.015530218370258808,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        0,
+        0.09
+       ],
+       [
+        1,
+        0.05
+       ],
+       [
+        2,
+        0.046
+       ]
+      ],
+      "attention_d1": 0.05020161718130112
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        13,
+        0.126
+       ],
+       [
+        3,
+        0.126
+       ],
+       [
+        12,
+        0.121
+       ]
+      ],
+      "attention_d1": 0.01914839632809162
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        0,
+        0.562
+       ],
+       [
+        28,
+        0.052
+       ],
+       [
+        31,
+        0.045
+       ]
+      ],
+      "attention_d1": 0.005008969455957413
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        2,
+        0.121
+       ],
+       [
+        12,
+        0.119
+       ],
+       [
+        11,
+        0.118
+       ]
+      ],
+      "attention_d1": 0.019844433292746544
+     }
+    },
+    "layer1_modal_deltas": [
+     11,
+     2,
+     11,
+     10
+    ],
+    "deep_decoy_over_clean": 0.6865298204495861,
+    "loss_all": 3.072339352213581,
+    "loss_rep": 0.7538893269177723,
+    "loss_other": 4.2219446400049465,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.022910092025995255,
+    "d2_l0_max": 0.022611748427152634
    }
   ]
  }
