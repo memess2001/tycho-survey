@@ -49,6 +49,15 @@ Also run, to look inside the window: the six baseline runs without a mask and wi
 [500, 1000), for 2,500 steps, measured every 50 steps with the layer-0 attention on offsets 1 and 2 by head. These
 repeat the first 2,500 steps of runs of ``relay_window_pilot.py`` exactly.
 
+Follow-up, recorded after the runs above and before the two arms it adds. Without any mask, all six runs form
+the textbook circuit at learning rate 5e-4 and none does at 1e-3 or 2e-3: the learning rate changes the outcome, not
+only the clock. Two readings. (i) The learning rate itself decides. (ii) The noise of the updates decides, and a
+smaller learning rate is one way to lower it; a larger batch is another. Two arms without a mask tell them apart:
+learning rate 1e-3 with batch 128 (reading (i): relays, as at batch 32; reading (ii): textbook circuits), and
+learning rate 5e-4 with batch 8 (reading (i): textbook circuits, as at batch 32; reading (ii): relays).
+One more window is added at learning rate 2e-3, [400, 900), to bracket the critical period there: the window from
+step 300 still flipped 5 of 6, against the reviewer's prediction.
+
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/relay_period_pilot.py
 --jobs 4`` (``--skip-runs`` analyses the cache). Needs the outputs of ``relay_followup_pilot.py``,
 ``relay_band_pilot.py`` and ``relay_window_pilot.py``. Runs are cached in ``work/relay_band``. Writes
@@ -74,7 +83,7 @@ rb, fp, rp = wp.rb, wp.fp, wp.rp
 FULL_STEPS, SHORT_STEPS = 12_000, 2_500
 LOSS_DROP, NEAR_FLOOR = 0.295, 0.0085                   # the reviewer's two constants (set on the baseline runs)
 SETTINGS = {"base": {}, "lr5e-4": {"lr": 5e-4}, "lr2e-3": {"lr": 2e-3}, "d128": {"d_model": 128},
-            "d32": {"d_model": 32}}
+            "d32": {"d_model": 32}, "b128": {"batch_size": 128}, "lr5e-4_b8": {"lr": 5e-4, "batch_size": 8}}
 #: arm -> (setting, window [start, end) of the band mask on layer 0 or None, steps); in order of priority
 ARMS = {
     "base_natural": ("base", None, SHORT_STEPS), "base_w400_900": ("base", (400, 900), SHORT_STEPS),
@@ -88,11 +97,14 @@ ARMS = {
     "lr5e-4_natural": ("lr5e-4", None, FULL_STEPS), "lr5e-4_w600_1600": ("lr5e-4", (600, 1600), FULL_STEPS),
     "lr5e-4_w700_1700": ("lr5e-4", (700, 1700), FULL_STEPS),
     "lr5e-4_w1050_2050": ("lr5e-4", (1050, 2050), FULL_STEPS),
+    "b128_natural": ("b128", None, FULL_STEPS), "lr5e-4_b8_natural": ("lr5e-4_b8", None, FULL_STEPS),
+    "lr2e-3_w400_900": ("lr2e-3", (400, 900), FULL_STEPS),
 }
 #: the steps (t1, t2) the reviewer names for its two formulas, by setting: (loss formula, attention formula)
 FORMULA_STEPS = {"base": ((100, 300), (200, 300)), "lr5e-4": ((150, 350), (150, 350)),
                  "lr2e-3": ((100, 200), (100, 200)), "d128": ((100, 300), (200, 300)),
-                 "d32": ((100, 300), (200, 300))}
+                 "d32": ((100, 300), (200, 300)), "b128": ((100, 300), (200, 300)),
+                 "lr5e-4_b8": ((150, 350), (150, 350))}
 STATS = ("band_l0", "band_l1", "source_l1", "offsets_1_2_l0", "loss_rep", "d1_l0_max", "d2_l0_max")
 
 
@@ -123,7 +135,8 @@ def arm_jobs(arm: str) -> list[dict]:
             jobs.append({"name": f"{arm}_single_rm12_h{nh}_s{seed}", "base": f"single_rm12_h{nh}_s{seed}",
                          "arm": arm, "setting": setting, "seed": seed, "window": window or (0, 0), "steps": steps,
                          "cfg": {**t["cfg"], **{k: v for k, v in change.items() if k == "d_model"}},
-                         "train": {**t["train"], **{k: v for k, v in change.items() if k == "lr"}, "steps": steps},
+                         "train": {**t["train"], **{k: v for k, v in change.items() if k != "d_model"},
+                                   "steps": steps},
                          "released_id": None})
     return jobs
 
@@ -241,6 +254,27 @@ def main(argv: list[str] | None = None) -> int:
                                      for k in next(iter(per_run.values()))["measured"]} if per_run else {}},
             "arms": {arm: outcome(arm) for arm in ARMS if ARMS[arm][0] == setting and ARMS[arm][2] == FULL_STEPS}}
 
+    # two things the reviewer's account does not cover: does the step-300 criterion of relay_window_pilot.py carry
+    # over to other settings, and can a mask undo a textbook circuit that forms without it
+    lost = []
+    for setting, blk in settings.items():
+        nat = {r["name"].split("_natural_")[1]: r for r in rows.get(f"{setting}_natural", [])}
+        if not nat:
+            continue
+        blk["step_300_source_criterion"] = {
+            "threshold": wp.SOURCE_THRESHOLD, "of": len(nat),
+            "correct": int(sum((r["at_step_300"]["source_l1"] >= wp.SOURCE_THRESHOLD) == r["textbook"]
+                               for r in nat.values())),
+            "textbook_without_mask": int(sum(r["textbook"] for r in nat.values()))}
+        for arm in blk["arms"]:
+            if arm.endswith("_natural"):
+                continue
+            for r in rows.get(arm, []):
+                base_name = r["name"].split(arm + "_")[1]
+                if nat[base_name]["textbook"] and not r["textbook"]:
+                    lost.append({"arm": arm, "run": base_name, "deep_decoy_over_clean": r["deep_decoy_over_clean"],
+                                 "relay_delta": r["relay_delta"], "formed": r["formed"]})
+
     def flips(arm: str) -> int | None:
         o = settings[ARMS[arm][0]]["arms"][arm]
         return o["textbook"] if o["complete"] else None
@@ -312,7 +346,7 @@ def main(argv: list[str] | None = None) -> int:
               "missing": [j["name"] for arm, js in jobs.items() for j in js if j not in have[arm]],
               "constants": {"loss_drop": LOSS_DROP, "offsets_1_2_floor": NEAR_FLOOR},
               "settings": settings, "prediction_1A": prediction_1a, "prediction_1B": prediction_1b,
-              "inside_the_window": inside, "runs": rows}
+              "textbook_without_mask_lost_with_mask": lost, "inside_the_window": inside, "runs": rows}
     args.out.write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
 
     for setting, blk in settings.items():
@@ -331,6 +365,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"   {arm}: textbook {o['textbook']}/{o['of']}, relays {o['relays']}, not formed {o['not_formed']}; "
                   f"δ {o['relay_deltas']}; decoy {[round(x, 2) for x in o['deep_decoy_over_clean']]}; "
                   f"d2 {[round(x, 2) for x in o['d2_l0_max']]}; first<2 {o['first_step_with_loss_rep_below_2']}")
+    print("step-300 criterion (source attention of layer 1 >= threshold) by setting:",
+          json.dumps({k: v.get("step_300_source_criterion") for k, v in settings.items()}))
+    print("textbook without the mask, not textbook with it:", json.dumps(lost))
     print("prediction 1A:", json.dumps(prediction_1a))
     print("prediction 1B:", json.dumps(prediction_1b))
     for arm, blk in inside.items():

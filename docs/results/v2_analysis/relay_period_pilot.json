@@ -1,60 +1,6 @@
 {
  "status": "exploratory pilot; local runs; not independently recomputed",
- "missing": [
-  "d128_w400_900_single_rm12_h2_s301",
-  "d128_w400_900_single_rm12_h2_s302",
-  "d128_w400_900_single_rm12_h4_s300",
-  "d128_w400_900_single_rm12_h4_s301",
-  "d128_w400_900_single_rm12_h4_s302",
-  "d128_w240_740_single_rm12_h2_s300",
-  "d128_w240_740_single_rm12_h2_s301",
-  "d128_w240_740_single_rm12_h2_s302",
-  "d128_w240_740_single_rm12_h4_s300",
-  "d128_w240_740_single_rm12_h4_s301",
-  "d128_w240_740_single_rm12_h4_s302",
-  "lr2e-3_natural_single_rm12_h2_s300",
-  "lr2e-3_natural_single_rm12_h2_s301",
-  "lr2e-3_natural_single_rm12_h2_s302",
-  "lr2e-3_natural_single_rm12_h4_s300",
-  "lr2e-3_natural_single_rm12_h4_s301",
-  "lr2e-3_natural_single_rm12_h4_s302",
-  "lr2e-3_w300_800_single_rm12_h2_s300",
-  "lr2e-3_w300_800_single_rm12_h2_s301",
-  "lr2e-3_w300_800_single_rm12_h2_s302",
-  "lr2e-3_w300_800_single_rm12_h4_s300",
-  "lr2e-3_w300_800_single_rm12_h4_s301",
-  "lr2e-3_w300_800_single_rm12_h4_s302",
-  "lr2e-3_w150_650_single_rm12_h2_s300",
-  "lr2e-3_w150_650_single_rm12_h2_s301",
-  "lr2e-3_w150_650_single_rm12_h2_s302",
-  "lr2e-3_w150_650_single_rm12_h4_s300",
-  "lr2e-3_w150_650_single_rm12_h4_s301",
-  "lr2e-3_w150_650_single_rm12_h4_s302",
-  "lr5e-4_natural_single_rm12_h2_s300",
-  "lr5e-4_natural_single_rm12_h2_s301",
-  "lr5e-4_natural_single_rm12_h2_s302",
-  "lr5e-4_natural_single_rm12_h4_s300",
-  "lr5e-4_natural_single_rm12_h4_s301",
-  "lr5e-4_natural_single_rm12_h4_s302",
-  "lr5e-4_w600_1600_single_rm12_h2_s300",
-  "lr5e-4_w600_1600_single_rm12_h2_s301",
-  "lr5e-4_w600_1600_single_rm12_h2_s302",
-  "lr5e-4_w600_1600_single_rm12_h4_s300",
-  "lr5e-4_w600_1600_single_rm12_h4_s301",
-  "lr5e-4_w600_1600_single_rm12_h4_s302",
-  "lr5e-4_w700_1700_single_rm12_h2_s300",
-  "lr5e-4_w700_1700_single_rm12_h2_s301",
-  "lr5e-4_w700_1700_single_rm12_h2_s302",
-  "lr5e-4_w700_1700_single_rm12_h4_s300",
-  "lr5e-4_w700_1700_single_rm12_h4_s301",
-  "lr5e-4_w700_1700_single_rm12_h4_s302",
-  "lr5e-4_w1050_2050_single_rm12_h2_s300",
-  "lr5e-4_w1050_2050_single_rm12_h2_s301",
-  "lr5e-4_w1050_2050_single_rm12_h2_s302",
-  "lr5e-4_w1050_2050_single_rm12_h4_s300",
-  "lr5e-4_w1050_2050_single_rm12_h4_s301",
-  "lr5e-4_w1050_2050_single_rm12_h4_s302"
- ],
+ "missing": [],
  "constants": {
   "loss_drop": 0.295,
   "offsets_1_2_floor": 0.0085
@@ -184,76 +130,307 @@
      350
     ]
    },
-   "unperturbed_runs": {},
+   "unperturbed_runs": {
+    "single_rm12_h2_s300": {
+     "band_l0_at_300": 0.5396263556667954,
+     "offsets_1_2_l0_at_300": 0.043103478848934174,
+     "loss_drop_at_300": 0.10196465213773376,
+     "t_crit_loss": 662.7598636821874,
+     "t_crit_attn": 1357.256721796239,
+     "measured": {
+      "loss_drop_reaches_0.295": 640.1057450346523,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 883.6289664500766
+     }
+    },
+    "single_rm12_h2_s301": {
+     "band_l0_at_300": 0.5730371933085707,
+     "offsets_1_2_l0_at_300": 0.03682024031877518,
+     "loss_drop_at_300": 0.10887856324308753,
+     "t_crit_loss": 576.3430644721046,
+     "t_crit_attn": 838.9475251822707,
+     "measured": {
+      "loss_drop_reaches_0.295": 572.8680363896591,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 858.1746501553076
+     }
+    },
+    "single_rm12_h2_s302": {
+     "band_l0_at_300": 0.5541724221117826,
+     "offsets_1_2_l0_at_300": 0.03876345232129097,
+     "loss_drop_at_300": 0.11562487964317913,
+     "t_crit_loss": 581.7186353620843,
+     "t_crit_attn": 978.0287374952302,
+     "measured": {
+      "loss_drop_reaches_0.295": 615.46263511792,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 929.8540769327432
+     }
+    },
+    "single_rm12_h4_s300": {
+     "band_l0_at_300": 0.5238973586226001,
+     "offsets_1_2_l0_at_300": 0.0440838448703289,
+     "loss_drop_at_300": 0.09372463540108544,
+     "t_crit_loss": 693.2430047345938,
+     "t_crit_attn": 1427.0492121877132,
+     "measured": {
+      "loss_drop_reaches_0.295": 664.6332715395135,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 1321.7656456607112
+     }
+    },
+    "single_rm12_h4_s301": {
+     "band_l0_at_300": 0.5319837448200689,
+     "offsets_1_2_l0_at_300": 0.041842568665742874,
+     "loss_drop_at_300": 0.10181427596508463,
+     "t_crit_loss": 640.2359019905978,
+     "t_crit_attn": 1114.8320397160753,
+     "measured": {
+      "loss_drop_reaches_0.295": 612.5842190787079,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 1398.9155313815
+     }
+    },
+    "single_rm12_h4_s302": {
+     "band_l0_at_300": 0.5248561694902824,
+     "offsets_1_2_l0_at_300": 0.042256761342287064,
+     "loss_drop_at_300": 0.10471662998600895,
+     "t_crit_loss": 638.3983234330983,
+     "t_crit_attn": 1159.2726057262716,
+     "measured": {
+      "loss_drop_reaches_0.295": 634.9433943276674,
+      "offsets_1_2_l0_falls_to_0.0085": null,
+      "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+      "band_l1_falls_to_0.33": null,
+      "loss_rep_falls_below_2": 1446.4797399102658
+     }
+    }
+   },
    "medians": {
-    "band_l0_at_300": null,
-    "offsets_1_2_l0_at_300": null,
-    "loss_drop_at_300": null,
-    "t_crit_loss": null,
-    "t_crit_attn": null,
-    "measured": {}
+    "band_l0_at_300": 0.5358050502434322,
+    "offsets_1_2_l0_at_300": 0.04204966500401497,
+    "loss_drop_at_300": 0.10334064106187135,
+    "t_crit_loss": 639.317112711848,
+    "t_crit_attn": 1137.0523227211734,
+    "measured": {
+     "loss_drop_reaches_0.295": 625.2030147227937,
+     "offsets_1_2_l0_falls_to_0.0085": null,
+     "last_step_with_layer_1_ahead_in_the_band": 12000.0,
+     "band_l1_falls_to_0.33": null,
+     "loss_rep_falls_below_2": 1125.8098612967271
+    }
    },
    "arms": {
     "lr5e-4_natural": {
      "window": null,
-     "textbook": 0,
+     "textbook": 6,
      "relays": 0,
      "not_formed": 0,
-     "of": 0,
-     "complete": false,
-     "relay_deltas": [],
-     "deep_decoy_over_clean": [],
-     "loss_all": [],
-     "d2_l0_max": [],
-     "first_step_with_loss_rep_below_2": []
+     "of": 6,
+     "complete": true,
+     "relay_deltas": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "deep_decoy_over_clean": [
+      0.9881014758060416,
+      0.9879632755560291,
+      0.9851951388358506,
+      0.9863904845191281,
+      0.9876682685428585,
+      0.9781632560865964
+     ],
+     "loss_all": [
+      2.8931977084887053,
+      2.889750305787522,
+      2.896774521697331,
+      2.8958847103615746,
+      2.896589228706339,
+      2.8973880650736987
+     ],
+     "d2_l0_max": [
+      0.7199591994285583,
+      0.6805143356323242,
+      0.6511489152908325,
+      0.715630292892456,
+      0.6970087885856628,
+      0.5007568597793579
+     ],
+     "first_step_with_loss_rep_below_2": [
+      900,
+      900,
+      950,
+      1350,
+      1400,
+      1450
+     ]
     },
     "lr5e-4_w600_1600": {
      "window": [
       600,
       1600
      ],
-     "textbook": 0,
+     "textbook": 6,
      "relays": 0,
      "not_formed": 0,
-     "of": 0,
-     "complete": false,
-     "relay_deltas": [],
-     "deep_decoy_over_clean": [],
-     "loss_all": [],
-     "d2_l0_max": [],
-     "first_step_with_loss_rep_below_2": []
+     "of": 6,
+     "complete": true,
+     "relay_deltas": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "deep_decoy_over_clean": [
+      0.9880599091561348,
+      0.9895235926348461,
+      0.9883449229118674,
+      0.9773454302537328,
+      0.9832204057320064,
+      0.9779887812566872
+     ],
+     "loss_all": [
+      2.892468174900644,
+      2.890970568534979,
+      2.892169930632387,
+      2.9126097907780686,
+      2.9003718651678625,
+      2.897996662042553
+     ],
+     "d2_l0_max": [
+      0.7095288038253784,
+      0.6868194937705994,
+      0.6771235466003418,
+      0.29231417179107666,
+      0.45271286368370056,
+      0.40073487162590027
+     ],
+     "first_step_with_loss_rep_below_2": [
+      950,
+      1000,
+      1050,
+      1250,
+      1300,
+      1300
+     ]
     },
     "lr5e-4_w700_1700": {
      "window": [
       700,
       1700
      ],
-     "textbook": 0,
+     "textbook": 6,
      "relays": 0,
      "not_formed": 0,
-     "of": 0,
-     "complete": false,
-     "relay_deltas": [],
-     "deep_decoy_over_clean": [],
-     "loss_all": [],
-     "d2_l0_max": [],
-     "first_step_with_loss_rep_below_2": []
+     "of": 6,
+     "complete": true,
+     "relay_deltas": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "deep_decoy_over_clean": [
+      0.9900048801338808,
+      0.9891716691060851,
+      0.9878204206359263,
+      0.9870238044933248,
+      0.9855629508678255,
+      0.9884855341542405
+     ],
+     "loss_all": [
+      2.893493224591738,
+      2.8905617353671778,
+      2.8920337335987445,
+      2.8972409559928796,
+      2.8940635114714577,
+      2.8956416214109
+     ],
+     "d2_l0_max": [
+      0.7216481566429138,
+      0.680894672870636,
+      0.7099935412406921,
+      0.7222843170166016,
+      0.7222113609313965,
+      0.707078754901886
+     ],
+     "first_step_with_loss_rep_below_2": [
+      950,
+      950,
+      1050,
+      1300,
+      1350,
+      1350
+     ]
     },
     "lr5e-4_w1050_2050": {
      "window": [
       1050,
       2050
      ],
-     "textbook": 0,
-     "relays": 0,
+     "textbook": 5,
+     "relays": 1,
      "not_formed": 0,
-     "of": 0,
-     "complete": false,
-     "relay_deltas": [],
-     "deep_decoy_over_clean": [],
-     "loss_all": [],
-     "d2_l0_max": [],
-     "first_step_with_loss_rep_below_2": []
+     "of": 6,
+     "complete": true,
+     "relay_deltas": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "deep_decoy_over_clean": [
+      0.9888784759261383,
+      0.9880735252209697,
+      0.987628058388289,
+      0.5296221665969929,
+      0.9874583491585478,
+      0.987521125690865
+     ],
+     "loss_all": [
+      2.893870590917549,
+      2.890298974097543,
+      2.8913851625585254,
+      3.0935098400878873,
+      2.8953556699670475,
+      2.896073012653255
+     ],
+     "d2_l0_max": [
+      0.7034242153167725,
+      0.7070232629776001,
+      0.6873118281364441,
+      0.025168539956212044,
+      0.699484646320343,
+      0.6427857875823975
+     ],
+     "first_step_with_loss_rep_below_2": [
+      900,
+      900,
+      950,
+      1400,
+      1450,
+      1500
+     ]
     }
    }
   },
@@ -268,60 +445,256 @@
      200
     ]
    },
-   "unperturbed_runs": {},
+   "unperturbed_runs": {
+    "single_rm12_h2_s300": {
+     "band_l0_at_300": 0.8426276936290287,
+     "offsets_1_2_l0_at_300": 0.010419594123959541,
+     "loss_drop_at_300": 0.16427308831792242,
+     "t_crit_loss": 488.29580285476993,
+     "t_crit_attn": 432.79391164659796,
+     "measured": {
+      "loss_drop_reaches_0.295": 541.5172979243484,
+      "offsets_1_2_l0_falls_to_0.0085": 331.1723686011451,
+      "last_step_with_layer_1_ahead_in_the_band": 100.0,
+      "band_l1_falls_to_0.33": 264.89231063175947,
+      "loss_rep_falls_below_2": 1222.339622503316
+     }
+    },
+    "single_rm12_h2_s301": {
+     "band_l0_at_300": 0.8182377866028965,
+     "offsets_1_2_l0_at_300": 0.010901098139584064,
+     "loss_drop_at_300": 0.14746666052595359,
+     "t_crit_loss": 860.3406863793978,
+     "t_crit_attn": 1085.6717561677965,
+     "measured": {
+      "loss_drop_reaches_0.295": 597.5917231406133,
+      "offsets_1_2_l0_falls_to_0.0085": 336.44232272217766,
+      "last_step_with_layer_1_ahead_in_the_band": 100.0,
+      "band_l1_falls_to_0.33": 320.1423418844328,
+      "loss_rep_falls_below_2": 1562.3475039388989
+     }
+    },
+    "single_rm12_h2_s302": {
+     "band_l0_at_300": 0.8764943648445152,
+     "offsets_1_2_l0_at_300": 0.006808230187743902,
+     "loss_drop_at_300": 0.18843521702636368,
+     "t_crit_loss": 549.2449293314407,
+     "t_crit_attn": 421.0650976975004,
+     "measured": {
+      "loss_drop_reaches_0.295": 548.7541750958994,
+      "offsets_1_2_l0_falls_to_0.0085": 290.8878625776409,
+      "last_step_with_layer_1_ahead_in_the_band": 200.0,
+      "band_l1_falls_to_0.33": 286.65166505835384,
+      "loss_rep_falls_below_2": 1337.3507186053505
+     }
+    },
+    "single_rm12_h4_s300": {
+     "band_l0_at_300": 0.8458792071206707,
+     "offsets_1_2_l0_at_300": 0.009194443002343178,
+     "loss_drop_at_300": 0.18731969056318887,
+     "t_crit_loss": 469.9409583957558,
+     "t_crit_attn": 368.9559297461217,
+     "measured": {
+      "loss_drop_reaches_0.295": 480.3787829196443,
+      "offsets_1_2_l0_falls_to_0.0085": 312.0209587168143,
+      "last_step_with_layer_1_ahead_in_the_band": 100.0,
+      "band_l1_falls_to_0.33": 288.18205405942234,
+      "loss_rep_falls_below_2": 1795.8036647385256
+     }
+    },
+    "single_rm12_h4_s301": {
+     "band_l0_at_300": 0.6449738889670146,
+     "offsets_1_2_l0_at_300": 0.02989819087088108,
+     "loss_drop_at_300": 0.06855933392425584,
+     "t_crit_loss": 219874.62555040827,
+     "t_crit_attn": null,
+     "measured": {
+      "loss_drop_reaches_0.295": 576.7971473799776,
+      "offsets_1_2_l0_falls_to_0.0085": 391.6732573580422,
+      "last_step_with_layer_1_ahead_in_the_band": 100.0,
+      "band_l1_falls_to_0.33": 132.92527313766428,
+      "loss_rep_falls_below_2": 9709.039910328358
+     }
+    },
+    "single_rm12_h4_s302": {
+     "band_l0_at_300": 0.8232766259296013,
+     "offsets_1_2_l0_at_300": 0.010810483247041702,
+     "loss_drop_at_300": 0.1595183155203026,
+     "t_crit_loss": 856.266512973742,
+     "t_crit_attn": 1181.9166536617993,
+     "measured": {
+      "loss_drop_reaches_0.295": 515.3052085361254,
+      "offsets_1_2_l0_falls_to_0.0085": 325.28349192019755,
+      "last_step_with_layer_1_ahead_in_the_band": 150.0,
+      "band_l1_falls_to_0.33": 315.29290520081537,
+      "loss_rep_falls_below_2": 2611.6433242123594
+     }
+    }
+   },
    "medians": {
-    "band_l0_at_300": null,
-    "offsets_1_2_l0_at_300": null,
-    "loss_drop_at_300": null,
-    "t_crit_loss": null,
-    "t_crit_attn": null,
-    "measured": {}
+    "band_l0_at_300": 0.832952159779315,
+    "offsets_1_2_l0_at_300": 0.010615038685500622,
+    "loss_drop_at_300": 0.1618957019191125,
+    "t_crit_loss": 702.7557211525914,
+    "t_crit_attn": 432.79391164659796,
+    "measured": {
+     "loss_drop_reaches_0.295": 545.1357365101239,
+     "offsets_1_2_l0_falls_to_0.0085": 328.2279302606713,
+     "last_step_with_layer_1_ahead_in_the_band": 100.0,
+     "band_l1_falls_to_0.33": 287.41685955888806,
+     "loss_rep_falls_below_2": 1679.0755843387124
+    }
    },
    "arms": {
     "lr2e-3_natural": {
      "window": null,
      "textbook": 0,
-     "relays": 0,
+     "relays": 6,
      "not_formed": 0,
-     "of": 0,
-     "complete": false,
-     "relay_deltas": [],
-     "deep_decoy_over_clean": [],
-     "loss_all": [],
-     "d2_l0_max": [],
-     "first_step_with_loss_rep_below_2": []
+     "of": 6,
+     "complete": true,
+     "relay_deltas": [
+      11,
+      11,
+      11,
+      11,
+      11,
+      11
+     ],
+     "deep_decoy_over_clean": [
+      0.5511859845756716,
+      0.5415814228400784,
+      0.535961210448959,
+      0.5823913892840339,
+      0.5558807643535002,
+      0.6111611875373565
+     ],
+     "loss_all": [
+      3.2402423597122847,
+      3.2427299324024537,
+      3.230678399553041,
+      3.208423944109095,
+      3.2682479382248584,
+      3.2467087508102357
+     ],
+     "d2_l0_max": [
+      0.025104518979787827,
+      0.00022130146680865437,
+      0.0010736922267824411,
+      0.0002770723949652165,
+      0.00016882979252841324,
+      0.0005412041791714728
+     ],
+     "first_step_with_loss_rep_below_2": [
+      1250,
+      1600,
+      1350,
+      1800,
+      9750,
+      2750
+     ]
     },
     "lr2e-3_w300_800": {
      "window": [
       300,
       800
      ],
-     "textbook": 0,
-     "relays": 0,
+     "textbook": 5,
+     "relays": 1,
      "not_formed": 0,
-     "of": 0,
-     "complete": false,
-     "relay_deltas": [],
-     "deep_decoy_over_clean": [],
-     "loss_all": [],
-     "d2_l0_max": [],
-     "first_step_with_loss_rep_below_2": []
+     "of": 6,
+     "complete": true,
+     "relay_deltas": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "deep_decoy_over_clean": [
+      0.47615393493857283,
+      0.9866134880701553,
+      0.9923570834484308,
+      0.9865745711997922,
+      0.9808251224712149,
+      0.9881048080949744
+     ],
+     "loss_all": [
+      3.195592284350901,
+      2.904442164049744,
+      2.9003886239405534,
+      2.9013667889298245,
+      2.9152643290326745,
+      2.9053303778057584
+     ],
+     "d2_l0_max": [
+      0.00919500645250082,
+      0.38923996686935425,
+      0.7110006809234619,
+      0.7500035166740417,
+      0.41932347416877747,
+      0.7243034243583679
+     ],
+     "first_step_with_loss_rep_below_2": [
+      900,
+      850,
+      750,
+      800,
+      850,
+      850
+     ]
     },
     "lr2e-3_w150_650": {
      "window": [
       150,
       650
      ],
-     "textbook": 0,
+     "textbook": 5,
      "relays": 0,
-     "not_formed": 0,
-     "of": 0,
-     "complete": false,
-     "relay_deltas": [],
-     "deep_decoy_over_clean": [],
-     "loss_all": [],
-     "d2_l0_max": [],
-     "first_step_with_loss_rep_below_2": []
+     "not_formed": 1,
+     "of": 6,
+     "complete": true,
+     "relay_deltas": [
+      0,
+      0,
+      0,
+      0,
+      25,
+      0
+     ],
+     "deep_decoy_over_clean": [
+      0.9825558149155517,
+      0.9871319809001698,
+      0.9839552403507585,
+      0.9815301973354427,
+      1.0020186143759604,
+      0.9810601378802284
+     ],
+     "loss_all": [
+      2.910603845069019,
+      2.913532380543023,
+      2.9084665239231215,
+      2.909562788444739,
+      4.149586862631311,
+      2.912507989059804
+     ],
+     "d2_l0_max": [
+      0.42439398169517517,
+      0.39947509765625,
+      0.3879173994064331,
+      0.48075878620147705,
+      0.024638429284095764,
+      0.6907981634140015
+     ],
+     "first_step_with_loss_rep_below_2": [
+      550,
+      700,
+      600,
+      650,
+      null,
+      700
+     ]
     }
    }
   },
@@ -490,24 +863,49 @@
       400,
       900
      ],
-     "textbook": 1,
-     "relays": 0,
+     "textbook": 2,
+     "relays": 4,
      "not_formed": 0,
-     "of": 1,
-     "complete": false,
+     "of": 6,
+     "complete": true,
      "relay_deltas": [
+      0,
+      0,
+      0,
+      0,
+      0,
       0
      ],
      "deep_decoy_over_clean": [
-      0.9874587599146294
+      0.9874587599146294,
+      0.9870801872350718,
+      0.5287300542537946,
+      0.5511023969643847,
+      0.5283747414153346,
+      0.6706893557697122
      ],
      "loss_all": [
-      2.885034806436183
+      2.885034806436183,
+      2.8855678500572157,
+      3.107218120862983,
+      3.1243528440331354,
+      3.0949653538345343,
+      2.9923171821906767
      ],
      "d2_l0_max": [
-      0.6827630400657654
+      0.6827630400657654,
+      0.3242805600166321,
+      0.004908069036900997,
+      0.024288153275847435,
+      0.022964874282479286,
+      0.03625081852078438
      ],
      "first_step_with_loss_rep_below_2": [
+      950,
+      650,
+      950,
+      950,
+      950,
       950
      ]
     },
@@ -516,16 +914,51 @@
       240,
       740
      ],
-     "textbook": 0,
+     "textbook": 6,
      "relays": 0,
      "not_formed": 0,
-     "of": 0,
-     "complete": false,
-     "relay_deltas": [],
-     "deep_decoy_over_clean": [],
-     "loss_all": [],
-     "d2_l0_max": [],
-     "first_step_with_loss_rep_below_2": []
+     "of": 6,
+     "complete": true,
+     "relay_deltas": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "deep_decoy_over_clean": [
+      0.9899609748114508,
+      0.9859187620351166,
+      0.9891825112116946,
+      0.9812228459005331,
+      0.9880259444324083,
+      0.9880813938367429
+     ],
+     "loss_all": [
+      2.884363782537369,
+      2.883344945670244,
+      2.8841793722538656,
+      2.8850644923755393,
+      2.8864589359833728,
+      2.885272057480302
+     ],
+     "d2_l0_max": [
+      0.62049400806427,
+      0.37262579798698425,
+      0.4561814069747925,
+      0.3898833394050598,
+      0.31435641646385193,
+      0.3836521804332733
+     ],
+     "first_step_with_loss_rep_below_2": [
+      550,
+      550,
+      550,
+      600,
+      600,
+      600
+     ]
     }
    }
   },
@@ -796,22 +1229,22 @@
  },
  "prediction_1A": {
   "lr5e-4": {
-   "band_l0_at_300_in_0.52_0.65": null,
-   "offsets_1_2_l0_at_300_in_0.028_0.043": null,
-   "t_crit_loss_in_760_980": null,
-   "w600_1600_at_least_5": null,
-   "w700_1700_at_least_4": null,
-   "w1050_2050_at_most_1": null
+   "band_l0_at_300_in_0.52_0.65": true,
+   "offsets_1_2_l0_at_300_in_0.028_0.043": true,
+   "t_crit_loss_in_760_980": false,
+   "w600_1600_at_least_5": true,
+   "w700_1700_at_least_4": true,
+   "w1050_2050_at_most_1": false
   },
   "lr2e-3": {
-   "t_crit_loss_in_200_265": null,
-   "t_crit_attn_in_200_265": null,
-   "band_l0_at_300_at_least_0.85": null,
-   "offsets_1_2_l0_at_300_at_most_0.010": null,
-   "w300_800_at_most_1": null,
-   "w150_650_at_least_5": null
+   "t_crit_loss_in_200_265": false,
+   "t_crit_attn_in_200_265": false,
+   "band_l0_at_300_at_least_0.85": false,
+   "offsets_1_2_l0_at_300_at_most_0.010": false,
+   "w300_800_at_most_1": false,
+   "w150_650_at_least_5": true
   },
-  "fails_by_its_own_criteria": null
+  "fails_by_its_own_criteria": true
  },
  "prediction_1B": {
   "d128": {
@@ -820,8 +1253,8 @@
    "loss_drop_at_300_at_least_0.23": true,
    "t_crit_loss_in_260_350": false,
    "t_crit_attn_in_260_350": false,
-   "w400_900_at_most_2": null,
-   "w240_740_at_least_5": null
+   "w400_900_at_most_2": true,
+   "w240_740_at_least_5": true
   },
   "d32": {
    "band_l0_at_300_in_0.54_0.67": false,
@@ -831,7 +1264,7 @@
    "t_crit_attn_in_560_760": false,
    "w500_1000_at_least_4": true
   },
-  "fails_by_its_own_criteria": null
+  "fails_by_its_own_criteria": true
  },
  "inside_the_window": {
   "base_natural": {
@@ -6724,15 +7157,4493 @@
     "textbook": true,
     "d1_l0_max": 0.9614211916923523,
     "d2_l0_max": 0.6827630400657654
+   },
+   {
+    "arm": "d128_w400_900",
+    "name": "d128_w400_900_single_rm12_h2_s301",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9125277938736897,
+    "p_best_with_one_layer0_head": 0.6211141023607941,
+    "loss_rep_probe": 0.15603520484089062,
+    "first_step_with_loss_rep_below_2": 650,
+    "at_step_300": {
+     "band_l0": 0.7484913396751275,
+     "band_l1": 0.7620595139425614,
+     "source_l1": 0.030726373195648193,
+     "offsets_1_2_l0": 0.021607935428619385,
+     "loss_rep": 3.778738019334188
+    },
+    "source_l1_at_the_end": 0.9405637383460999,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.459
+       ],
+       [
+        2,
+        0.15
+       ],
+       [
+        0,
+        0.138
+       ]
+      ],
+      "attention_d1": 0.4590435028076172
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.383
+       ],
+       [
+        3,
+        0.127
+       ],
+       [
+        1,
+        0.08
+       ]
+      ],
+      "attention_d1": 0.08013549447059631
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9870801872350718,
+    "loss_all": 2.8855678500572157,
+    "loss_rep": 0.16125930651534248,
+    "loss_other": 4.236418406705009,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.4355860650539398,
+    "d2_l0_max": 0.3242805600166321
+   },
+   {
+    "arm": "d128_w400_900",
+    "name": "d128_w400_900_single_rm12_h2_s302",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.6958689763659008,
+    "p_best_with_one_layer0_head": 0.04994490793136078,
+    "loss_rep_probe": 0.5711566830971837,
+    "first_step_with_loss_rep_below_2": 950,
+    "at_step_300": {
+     "band_l0": 0.7073797830574713,
+     "band_l1": 0.6578339166635709,
+     "source_l1": 0.018901890143752098,
+     "offsets_1_2_l0": 0.018440527841448784,
+     "loss_rep": 3.7433957567508283
+    },
+    "source_l1_at_the_end": 0.36796271800994873,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.339
+       ],
+       [
+        10,
+        0.212
+       ],
+       [
+        13,
+        0.114
+       ]
+      ],
+      "attention_d1": 0.3389343023300171
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        0,
+        0.33
+       ],
+       [
+        9,
+        0.179
+       ],
+       [
+        12,
+        0.096
+       ]
+      ],
+      "attention_d1": 0.008544515818357468
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.5287300542537946,
+    "loss_all": 3.107218120862983,
+    "loss_rep": 0.6851785244211862,
+    "loss_other": 4.308188379842059,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.02737758867442608,
+    "d2_l0_max": 0.004908069036900997
+   },
+   {
+    "arm": "d128_w400_900",
+    "name": "d128_w400_900_single_rm12_h4_s300",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.6649431054607384,
+    "p_best_with_one_layer0_head": 0.041969811532500595,
+    "loss_rep_probe": 0.7395522599494558,
+    "first_step_with_loss_rep_below_2": 950,
+    "at_step_300": {
+     "band_l0": 0.666176325651477,
+     "band_l1": 0.8077846046114701,
+     "source_l1": 0.030231352895498276,
+     "offsets_1_2_l0": 0.024922071024775505,
+     "loss_rep": 3.7874652648210776
+    },
+    "source_l1_at_the_end": 0.246474951505661,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        0,
+        0.302
+       ],
+       [
+        14,
+        0.144
+       ],
+       [
+        13,
+        0.136
+       ]
+      ],
+      "attention_d1": 0.015037438832223415
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.295
+       ],
+       [
+        15,
+        0.148
+       ],
+       [
+        14,
+        0.13
+       ]
+      ],
+      "attention_d1": 0.29504579305648804
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        0,
+        0.212
+       ],
+       [
+        14,
+        0.096
+       ],
+       [
+        13,
+        0.081
+       ]
+      ],
+      "attention_d1": 0.032384324818849564
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        1,
+        0.075
+       ],
+       [
+        0,
+        0.069
+       ],
+       [
+        2,
+        0.053
+       ]
+      ],
+      "attention_d1": 0.07502976059913635
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.5511023969643847,
+    "loss_all": 3.1243528440331354,
+    "loss_rep": 0.7547191199329364,
+    "loss_other": 4.299337609558441,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.0241362527012825,
+    "d2_l0_max": 0.024288153275847435
+   },
+   {
+    "arm": "d128_w400_900",
+    "name": "d128_w400_900_single_rm12_h4_s301",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.6787441529388082,
+    "p_best_with_one_layer0_head": 0.045663975526515334,
+    "loss_rep_probe": 0.6660891569735428,
+    "first_step_with_loss_rep_below_2": 950,
+    "at_step_300": {
+     "band_l0": 0.70393306332238,
+     "band_l1": 0.8499434218326829,
+     "source_l1": 0.031079288572072983,
+     "offsets_1_2_l0": 0.02510753460228443,
+     "loss_rep": 3.799826455738207
+    },
+    "source_l1_at_the_end": 0.37686577439308167,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        0,
+        0.41
+       ],
+       [
+        11,
+        0.12
+       ],
+       [
+        14,
+        0.084
+       ]
+      ],
+      "attention_d1": 0.01935536600649357
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.411
+       ],
+       [
+        12,
+        0.116
+       ],
+       [
+        15,
+        0.083
+       ]
+      ],
+      "attention_d1": 0.4106026589870453
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        0,
+        0.072
+       ],
+       [
+        1,
+        0.055
+       ],
+       [
+        2,
+        0.053
+       ]
+      ],
+      "attention_d1": 0.055031709372997284
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        0,
+        0.198
+       ],
+       [
+        9,
+        0.069
+       ],
+       [
+        7,
+        0.065
+       ]
+      ],
+      "attention_d1": 0.033069007098674774
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.5283747414153346,
+    "loss_all": 3.0949653538345343,
+    "loss_rep": 0.6566759328903516,
+    "loss_other": 4.303993101208789,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.05329124256968498,
+    "d2_l0_max": 0.022964874282479286
+   },
+   {
+    "arm": "d128_w400_900",
+    "name": "d128_w400_900_single_rm12_h4_s302",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.8202168647526399,
+    "p_best_with_one_layer0_head": 0.03955173524641121,
+    "loss_rep_probe": 0.3950681294584322,
+    "first_step_with_loss_rep_below_2": 950,
+    "at_step_300": {
+     "band_l0": 0.6540530143730297,
+     "band_l1": 0.731696046322962,
+     "source_l1": 0.020396674051880836,
+     "offsets_1_2_l0": 0.02416517212986946,
+     "loss_rep": 3.7561385210998814
+    },
+    "source_l1_at_the_end": 0.33904311060905457,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.409
+       ],
+       [
+        12,
+        0.101
+       ],
+       [
+        18,
+        0.095
+       ]
+      ],
+      "attention_d1": 0.40873539447784424
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        0,
+        0.545
+       ],
+       [
+        28,
+        0.051
+       ],
+       [
+        32,
+        0.046
+       ]
+      ],
+      "attention_d1": 0.00475684180855751
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        0,
+        0.397
+       ],
+       [
+        17,
+        0.107
+       ],
+       [
+        11,
+        0.104
+       ]
+      ],
+      "attention_d1": 0.023200342431664467
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        0,
+        0.086
+       ],
+       [
+        1,
+        0.057
+       ],
+       [
+        2,
+        0.049
+       ]
+      ],
+      "attention_d1": 0.057425692677497864
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     16
+    ],
+    "deep_decoy_over_clean": 0.6706893557697122,
+    "loss_all": 2.9923171821906767,
+    "loss_rep": 0.49659526760816086,
+    "loss_other": 4.229822877183944,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.0778399109840393,
+    "d2_l0_max": 0.03625081852078438
    }
   ],
-  "d128_w240_740": [],
-  "lr2e-3_natural": [],
-  "lr2e-3_w300_800": [],
-  "lr2e-3_w150_650": [],
-  "lr5e-4_natural": [],
-  "lr5e-4_w600_1600": [],
-  "lr5e-4_w700_1700": [],
-  "lr5e-4_w1050_2050": []
+  "d128_w240_740": [
+   {
+    "arm": "d128_w240_740",
+    "name": "d128_w240_740_single_rm12_h2_s300",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9110679125112946,
+    "p_best_with_one_layer0_head": 0.7674823200263321,
+    "loss_rep_probe": 0.16837724533144463,
+    "first_step_with_loss_rep_below_2": 550,
+    "at_step_300": {
+     "band_l0": 0.5508905731755145,
+     "band_l1": 0.8745153116643672,
+     "source_l1": 0.03997308015823364,
+     "offsets_1_2_l0": 0.03428249806165695,
+     "loss_rep": 3.8959862875036504
+    },
+    "source_l1_at_the_end": 0.9452167749404907,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.94
+       ],
+       [
+        0,
+        0.033
+       ],
+       [
+        3,
+        0.009
+       ]
+      ],
+      "attention_d1": 0.9399167895317078
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.66
+       ],
+       [
+        0,
+        0.061
+       ],
+       [
+        1,
+        0.042
+       ]
+      ],
+      "attention_d1": 0.04168951138854027
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9899609748114508,
+    "loss_all": 2.884363782537369,
+    "loss_rep": 0.16297273789879388,
+    "loss_other": 4.233767695035077,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9409298896789551,
+    "d2_l0_max": 0.62049400806427
+   },
+   {
+    "arm": "d128_w240_740",
+    "name": "d128_w240_740_single_rm12_h2_s301",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9140578441317255,
+    "p_best_with_one_layer0_head": 0.533797855759471,
+    "loss_rep_probe": 0.160032765124452,
+    "first_step_with_loss_rep_below_2": 550,
+    "at_step_300": {
+     "band_l0": 0.5806627478377883,
+     "band_l1": 0.7989072373881093,
+     "source_l1": 0.03411439433693886,
+     "offsets_1_2_l0": 0.03076675720512867,
+     "loss_rep": 3.9027048204018873
+    },
+    "source_l1_at_the_end": 0.9503428339958191,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.608
+       ],
+       [
+        0,
+        0.145
+       ],
+       [
+        2,
+        0.096
+       ]
+      ],
+      "attention_d1": 0.6080692410469055
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.427
+       ],
+       [
+        1,
+        0.163
+       ],
+       [
+        3,
+        0.135
+       ]
+      ],
+      "attention_d1": 0.1633823961019516
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9859187620351166,
+    "loss_all": 2.883344945670244,
+    "loss_rep": 0.15881279110114763,
+    "loss_other": 4.2343063800236145,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.5752028822898865,
+    "d2_l0_max": 0.37262579798698425
+   },
+   {
+    "arm": "d128_w240_740",
+    "name": "d128_w240_740_single_rm12_h2_s302",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9238414810445909,
+    "p_best_with_one_layer0_head": 0.6809055866457255,
+    "loss_rep_probe": 0.13808480342115464,
+    "first_step_with_loss_rep_below_2": 550,
+    "at_step_300": {
+     "band_l0": 0.5195458546023868,
+     "band_l1": 0.9046532471561373,
+     "source_l1": 0.03384057432413101,
+     "offsets_1_2_l0": 0.04015203192830086,
+     "loss_rep": 3.842843886504204
+    },
+    "source_l1_at_the_end": 0.945824146270752,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.614
+       ],
+       [
+        0,
+        0.152
+       ],
+       [
+        2,
+        0.091
+       ]
+      ],
+      "attention_d1": 0.6144787073135376
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.487
+       ],
+       [
+        1,
+        0.175
+       ],
+       [
+        3,
+        0.137
+       ]
+      ],
+      "attention_d1": 0.1745501458644867
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9891825112116946,
+    "loss_all": 2.8841793722538656,
+    "loss_rep": 0.1557635195014917,
+    "loss_other": 4.237066541438252,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.5898878574371338,
+    "d2_l0_max": 0.4561814069747925
+   },
+   {
+    "arm": "d128_w240_740",
+    "name": "d128_w240_740_single_rm12_h4_s300",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9120505671508092,
+    "p_best_with_one_layer0_head": 0.6185376466227805,
+    "loss_rep_probe": 0.16169776702349267,
+    "first_step_with_loss_rep_below_2": 600,
+    "at_step_300": {
+     "band_l0": 0.528575021274738,
+     "band_l1": 0.8969198462506456,
+     "source_l1": 0.040430616587400436,
+     "offsets_1_2_l0": 0.03800487890839577,
+     "loss_rep": 3.9112034214420204
+    },
+    "source_l1_at_the_end": 0.9082001447677612,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.673
+       ],
+       [
+        0,
+        0.143
+       ],
+       [
+        2,
+        0.089
+       ]
+      ],
+      "attention_d1": 0.6733261942863464
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.157
+       ],
+       [
+        2,
+        0.072
+       ],
+       [
+        0,
+        0.062
+       ]
+      ],
+      "attention_d1": 0.15681757032871246
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        1,
+        0.131
+       ],
+       [
+        2,
+        0.106
+       ],
+       [
+        0,
+        0.094
+       ]
+      ],
+      "attention_d1": 0.1306612640619278
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        2,
+        0.452
+       ],
+       [
+        1,
+        0.177
+       ],
+       [
+        3,
+        0.149
+       ]
+      ],
+      "attention_d1": 0.17729279398918152
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9812228459005331,
+    "loss_all": 2.8850644923755393,
+    "loss_rep": 0.16629038981418556,
+    "loss_other": 4.23317079206426,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.6237536668777466,
+    "d2_l0_max": 0.3898833394050598
+   },
+   {
+    "arm": "d128_w240_740",
+    "name": "d128_w240_740_single_rm12_h4_s301",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9142112378275764,
+    "p_best_with_one_layer0_head": 0.7316264459373475,
+    "loss_rep_probe": 0.17183936043536482,
+    "first_step_with_loss_rep_below_2": 600,
+    "at_step_300": {
+     "band_l0": 0.5432982879503868,
+     "band_l1": 0.889929329741533,
+     "source_l1": 0.035174693912267685,
+     "offsets_1_2_l0": 0.036753762513399124,
+     "loss_rep": 3.8920762550049943
+    },
+    "source_l1_at_the_end": 0.8612353801727295,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.357
+       ],
+       [
+        1,
+        0.238
+       ],
+       [
+        3,
+        0.123
+       ]
+      ],
+      "attention_d1": 0.23772083222866058
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.366
+       ],
+       [
+        3,
+        0.116
+       ],
+       [
+        1,
+        0.08
+       ]
+      ],
+      "attention_d1": 0.07985221594572067
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        1,
+        0.776
+       ],
+       [
+        0,
+        0.105
+       ],
+       [
+        2,
+        0.058
+       ]
+      ],
+      "attention_d1": 0.7758209705352783
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        1,
+        0.256
+       ],
+       [
+        2,
+        0.207
+       ],
+       [
+        0,
+        0.15
+       ]
+      ],
+      "attention_d1": 0.25645381212234497
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9880259444324083,
+    "loss_all": 2.8864589359833728,
+    "loss_rep": 0.16835272304035498,
+    "loss_other": 4.23423406207399,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.7101991772651672,
+    "d2_l0_max": 0.31435641646385193
+   },
+   {
+    "arm": "d128_w240_740",
+    "name": "d128_w240_740_single_rm12_h4_s302",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9205585270196832,
+    "p_best_with_one_layer0_head": 0.7439757926170756,
+    "loss_rep_probe": 0.151601422318721,
+    "first_step_with_loss_rep_below_2": 600,
+    "at_step_300": {
+     "band_l0": 0.519931618675247,
+     "band_l1": 0.8923928607019904,
+     "source_l1": 0.0321325808763504,
+     "offsets_1_2_l0": 0.04246082901954651,
+     "loss_rep": 3.8504253533015627
+    },
+    "source_l1_at_the_end": 0.8801309466362,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.823
+       ],
+       [
+        0,
+        0.09
+       ],
+       [
+        2,
+        0.037
+       ]
+      ],
+      "attention_d1": 0.8230882883071899
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.142
+       ],
+       [
+        2,
+        0.119
+       ],
+       [
+        0,
+        0.11
+       ]
+      ],
+      "attention_d1": 0.14170335233211517
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        2,
+        0.446
+       ],
+       [
+        1,
+        0.209
+       ],
+       [
+        3,
+        0.109
+       ]
+      ],
+      "attention_d1": 0.20926184952259064
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        2,
+        0.206
+       ],
+       [
+        3,
+        0.145
+       ],
+       [
+        1,
+        0.082
+       ]
+      ],
+      "attention_d1": 0.08188635110855103
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9880813938367429,
+    "loss_all": 2.885272057480302,
+    "loss_rep": 0.1684185352489827,
+    "loss_other": 4.232426035885862,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.7594165802001953,
+    "d2_l0_max": 0.3836521804332733
+   }
+  ],
+  "lr2e-3_natural": [
+   {
+    "arm": "lr2e-3_natural",
+    "name": "lr2e-3_natural_single_rm12_h2_s300",
+    "n_head": 2,
+    "relay_delta": 11,
+    "p_all": 0.5940453683624474,
+    "p_best_with_one_layer0_head": 0.04056861870585345,
+    "loss_rep_probe": 1.0846421816779839,
+    "first_step_with_loss_rep_below_2": 1250,
+    "at_step_300": {
+     "band_l0": 0.8426276936290287,
+     "band_l1": 0.23767115315571086,
+     "source_l1": 0.010602125898003578,
+     "offsets_1_2_l0": 0.010419594123959541,
+     "loss_rep": 4.008497920098695
+    },
+    "source_l1_at_the_end": 0.00849585048854351,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        12,
+        0.196
+       ],
+       [
+        11,
+        0.094
+       ],
+       [
+        22,
+        0.071
+       ]
+      ],
+      "attention_d1": 0.017091458663344383
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        11,
+        0.19
+       ],
+       [
+        10,
+        0.092
+       ],
+       [
+        4,
+        0.065
+       ]
+      ],
+      "attention_d1": 0.0030886251479387283
+     }
+    },
+    "layer1_modal_deltas": [
+     11,
+     11
+    ],
+    "deep_decoy_over_clean": 0.5511859845756716,
+    "loss_all": 3.2402423597122847,
+    "loss_rep": 1.0885500567099435,
+    "loss_other": 4.307160698362205,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.003096743021160364,
+    "d2_l0_max": 0.025104518979787827
+   },
+   {
+    "arm": "lr2e-3_natural",
+    "name": "lr2e-3_natural_single_rm12_h2_s301",
+    "n_head": 2,
+    "relay_delta": 11,
+    "p_all": 0.5859594418084708,
+    "p_best_with_one_layer0_head": 0.04340867884174251,
+    "loss_rep_probe": 1.0831149822169883,
+    "first_step_with_loss_rep_below_2": 1600,
+    "at_step_300": {
+     "band_l0": 0.8182377866028965,
+     "band_l1": 0.38447928273323123,
+     "source_l1": 0.014358019456267357,
+     "offsets_1_2_l0": 0.010901098139584064,
+     "loss_rep": 4.022984451223067
+    },
+    "source_l1_at_the_end": 0.008502351120114326,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        12,
+        0.141
+       ],
+       [
+        11,
+        0.121
+       ],
+       [
+        9,
+        0.078
+       ]
+      ],
+      "attention_d1": 0.016564400866627693
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        11,
+        0.135
+       ],
+       [
+        10,
+        0.113
+       ],
+       [
+        8,
+        0.074
+       ]
+      ],
+      "attention_d1": 0.01671581342816353
+     }
+    },
+    "layer1_modal_deltas": [
+     11,
+     11
+    ],
+    "deep_decoy_over_clean": 0.5415814228400784,
+    "loss_all": 3.2427299324024537,
+    "loss_rep": 1.1117357710263642,
+    "loss_other": 4.299385081075719,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.0005047546001151204,
+    "d2_l0_max": 0.00022130146680865437
+   },
+   {
+    "arm": "lr2e-3_natural",
+    "name": "lr2e-3_natural_single_rm12_h2_s302",
+    "n_head": 2,
+    "relay_delta": 11,
+    "p_all": 0.6400741063411566,
+    "p_best_with_one_layer0_head": 0.04224246661644865,
+    "loss_rep_probe": 0.8479583485389323,
+    "first_step_with_loss_rep_below_2": 1350,
+    "at_step_300": {
+     "band_l0": 0.8764943648445152,
+     "band_l1": 0.3039663121053169,
+     "source_l1": 0.012145929038524628,
+     "offsets_1_2_l0": 0.006808230187743902,
+     "loss_rep": 3.9885176276369525
+    },
+    "source_l1_at_the_end": 0.007268787361681461,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        11,
+        0.282
+       ],
+       [
+        10,
+        0.131
+       ],
+       [
+        12,
+        0.06
+       ]
+      ],
+      "attention_d1": 0.04808821901679039
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        12,
+        0.274
+       ],
+       [
+        11,
+        0.114
+       ],
+       [
+        31,
+        0.062
+       ]
+      ],
+      "attention_d1": 0.002655321964994073
+     }
+    },
+    "layer1_modal_deltas": [
+     11,
+     11
+    ],
+    "deep_decoy_over_clean": 0.535961210448959,
+    "loss_all": 3.230678399553041,
+    "loss_rep": 1.052846815525092,
+    "loss_other": 4.31055792147551,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.0006169561529532075,
+    "d2_l0_max": 0.0010736922267824411
+   },
+   {
+    "arm": "lr2e-3_natural",
+    "name": "lr2e-3_natural_single_rm12_h4_s300",
+    "n_head": 4,
+    "relay_delta": 11,
+    "p_all": 0.6214897446368675,
+    "p_best_with_one_layer0_head": 0.028023464427260295,
+    "loss_rep_probe": 1.0031233797494652,
+    "first_step_with_loss_rep_below_2": 1800,
+    "at_step_300": {
+     "band_l0": 0.8458792071206707,
+     "band_l1": 0.28910450709830654,
+     "source_l1": 0.012835941277444363,
+     "offsets_1_2_l0": 0.009194443002343178,
+     "loss_rep": 3.9854597156285068
+    },
+    "source_l1_at_the_end": 0.01567959599196911,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        12,
+        0.235
+       ],
+       [
+        11,
+        0.154
+       ],
+       [
+        31,
+        0.081
+       ]
+      ],
+      "attention_d1": 0.016796600073575974
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        12,
+        0.175
+       ],
+       [
+        11,
+        0.142
+       ],
+       [
+        13,
+        0.098
+       ]
+      ],
+      "attention_d1": 0.03311731666326523
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        11,
+        0.243
+       ],
+       [
+        10,
+        0.174
+       ],
+       [
+        30,
+        0.066
+       ]
+      ],
+      "attention_d1": 0.015024175867438316
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        11,
+        0.231
+       ],
+       [
+        10,
+        0.181
+       ],
+       [
+        30,
+        0.069
+       ]
+      ],
+      "attention_d1": 0.015340079553425312
+     }
+    },
+    "layer1_modal_deltas": [
+     11,
+     11,
+     11,
+     11
+    ],
+    "deep_decoy_over_clean": 0.5823913892840339,
+    "loss_all": 3.208423944109095,
+    "loss_rep": 1.0220242299045132,
+    "loss_other": 4.292551980189762,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.000754777283873409,
+    "d2_l0_max": 0.0002770723949652165
+   },
+   {
+    "arm": "lr2e-3_natural",
+    "name": "lr2e-3_natural_single_rm12_h4_s301",
+    "n_head": 4,
+    "relay_delta": 11,
+    "p_all": 0.5792236777705531,
+    "p_best_with_one_layer0_head": 0.0208539812845684,
+    "loss_rep_probe": 1.1607087420790758,
+    "first_step_with_loss_rep_below_2": 9750,
+    "at_step_300": {
+     "band_l0": 0.6449738889670146,
+     "band_l1": 0.4001079653857198,
+     "source_l1": 0.017786432057619095,
+     "offsets_1_2_l0": 0.02989819087088108,
+     "loss_rep": 4.101922709399502
+    },
+    "source_l1_at_the_end": 0.010626217350363731,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        12,
+        0.357
+       ],
+       [
+        0,
+        0.163
+       ],
+       [
+        11,
+        0.094
+       ]
+      ],
+      "attention_d1": 0.0013079046038910747
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        11,
+        0.335
+       ],
+       [
+        10,
+        0.094
+       ],
+       [
+        28,
+        0.074
+       ]
+      ],
+      "attention_d1": 0.013511266559362411
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        11,
+        0.315
+       ],
+       [
+        10,
+        0.109
+       ],
+       [
+        31,
+        0.067
+       ]
+      ],
+      "attention_d1": 0.015741104260087013
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        11,
+        0.32
+       ],
+       [
+        10,
+        0.106
+       ],
+       [
+        28,
+        0.07
+       ]
+      ],
+      "attention_d1": 0.015165867283940315
+     }
+    },
+    "layer1_modal_deltas": [
+     11,
+     11,
+     11,
+     -4
+    ],
+    "deep_decoy_over_clean": 0.5558807643535002,
+    "loss_all": 3.2682479382248584,
+    "loss_rep": 1.1910166015114259,
+    "loss_other": 4.298244747557423,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.00016545179823879153,
+    "d2_l0_max": 0.00016882979252841324
+   },
+   {
+    "arm": "lr2e-3_natural",
+    "name": "lr2e-3_natural_single_rm12_h4_s302",
+    "n_head": 4,
+    "relay_delta": 11,
+    "p_all": 0.6287503128948886,
+    "p_best_with_one_layer0_head": 0.02676072908314637,
+    "loss_rep_probe": 0.9582111248441235,
+    "first_step_with_loss_rep_below_2": 2750,
+    "at_step_300": {
+     "band_l0": 0.8232766259296013,
+     "band_l1": 0.3670587634741155,
+     "source_l1": 0.013912572525441647,
+     "offsets_1_2_l0": 0.010810483247041702,
+     "loss_rep": 4.017426905029095
+    },
+    "source_l1_at_the_end": 0.010231870226562023,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        11,
+        0.168
+       ],
+       [
+        13,
+        0.157
+       ],
+       [
+        12,
+        0.138
+       ]
+      ],
+      "attention_d1": 0.015302596613764763
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        11,
+        0.149
+       ],
+       [
+        13,
+        0.146
+       ],
+       [
+        12,
+        0.13
+       ]
+      ],
+      "attention_d1": 0.018821679055690765
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        12,
+        0.156
+       ],
+       [
+        14,
+        0.142
+       ],
+       [
+        13,
+        0.121
+       ]
+      ],
+      "attention_d1": 0.017539797350764275
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        11,
+        0.151
+       ],
+       [
+        13,
+        0.14
+       ],
+       [
+        12,
+        0.128
+       ]
+      ],
+      "attention_d1": 0.02328939363360405
+     }
+    },
+    "layer1_modal_deltas": [
+     11,
+     11,
+     11,
+     14
+    ],
+    "deep_decoy_over_clean": 0.6111611875373565,
+    "loss_all": 3.2467087508102357,
+    "loss_rep": 1.1588204155691761,
+    "loss_other": 4.28198984133311,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.00033343094401061535,
+    "d2_l0_max": 0.0005412041791714728
+   }
+  ],
+  "lr2e-3_w300_800": [
+   {
+    "arm": "lr2e-3_w300_800",
+    "name": "lr2e-3_w300_800_single_rm12_h2_s300",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.6124934359163575,
+    "p_best_with_one_layer0_head": 0.03255421760302317,
+    "loss_rep_probe": 0.8797174804607895,
+    "first_step_with_loss_rep_below_2": 900,
+    "at_step_300": {
+     "band_l0": 0.8426276936290287,
+     "band_l1": 0.23767115315571086,
+     "source_l1": 0.010602125898003578,
+     "offsets_1_2_l0": 0.010419594123959541,
+     "loss_rep": 4.008497920098695
+    },
+    "source_l1_at_the_end": 0.27255722880363464,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.267
+       ],
+       [
+        14,
+        0.124
+       ],
+       [
+        15,
+        0.106
+       ]
+      ],
+      "attention_d1": 0.2674655020236969
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        0,
+        0.267
+       ],
+       [
+        13,
+        0.126
+       ],
+       [
+        14,
+        0.119
+       ]
+      ],
+      "attention_d1": 0.020475653931498528
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.47615393493857283,
+    "loss_all": 3.195592284350901,
+    "loss_rep": 0.8864641526711989,
+    "loss_other": 4.340575303783499,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.019316181540489197,
+    "d2_l0_max": 0.00919500645250082
+   },
+   {
+    "arm": "lr2e-3_w300_800",
+    "name": "lr2e-3_w300_800_single_rm12_h2_s301",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.906175012311095,
+    "p_best_with_one_layer0_head": 0.3741656255258256,
+    "loss_rep_probe": 0.18218827620803163,
+    "first_step_with_loss_rep_below_2": 850,
+    "at_step_300": {
+     "band_l0": 0.8182377866028965,
+     "band_l1": 0.38447928273323123,
+     "source_l1": 0.014358019456267357,
+     "offsets_1_2_l0": 0.010901098139584064,
+     "loss_rep": 4.022984451223067
+    },
+    "source_l1_at_the_end": 0.9530681371688843,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.447
+       ],
+       [
+        1,
+        0.182
+       ],
+       [
+        0,
+        0.12
+       ]
+      ],
+      "attention_d1": 0.18161706626415253
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.834
+       ],
+       [
+        0,
+        0.087
+       ],
+       [
+        2,
+        0.03
+       ]
+      ],
+      "attention_d1": 0.8336228728294373
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9866134880701553,
+    "loss_all": 2.904442164049744,
+    "loss_rep": 0.1907968041929231,
+    "loss_other": 4.250005372592,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.7944081425666809,
+    "d2_l0_max": 0.38923996686935425
+   },
+   {
+    "arm": "lr2e-3_w300_800",
+    "name": "lr2e-3_w300_800_single_rm12_h2_s302",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9090164649835638,
+    "p_best_with_one_layer0_head": 0.6762064930185683,
+    "loss_rep_probe": 0.1810164321115291,
+    "first_step_with_loss_rep_below_2": 750,
+    "at_step_300": {
+     "band_l0": 0.8764943648445152,
+     "band_l1": 0.3039663121053169,
+     "source_l1": 0.012145929038524628,
+     "offsets_1_2_l0": 0.006808230187743902,
+     "loss_rep": 3.9885176276369525
+    },
+    "source_l1_at_the_end": 0.9556323885917664,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.958
+       ],
+       [
+        0,
+        0.024
+       ],
+       [
+        4,
+        0.01
+       ]
+      ],
+      "attention_d1": 0.9584013223648071
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.759
+       ],
+       [
+        0,
+        0.029
+       ],
+       [
+        39,
+        0.024
+       ]
+      ],
+      "attention_d1": 0.022403202950954437
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9923570834484308,
+    "loss_all": 2.9003886239405534,
+    "loss_rep": 0.1996148332874825,
+    "loss_other": 4.2395694546625595,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9562028050422668,
+    "d2_l0_max": 0.7110006809234619
+   },
+   {
+    "arm": "lr2e-3_w300_800",
+    "name": "lr2e-3_w300_800_single_rm12_h4_s300",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.8990974378810788,
+    "p_best_with_one_layer0_head": 0.8028645947863736,
+    "loss_rep_probe": 0.1984903619645852,
+    "first_step_with_loss_rep_below_2": 800,
+    "at_step_300": {
+     "band_l0": 0.8458792071206707,
+     "band_l1": 0.28910450709830654,
+     "source_l1": 0.012835941277444363,
+     "offsets_1_2_l0": 0.009194443002343178,
+     "loss_rep": 3.9854597156285068
+    },
+    "source_l1_at_the_end": 0.9100444912910461,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.99
+       ],
+       [
+        0,
+        0.018
+       ],
+       [
+        3,
+        0.003
+       ]
+      ],
+      "attention_d1": 0.9900909066200256
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.068
+       ],
+       [
+        0,
+        0.052
+       ],
+       [
+        2,
+        0.048
+       ]
+      ],
+      "attention_d1": 0.06789518147706985
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        0,
+        0.062
+       ],
+       [
+        1,
+        0.049
+       ],
+       [
+        3,
+        0.039
+       ]
+      ],
+      "attention_d1": 0.049346379935741425
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        2,
+        0.784
+       ],
+       [
+        0,
+        0.047
+       ],
+       [
+        1,
+        0.029
+       ]
+      ],
+      "attention_d1": 0.028626535087823868
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9865745711997922,
+    "loss_all": 2.9013667889298245,
+    "loss_rep": 0.19367536675966113,
+    "loss_other": 4.243977732737847,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9913120865821838,
+    "d2_l0_max": 0.7500035166740417
+   },
+   {
+    "arm": "lr2e-3_w300_800",
+    "name": "lr2e-3_w300_800_single_rm12_h4_s301",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.8944069609667623,
+    "p_best_with_one_layer0_head": 0.6926117159391699,
+    "loss_rep_probe": 0.2292659790562308,
+    "first_step_with_loss_rep_below_2": 850,
+    "at_step_300": {
+     "band_l0": 0.6449738889670146,
+     "band_l1": 0.4001079653857198,
+     "source_l1": 0.017786432057619095,
+     "offsets_1_2_l0": 0.02989819087088108,
+     "loss_rep": 4.101922709399502
+    },
+    "source_l1_at_the_end": 0.7169214487075806,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.258
+       ],
+       [
+        2,
+        0.253
+       ],
+       [
+        0,
+        0.181
+       ]
+      ],
+      "attention_d1": 0.25804346799850464
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        0,
+        0.086
+       ],
+       [
+        1,
+        0.051
+       ],
+       [
+        2,
+        0.047
+       ]
+      ],
+      "attention_d1": 0.05050453916192055
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        1,
+        0.902
+       ],
+       [
+        0,
+        0.051
+       ],
+       [
+        2,
+        0.022
+       ]
+      ],
+      "attention_d1": 0.9019087553024292
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        2,
+        0.516
+       ],
+       [
+        1,
+        0.167
+       ],
+       [
+        0,
+        0.11
+       ]
+      ],
+      "attention_d1": 0.1670772135257721
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     -1
+    ],
+    "deep_decoy_over_clean": 0.9808251224712149,
+    "loss_all": 2.9152643290326745,
+    "loss_rep": 0.2291929075754787,
+    "loss_other": 4.247154978303183,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.8551028966903687,
+    "d2_l0_max": 0.41932347416877747
+   },
+   {
+    "arm": "lr2e-3_w300_800",
+    "name": "lr2e-3_w300_800_single_rm12_h4_s302",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9084234245287118,
+    "p_best_with_one_layer0_head": 0.5978671865977754,
+    "loss_rep_probe": 0.18562380399040682,
+    "first_step_with_loss_rep_below_2": 850,
+    "at_step_300": {
+     "band_l0": 0.8232766259296013,
+     "band_l1": 0.3670587634741155,
+     "source_l1": 0.013912572525441647,
+     "offsets_1_2_l0": 0.010810483247041702,
+     "loss_rep": 4.017426905029095
+    },
+    "source_l1_at_the_end": 0.711696445941925,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.081
+       ],
+       [
+        2,
+        0.06
+       ],
+       [
+        0,
+        0.056
+       ]
+      ],
+      "attention_d1": 0.08121438324451447
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        3,
+        0.2
+       ],
+       [
+        2,
+        0.105
+       ],
+       [
+        0,
+        0.105
+       ]
+      ],
+      "attention_d1": 0.03217191994190216
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        2,
+        0.773
+       ],
+       [
+        1,
+        0.113
+       ],
+       [
+        0,
+        0.045
+       ]
+      ],
+      "attention_d1": 0.11331826448440552
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        1,
+        0.972
+       ],
+       [
+        0,
+        0.024
+       ],
+       [
+        2,
+        0.005
+       ]
+      ],
+      "attention_d1": 0.972232460975647
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     16
+    ],
+    "deep_decoy_over_clean": 0.9881048080949744,
+    "loss_all": 2.9053303778057584,
+    "loss_rep": 0.2079355193240595,
+    "loss_other": 4.242835762324951,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9737005233764648,
+    "d2_l0_max": 0.7243034243583679
+   }
+  ],
+  "lr2e-3_w150_650": [
+   {
+    "arm": "lr2e-3_w150_650",
+    "name": "lr2e-3_w150_650_single_rm12_h2_s300",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.8908859133487705,
+    "p_best_with_one_layer0_head": 0.5126487868180502,
+    "loss_rep_probe": 0.21651079373245524,
+    "first_step_with_loss_rep_below_2": 550,
+    "at_step_300": {
+     "band_l0": 0.5091463484026848,
+     "band_l1": 0.7242490030457452,
+     "source_l1": 0.03407271206378937,
+     "offsets_1_2_l0": 0.04529932141304016,
+     "loss_rep": 4.086546682961581
+    },
+    "source_l1_at_the_end": 0.9518513083457947,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.921
+       ],
+       [
+        0,
+        0.046
+       ],
+       [
+        2,
+        0.015
+       ]
+      ],
+      "attention_d1": 0.9206349849700928
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.477
+       ],
+       [
+        1,
+        0.157
+       ],
+       [
+        0,
+        0.108
+       ]
+      ],
+      "attention_d1": 0.1571560502052307
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9825558149155517,
+    "loss_all": 2.910603845069019,
+    "loss_rep": 0.21465612828123268,
+    "loss_other": 4.247391663229069,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.8977081775665283,
+    "d2_l0_max": 0.42439398169517517
+   },
+   {
+    "arm": "lr2e-3_w150_650",
+    "name": "lr2e-3_w150_650_single_rm12_h2_s301",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.8967145628296636,
+    "p_best_with_one_layer0_head": 0.4473966640281085,
+    "loss_rep_probe": 0.2018360067896972,
+    "first_step_with_loss_rep_below_2": 700,
+    "at_step_300": {
+     "band_l0": 0.49481988550072226,
+     "band_l1": 0.6339436266069121,
+     "source_l1": 0.028273478150367737,
+     "offsets_1_2_l0": 0.045521996915340424,
+     "loss_rep": 4.112080114121432
+    },
+    "source_l1_at_the_end": 0.9547553062438965,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.454
+       ],
+       [
+        1,
+        0.177
+       ],
+       [
+        3,
+        0.12
+       ]
+      ],
+      "attention_d1": 0.17694243788719177
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.894
+       ],
+       [
+        0,
+        0.056
+       ],
+       [
+        2,
+        0.024
+       ]
+      ],
+      "attention_d1": 0.8944153189659119
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9871319809001698,
+    "loss_all": 2.913532380543023,
+    "loss_rep": 0.21776886546160293,
+    "loss_other": 4.250228862140564,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.8586637377738953,
+    "d2_l0_max": 0.39947509765625
+   },
+   {
+    "arm": "lr2e-3_w150_650",
+    "name": "lr2e-3_w150_650_single_rm12_h2_s302",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9085436020108807,
+    "p_best_with_one_layer0_head": 0.45974573992655243,
+    "loss_rep_probe": 0.1910838960495299,
+    "first_step_with_loss_rep_below_2": 600,
+    "at_step_300": {
+     "band_l0": 0.49793389955315437,
+     "band_l1": 0.7675986661575556,
+     "source_l1": 0.031015070155262947,
+     "offsets_1_2_l0": 0.046339962631464005,
+     "loss_rep": 4.076869885663301
+    },
+    "source_l1_at_the_end": 0.9530491828918457,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.447
+       ],
+       [
+        1,
+        0.149
+       ],
+       [
+        0,
+        0.128
+       ]
+      ],
+      "attention_d1": 0.1486959308385849
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.947
+       ],
+       [
+        0,
+        0.033
+       ],
+       [
+        2,
+        0.008
+       ]
+      ],
+      "attention_d1": 0.947439432144165
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9839552403507585,
+    "loss_all": 2.9084665239231215,
+    "loss_rep": 0.21618696425183767,
+    "loss_other": 4.2434354834614325,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9253060817718506,
+    "d2_l0_max": 0.3879173994064331
+   },
+   {
+    "arm": "lr2e-3_w150_650",
+    "name": "lr2e-3_w150_650_single_rm12_h4_s300",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.8988587775550956,
+    "p_best_with_one_layer0_head": 0.5309029658418306,
+    "loss_rep_probe": 0.21307985276349345,
+    "first_step_with_loss_rep_below_2": 650,
+    "at_step_300": {
+     "band_l0": 0.5080006908590777,
+     "band_l1": 0.714221450882197,
+     "source_l1": 0.03133885934948921,
+     "offsets_1_2_l0": 0.04515725001692772,
+     "loss_rep": 4.08909952225491
+    },
+    "source_l1_at_the_end": 0.7161780595779419,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.058
+       ],
+       [
+        0,
+        0.051
+       ],
+       [
+        2,
+        0.04
+       ]
+      ],
+      "attention_d1": 0.05792045220732689
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.961
+       ],
+       [
+        0,
+        0.029
+       ],
+       [
+        3,
+        0.008
+       ]
+      ],
+      "attention_d1": 0.9610990881919861
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        2,
+        0.537
+       ],
+       [
+        1,
+        0.137
+       ],
+       [
+        0,
+        0.135
+       ]
+      ],
+      "attention_d1": 0.13743065297603607
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        1,
+        0.099
+       ],
+       [
+        0,
+        0.098
+       ],
+       [
+        2,
+        0.09
+       ]
+      ],
+      "attention_d1": 0.09897110611200333
+     }
+    },
+    "layer1_modal_deltas": [
+     -1,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9815301973354427,
+    "loss_all": 2.909562788444739,
+    "loss_rep": 0.20802278171583027,
+    "loss_other": 4.249123548016954,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9513276815414429,
+    "d2_l0_max": 0.48075878620147705
+   },
+   {
+    "arm": "lr2e-3_w150_650",
+    "name": "lr2e-3_w150_650_single_rm12_h4_s301",
+    "n_head": 4,
+    "relay_delta": 25,
+    "p_all": 0.016626333282278305,
+    "p_best_with_one_layer0_head": 0.01667689482070726,
+    "loss_rep_probe": 4.118484758457414,
+    "first_step_with_loss_rep_below_2": null,
+    "at_step_300": {
+     "band_l0": 0.47747459143110993,
+     "band_l1": 0.4671135758303603,
+     "source_l1": 0.02450491674244404,
+     "offsets_1_2_l0": 0.04788028076291084,
+     "loss_rep": 4.160348518627727
+    },
+    "source_l1_at_the_end": 0.01577962003648281,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        0,
+        0.112
+       ],
+       [
+        1,
+        0.048
+       ],
+       [
+        2,
+        0.047
+       ]
+      ],
+      "attention_d1": 0.04775218665599823
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.074
+       ],
+       [
+        2,
+        0.069
+       ],
+       [
+        3,
+        0.061
+       ]
+      ],
+      "attention_d1": 0.0740499272942543
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        2,
+        0.064
+       ],
+       [
+        1,
+        0.063
+       ],
+       [
+        0,
+        0.057
+       ]
+      ],
+      "attention_d1": 0.0629579946398735
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        0,
+        0.075
+       ],
+       [
+        2,
+        0.066
+       ],
+       [
+        1,
+        0.064
+       ]
+      ],
+      "attention_d1": 0.06396473944187164
+     }
+    },
+    "layer1_modal_deltas": [
+     17,
+     22,
+     17,
+     25
+    ],
+    "deep_decoy_over_clean": 1.0020186143759604,
+    "loss_all": 4.149586862631311,
+    "loss_rep": 4.119574511827721,
+    "loss_other": 4.164468510631661,
+    "formed": false,
+    "textbook": false,
+    "d1_l0_max": 0.022939911112189293,
+    "d2_l0_max": 0.024638429284095764
+   },
+   {
+    "arm": "lr2e-3_w150_650",
+    "name": "lr2e-3_w150_650_single_rm12_h4_s302",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9023210635051079,
+    "p_best_with_one_layer0_head": 0.4195952121737946,
+    "loss_rep_probe": 0.20172739998820924,
+    "first_step_with_loss_rep_below_2": 700,
+    "at_step_300": {
+     "band_l0": 0.49597255103993176,
+     "band_l1": 0.6619875630706556,
+     "source_l1": 0.0301820058375597,
+     "offsets_1_2_l0": 0.047588806599378586,
+     "loss_rep": 4.107844787240625
+    },
+    "source_l1_at_the_end": 0.7211021184921265,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.981
+       ],
+       [
+        0,
+        0.02
+       ],
+       [
+        3,
+        0.004
+       ]
+      ],
+      "attention_d1": 0.9813140034675598
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        0,
+        0.069
+       ],
+       [
+        1,
+        0.052
+       ],
+       [
+        2,
+        0.049
+       ]
+      ],
+      "attention_d1": 0.05203480273485184
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        2,
+        0.759
+       ],
+       [
+        1,
+        0.077
+       ],
+       [
+        0,
+        0.074
+       ]
+      ],
+      "attention_d1": 0.07659173756837845
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        0,
+        0.222
+       ],
+       [
+        2,
+        0.222
+       ],
+       [
+        1,
+        0.187
+       ]
+      ],
+      "attention_d1": 0.18720804154872894
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     22
+    ],
+    "deep_decoy_over_clean": 0.9810601378802284,
+    "loss_all": 2.912507989059804,
+    "loss_rep": 0.2207039906318919,
+    "loss_other": 4.247241141177603,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.980850338935852,
+    "d2_l0_max": 0.6907981634140015
+   }
+  ],
+  "lr5e-4_natural": [
+   {
+    "arm": "lr5e-4_natural",
+    "name": "lr5e-4_natural_single_rm12_h2_s300",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.908834432416331,
+    "p_best_with_one_layer0_head": 0.8396744402426445,
+    "loss_rep_probe": 0.1768526758222865,
+    "first_step_with_loss_rep_below_2": 900,
+    "at_step_300": {
+     "band_l0": 0.5396263556667954,
+     "band_l1": 0.6565014708623402,
+     "source_l1": 0.03294923156499863,
+     "offsets_1_2_l0": 0.043103478848934174,
+     "loss_rep": 4.070806356278884
+    },
+    "source_l1_at_the_end": 0.9200137853622437,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.76
+       ],
+       [
+        0,
+        0.047
+       ],
+       [
+        1,
+        0.042
+       ]
+      ],
+      "attention_d1": 0.04172706976532936
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.994
+       ],
+       [
+        0,
+        0.017
+       ],
+       [
+        3,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.9943044185638428
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9881014758060416,
+    "loss_all": 2.8931977084887053,
+    "loss_rep": 0.17545839036707195,
+    "loss_other": 4.240790909490525,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9946053624153137,
+    "d2_l0_max": 0.7199591994285583
+   },
+   {
+    "arm": "lr5e-4_natural",
+    "name": "lr5e-4_natural_single_rm12_h2_s301",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9055719519336497,
+    "p_best_with_one_layer0_head": 0.8400319859502292,
+    "loss_rep_probe": 0.18250353583284126,
+    "first_step_with_loss_rep_below_2": 900,
+    "at_step_300": {
+     "band_l0": 0.5730371933085707,
+     "band_l1": 0.6574321545058318,
+     "source_l1": 0.0292514581233263,
+     "offsets_1_2_l0": 0.03682024031877518,
+     "loss_rep": 4.061572548505933
+    },
+    "source_l1_at_the_end": 0.9207620024681091,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.993
+       ],
+       [
+        0,
+        0.017
+       ],
+       [
+        3,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.9933010339736938
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.743
+       ],
+       [
+        0,
+        0.049
+       ],
+       [
+        34,
+        0.024
+       ]
+      ],
+      "attention_d1": 0.018492605537176132
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9879632755560291,
+    "loss_all": 2.889750305787522,
+    "loss_rep": 0.17743218383326295,
+    "loss_other": 4.234655402360879,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9936743378639221,
+    "d2_l0_max": 0.6805143356323242
+   },
+   {
+    "arm": "lr5e-4_natural",
+    "name": "lr5e-4_natural_single_rm12_h2_s302",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9161571364214628,
+    "p_best_with_one_layer0_head": 0.8100796101836748,
+    "loss_rep_probe": 0.16789667998439067,
+    "first_step_with_loss_rep_below_2": 950,
+    "at_step_300": {
+     "band_l0": 0.5541724221117826,
+     "band_l1": 0.6653433909018048,
+     "source_l1": 0.030028371140360832,
+     "offsets_1_2_l0": 0.03876345232129097,
+     "loss_rep": 4.061327965020137
+    },
+    "source_l1_at_the_end": 0.937715470790863,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.695
+       ],
+       [
+        0,
+        0.065
+       ],
+       [
+        1,
+        0.03
+       ]
+      ],
+      "attention_d1": 0.02984093874692917
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.986
+       ],
+       [
+        0,
+        0.019
+       ],
+       [
+        3,
+        0.005
+       ]
+      ],
+      "attention_d1": 0.9859204292297363
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9851951388358506,
+    "loss_all": 2.896774521697331,
+    "loss_rep": 0.19253280232751765,
+    "loss_other": 4.237674927629911,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9870723485946655,
+    "d2_l0_max": 0.6511489152908325
+   },
+   {
+    "arm": "lr5e-4_natural",
+    "name": "lr5e-4_natural_single_rm12_h4_s300",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9048139245812646,
+    "p_best_with_one_layer0_head": 0.6762308931304398,
+    "loss_rep_probe": 0.19338934530299803,
+    "first_step_with_loss_rep_below_2": 1350,
+    "at_step_300": {
+     "band_l0": 0.5238973586226001,
+     "band_l1": 0.6231497697178459,
+     "source_l1": 0.030665138736367226,
+     "offsets_1_2_l0": 0.0440838448703289,
+     "loss_rep": 4.07905477079061
+    },
+    "source_l1_at_the_end": 0.920826256275177,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        0,
+        0.093
+       ],
+       [
+        1,
+        0.087
+       ],
+       [
+        2,
+        0.064
+       ]
+      ],
+      "attention_d1": 0.08733787387609482
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.758
+       ],
+       [
+        0,
+        0.041
+       ],
+       [
+        1,
+        0.025
+       ]
+      ],
+      "attention_d1": 0.025023389607667923
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        1,
+        0.987
+       ],
+       [
+        0,
+        0.02
+       ],
+       [
+        3,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.9873088598251343
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        0,
+        0.355
+       ],
+       [
+        1,
+        0.164
+       ],
+       [
+        2,
+        0.104
+       ]
+      ],
+      "attention_d1": 0.16435007750988007
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9863904845191281,
+    "loss_all": 2.8958847103615746,
+    "loss_rep": 0.19399411421454044,
+    "loss_other": 4.235619309975422,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9886885285377502,
+    "d2_l0_max": 0.715630292892456
+   },
+   {
+    "arm": "lr5e-4_natural",
+    "name": "lr5e-4_natural_single_rm12_h4_s301",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9017173408118251,
+    "p_best_with_one_layer0_head": 0.7255124846861792,
+    "loss_rep_probe": 0.1902973561525924,
+    "first_step_with_loss_rep_below_2": 1400,
+    "at_step_300": {
+     "band_l0": 0.5319837448200689,
+     "band_l1": 0.6468710441087706,
+     "source_l1": 0.02924513630568981,
+     "offsets_1_2_l0": 0.041842568665742874,
+     "loss_rep": 4.068667767358673
+    },
+    "source_l1_at_the_end": 0.9269140958786011,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.988
+       ],
+       [
+        0,
+        0.02
+       ],
+       [
+        3,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.9884734153747559
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.081
+       ],
+       [
+        0,
+        0.074
+       ],
+       [
+        2,
+        0.058
+       ]
+      ],
+      "attention_d1": 0.0810890644788742
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        0,
+        0.14
+       ],
+       [
+        1,
+        0.096
+       ],
+       [
+        2,
+        0.074
+       ]
+      ],
+      "attention_d1": 0.09583347290754318
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        2,
+        0.766
+       ],
+       [
+        0,
+        0.036
+       ],
+       [
+        1,
+        0.022
+       ]
+      ],
+      "attention_d1": 0.02159171737730503
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9876682685428585,
+    "loss_all": 2.896589228706339,
+    "loss_rep": 0.19158655653927062,
+    "loss_other": 4.237866953688258,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.989392101764679,
+    "d2_l0_max": 0.6970087885856628
+   },
+   {
+    "arm": "lr5e-4_natural",
+    "name": "lr5e-4_natural_single_rm12_h4_s302",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9091413605510601,
+    "p_best_with_one_layer0_head": 0.6996127556665318,
+    "loss_rep_probe": 0.18308595630051566,
+    "first_step_with_loss_rep_below_2": 1450,
+    "at_step_300": {
+     "band_l0": 0.5248561694902824,
+     "band_l1": 0.6493495779330776,
+     "source_l1": 0.029776452109217644,
+     "offsets_1_2_l0": 0.042256761342287064,
+     "loss_rep": 4.072228590563388
+    },
+    "source_l1_at_the_end": 0.9092550277709961,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        0,
+        0.108
+       ],
+       [
+        1,
+        0.09
+       ],
+       [
+        2,
+        0.081
+       ]
+      ],
+      "attention_d1": 0.09033460915088654
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.969
+       ],
+       [
+        0,
+        0.029
+       ],
+       [
+        3,
+        0.006
+       ]
+      ],
+      "attention_d1": 0.9685800671577454
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        2,
+        0.296
+       ],
+       [
+        0,
+        0.223
+       ],
+       [
+        1,
+        0.155
+       ]
+      ],
+      "attention_d1": 0.15461485087871552
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        2,
+        0.618
+       ],
+       [
+        1,
+        0.151
+       ],
+       [
+        0,
+        0.102
+       ]
+      ],
+      "attention_d1": 0.15098027884960175
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9781632560865964,
+    "loss_all": 2.8973880650736987,
+    "loss_rep": 0.19550271852829107,
+    "loss_other": 4.237120061668407,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9644569754600525,
+    "d2_l0_max": 0.5007568597793579
+   }
+  ],
+  "lr5e-4_w600_1600": [
+   {
+    "arm": "lr5e-4_w600_1600",
+    "name": "lr5e-4_w600_1600_single_rm12_h2_s300",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9067081717080784,
+    "p_best_with_one_layer0_head": 0.843339478739201,
+    "loss_rep_probe": 0.18119967366591955,
+    "first_step_with_loss_rep_below_2": 950,
+    "at_step_300": {
+     "band_l0": 0.5396263556667954,
+     "band_l1": 0.6565014708623402,
+     "source_l1": 0.03294923156499863,
+     "offsets_1_2_l0": 0.043103478848934174,
+     "loss_rep": 4.070806356278884
+    },
+    "source_l1_at_the_end": 0.9241878986358643,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.743
+       ],
+       [
+        0,
+        0.074
+       ],
+       [
+        5,
+        0.025
+       ]
+      ],
+      "attention_d1": 0.021330544725060463
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.994
+       ],
+       [
+        0,
+        0.017
+       ],
+       [
+        3,
+        0.003
+       ]
+      ],
+      "attention_d1": 0.993598222732544
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9880599091561348,
+    "loss_all": 2.892468174900644,
+    "loss_rep": 0.17901732926530534,
+    "loss_other": 4.237934933411575,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9947130084037781,
+    "d2_l0_max": 0.7095288038253784
+   },
+   {
+    "arm": "lr5e-4_w600_1600",
+    "name": "lr5e-4_w600_1600_single_rm12_h2_s301",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9041882582775925,
+    "p_best_with_one_layer0_head": 0.8378624452169612,
+    "loss_rep_probe": 0.18502689791316806,
+    "first_step_with_loss_rep_below_2": 1000,
+    "at_step_300": {
+     "band_l0": 0.5730371933085707,
+     "band_l1": 0.6574321545058318,
+     "source_l1": 0.0292514581233263,
+     "offsets_1_2_l0": 0.03682024031877518,
+     "loss_rep": 4.061572548505933
+    },
+    "source_l1_at_the_end": 0.9223335385322571,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.994
+       ],
+       [
+        0,
+        0.017
+       ],
+       [
+        4,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.994222104549408
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.745
+       ],
+       [
+        0,
+        0.067
+       ],
+       [
+        1,
+        0.039
+       ]
+      ],
+      "attention_d1": 0.0391131155192852
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9895235926348461,
+    "loss_all": 2.890970568534979,
+    "loss_rep": 0.18371340228806526,
+    "loss_other": 4.233366186198303,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9929355382919312,
+    "d2_l0_max": 0.6868194937705994
+   },
+   {
+    "arm": "lr5e-4_w600_1600",
+    "name": "lr5e-4_w600_1600_single_rm12_h2_s302",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9162374497205241,
+    "p_best_with_one_layer0_head": 0.8498804197941578,
+    "loss_rep_probe": 0.1652056290597088,
+    "first_step_with_loss_rep_below_2": 1050,
+    "at_step_300": {
+     "band_l0": 0.5541724221117826,
+     "band_l1": 0.6653433909018048,
+     "source_l1": 0.030028371140360832,
+     "offsets_1_2_l0": 0.03876345232129097,
+     "loss_rep": 4.061327965020137
+    },
+    "source_l1_at_the_end": 0.9355186223983765,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.725
+       ],
+       [
+        0,
+        0.048
+       ],
+       [
+        1,
+        0.035
+       ]
+      ],
+      "attention_d1": 0.03465382009744644
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.983
+       ],
+       [
+        0,
+        0.02
+       ],
+       [
+        3,
+        0.004
+       ]
+      ],
+      "attention_d1": 0.9830461740493774
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9883449229118674,
+    "loss_all": 2.892169930632387,
+    "loss_rep": 0.18523870629924336,
+    "loss_other": 4.234403929738704,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9842903017997742,
+    "d2_l0_max": 0.6771235466003418
+   },
+   {
+    "arm": "lr5e-4_w600_1600",
+    "name": "lr5e-4_w600_1600_single_rm12_h4_s300",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.8947167298776318,
+    "p_best_with_one_layer0_head": 0.6932966985310873,
+    "loss_rep_probe": 0.2230874427738098,
+    "first_step_with_loss_rep_below_2": 1250,
+    "at_step_300": {
+     "band_l0": 0.5238973586226001,
+     "band_l1": 0.6231497697178459,
+     "source_l1": 0.030665138736367226,
+     "offsets_1_2_l0": 0.0440838448703289,
+     "loss_rep": 4.07905477079061
+    },
+    "source_l1_at_the_end": 0.9237444400787354,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.357
+       ],
+       [
+        1,
+        0.136
+       ],
+       [
+        3,
+        0.135
+       ]
+      ],
+      "attention_d1": 0.13635005056858063
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.657
+       ],
+       [
+        0,
+        0.188
+       ],
+       [
+        2,
+        0.107
+       ]
+      ],
+      "attention_d1": 0.6567095518112183
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        1,
+        0.396
+       ],
+       [
+        0,
+        0.268
+       ],
+       [
+        2,
+        0.168
+       ]
+      ],
+      "attention_d1": 0.3960981070995331
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        2,
+        0.362
+       ],
+       [
+        1,
+        0.292
+       ],
+       [
+        0,
+        0.164
+       ]
+      ],
+      "attention_d1": 0.29197514057159424
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9773454302537328,
+    "loss_all": 2.9126097907780686,
+    "loss_rep": 0.22476436234216424,
+    "loss_other": 4.245380082818984,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.600492000579834,
+    "d2_l0_max": 0.29231417179107666
+   },
+   {
+    "arm": "lr5e-4_w600_1600",
+    "name": "lr5e-4_w600_1600_single_rm12_h4_s301",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9020996699057819,
+    "p_best_with_one_layer0_head": 0.6564500348837943,
+    "loss_rep_probe": 0.19246717023163526,
+    "first_step_with_loss_rep_below_2": 1300,
+    "at_step_300": {
+     "band_l0": 0.5319837448200689,
+     "band_l1": 0.6468710441087706,
+     "source_l1": 0.02924513630568981,
+     "offsets_1_2_l0": 0.041842568665742874,
+     "loss_rep": 4.068667767358673
+    },
+    "source_l1_at_the_end": 0.9353592395782471,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.9
+       ],
+       [
+        0,
+        0.061
+       ],
+       [
+        2,
+        0.019
+       ]
+      ],
+      "attention_d1": 0.9000847339630127
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.581
+       ],
+       [
+        1,
+        0.075
+       ],
+       [
+        3,
+        0.059
+       ]
+      ],
+      "attention_d1": 0.07545825093984604
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        2,
+        0.278
+       ],
+       [
+        1,
+        0.257
+       ],
+       [
+        0,
+        0.223
+       ]
+      ],
+      "attention_d1": 0.2573470175266266
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        0,
+        0.309
+       ],
+       [
+        1,
+        0.264
+       ],
+       [
+        2,
+        0.194
+       ]
+      ],
+      "attention_d1": 0.26445910334587097
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9832204057320064,
+    "loss_all": 2.9003718651678625,
+    "loss_rep": 0.20127542716492441,
+    "loss_other": 4.238720979245108,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.8739261031150818,
+    "d2_l0_max": 0.45271286368370056
+   },
+   {
+    "arm": "lr5e-4_w600_1600",
+    "name": "lr5e-4_w600_1600_single_rm12_h4_s302",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9133415858717293,
+    "p_best_with_one_layer0_head": 0.6056066802540176,
+    "loss_rep_probe": 0.17643777494213259,
+    "first_step_with_loss_rep_below_2": 1300,
+    "at_step_300": {
+     "band_l0": 0.5248561694902824,
+     "band_l1": 0.6493495779330776,
+     "source_l1": 0.029776452109217644,
+     "offsets_1_2_l0": 0.042256761342287064,
+     "loss_rep": 4.072228590563388
+    },
+    "source_l1_at_the_end": 0.7318323254585266,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.516
+       ],
+       [
+        1,
+        0.117
+       ],
+       [
+        3,
+        0.112
+       ]
+      ],
+      "attention_d1": 0.11697868257761002
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.429
+       ],
+       [
+        0,
+        0.225
+       ],
+       [
+        2,
+        0.205
+       ]
+      ],
+      "attention_d1": 0.4289112687110901
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        1,
+        0.291
+       ],
+       [
+        2,
+        0.277
+       ],
+       [
+        0,
+        0.195
+       ]
+      ],
+      "attention_d1": 0.2908206880092621
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        1,
+        0.703
+       ],
+       [
+        0,
+        0.191
+       ],
+       [
+        2,
+        0.071
+       ]
+      ],
+      "attention_d1": 0.7028513550758362
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     -1
+    ],
+    "deep_decoy_over_clean": 0.9779887812566872,
+    "loss_all": 2.897996662042553,
+    "loss_rep": 0.19374261855652836,
+    "loss_other": 4.23890317889795,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.6480222940444946,
+    "d2_l0_max": 0.40073487162590027
+   }
+  ],
+  "lr5e-4_w700_1700": [
+   {
+    "arm": "lr5e-4_w700_1700",
+    "name": "lr5e-4_w700_1700_single_rm12_h2_s300",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9098976831318912,
+    "p_best_with_one_layer0_head": 0.8418662972288194,
+    "loss_rep_probe": 0.17792773361492456,
+    "first_step_with_loss_rep_below_2": 950,
+    "at_step_300": {
+     "band_l0": 0.5396263556667954,
+     "band_l1": 0.6565014708623402,
+     "source_l1": 0.03294923156499863,
+     "offsets_1_2_l0": 0.043103478848934174,
+     "loss_rep": 4.070806356278884
+    },
+    "source_l1_at_the_end": 0.9258376955986023,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.755
+       ],
+       [
+        0,
+        0.058
+       ],
+       [
+        1,
+        0.026
+       ]
+      ],
+      "attention_d1": 0.026052849367260933
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.994
+       ],
+       [
+        0,
+        0.017
+       ],
+       [
+        4,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.9939460754394531
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9900048801338808,
+    "loss_all": 2.893493224591738,
+    "loss_rep": 0.17785087235590988,
+    "loss_other": 4.240046643392373,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9940338134765625,
+    "d2_l0_max": 0.7216481566429138
+   },
+   {
+    "arm": "lr5e-4_w700_1700",
+    "name": "lr5e-4_w700_1700_single_rm12_h2_s301",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9048566237320204,
+    "p_best_with_one_layer0_head": 0.836020121655911,
+    "loss_rep_probe": 0.18434608726524665,
+    "first_step_with_loss_rep_below_2": 950,
+    "at_step_300": {
+     "band_l0": 0.5730371933085707,
+     "band_l1": 0.6574321545058318,
+     "source_l1": 0.0292514581233263,
+     "offsets_1_2_l0": 0.03682024031877518,
+     "loss_rep": 4.061572548505933
+    },
+    "source_l1_at_the_end": 0.9254927039146423,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.99
+       ],
+       [
+        0,
+        0.02
+       ],
+       [
+        3,
+        0.003
+       ]
+      ],
+      "attention_d1": 0.9899857044219971
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.749
+       ],
+       [
+        0,
+        0.051
+       ],
+       [
+        1,
+        0.025
+       ]
+      ],
+      "attention_d1": 0.02484602853655815
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9891716691060851,
+    "loss_all": 2.8905617353671778,
+    "loss_rep": 0.18228661829631895,
+    "loss_other": 4.2334621047556436,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9924666285514832,
+    "d2_l0_max": 0.680894672870636
+   },
+   {
+    "arm": "lr5e-4_w700_1700",
+    "name": "lr5e-4_w700_1700_single_rm12_h2_s302",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9121343558731456,
+    "p_best_with_one_layer0_head": 0.8499717859826451,
+    "loss_rep_probe": 0.16802997274880782,
+    "first_step_with_loss_rep_below_2": 1050,
+    "at_step_300": {
+     "band_l0": 0.5541724221117826,
+     "band_l1": 0.6653433909018048,
+     "source_l1": 0.030028371140360832,
+     "offsets_1_2_l0": 0.03876345232129097,
+     "loss_rep": 4.061327965020137
+    },
+    "source_l1_at_the_end": 0.9287068247795105,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.755
+       ],
+       [
+        0,
+        0.054
+       ],
+       [
+        1,
+        0.038
+       ]
+      ],
+      "attention_d1": 0.03797977417707443
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.992
+       ],
+       [
+        0,
+        0.018
+       ],
+       [
+        3,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.9923489689826965
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9878204206359263,
+    "loss_all": 2.8920337335987445,
+    "loss_rep": 0.18999510697415092,
+    "loss_other": 4.231841734242547,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9938502907752991,
+    "d2_l0_max": 0.7099935412406921
+   },
+   {
+    "arm": "lr5e-4_w700_1700",
+    "name": "lr5e-4_w700_1700_single_rm12_h4_s300",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9073632746581681,
+    "p_best_with_one_layer0_head": 0.6997351264126207,
+    "loss_rep_probe": 0.187484662605676,
+    "first_step_with_loss_rep_below_2": 1300,
+    "at_step_300": {
+     "band_l0": 0.5238973586226001,
+     "band_l1": 0.6231497697178459,
+     "source_l1": 0.030665138736367226,
+     "offsets_1_2_l0": 0.0440838448703289,
+     "loss_rep": 4.07905477079061
+    },
+    "source_l1_at_the_end": 0.9250913858413696,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.072
+       ],
+       [
+        0,
+        0.068
+       ],
+       [
+        2,
+        0.054
+       ]
+      ],
+      "attention_d1": 0.07176437973976135
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        0,
+        0.262
+       ],
+       [
+        2,
+        0.171
+       ],
+       [
+        1,
+        0.115
+       ]
+      ],
+      "attention_d1": 0.11477617919445038
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        1,
+        0.99
+       ],
+       [
+        0,
+        0.019
+       ],
+       [
+        3,
+        0.003
+       ]
+      ],
+      "attention_d1": 0.9897971749305725
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        2,
+        0.743
+       ],
+       [
+        0,
+        0.077
+       ],
+       [
+        1,
+        0.042
+       ]
+      ],
+      "attention_d1": 0.04189059138298035
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9870238044933248,
+    "loss_all": 2.8972409559928796,
+    "loss_rep": 0.18549898893284764,
+    "loss_other": 4.241860365703994,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9912874698638916,
+    "d2_l0_max": 0.7222843170166016
+   },
+   {
+    "arm": "lr5e-4_w700_1700",
+    "name": "lr5e-4_w700_1700_single_rm12_h4_s301",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.8992595831556729,
+    "p_best_with_one_layer0_head": 0.7791025931449913,
+    "loss_rep_probe": 0.19479156691395152,
+    "first_step_with_loss_rep_below_2": 1350,
+    "at_step_300": {
+     "band_l0": 0.5319837448200689,
+     "band_l1": 0.6468710441087706,
+     "source_l1": 0.02924513630568981,
+     "offsets_1_2_l0": 0.041842568665742874,
+     "loss_rep": 4.068667767358673
+    },
+    "source_l1_at_the_end": 0.9358078241348267,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.989
+       ],
+       [
+        0,
+        0.021
+       ],
+       [
+        3,
+        0.003
+       ]
+      ],
+      "attention_d1": 0.9885448217391968
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.09
+       ],
+       [
+        0,
+        0.082
+       ],
+       [
+        2,
+        0.076
+       ]
+      ],
+      "attention_d1": 0.08962986618280411
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        2,
+        0.776
+       ],
+       [
+        0,
+        0.05
+       ],
+       [
+        1,
+        0.044
+       ]
+      ],
+      "attention_d1": 0.0439901128411293
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        0,
+        0.385
+       ],
+       [
+        1,
+        0.184
+       ],
+       [
+        2,
+        0.148
+       ]
+      ],
+      "attention_d1": 0.18368341028690338
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9855629508678255,
+    "loss_all": 2.8940635114714577,
+    "loss_rep": 0.19180909900226983,
+    "loss_other": 4.233978509697813,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9902350902557373,
+    "d2_l0_max": 0.7222113609313965
+   },
+   {
+    "arm": "lr5e-4_w700_1700",
+    "name": "lr5e-4_w700_1700_single_rm12_h4_s302",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9158151906904349,
+    "p_best_with_one_layer0_head": 0.7209516763360059,
+    "loss_rep_probe": 0.17685141796794518,
+    "first_step_with_loss_rep_below_2": 1350,
+    "at_step_300": {
+     "band_l0": 0.5248561694902824,
+     "band_l1": 0.6493495779330776,
+     "source_l1": 0.029776452109217644,
+     "offsets_1_2_l0": 0.042256761342287064,
+     "loss_rep": 4.072228590563388
+    },
+    "source_l1_at_the_end": 0.7583548426628113,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.084
+       ],
+       [
+        0,
+        0.073
+       ],
+       [
+        2,
+        0.066
+       ]
+      ],
+      "attention_d1": 0.0843643993139267
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.987
+       ],
+       [
+        0,
+        0.02
+       ],
+       [
+        2,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.9872164726257324
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        2,
+        0.74
+       ],
+       [
+        1,
+        0.077
+       ],
+       [
+        0,
+        0.048
+       ]
+      ],
+      "attention_d1": 0.07664483785629272
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        1,
+        0.222
+       ],
+       [
+        0,
+        0.219
+       ],
+       [
+        2,
+        0.102
+       ]
+      ],
+      "attention_d1": 0.22238054871559143
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9884855341542405,
+    "loss_all": 2.8956416214109,
+    "loss_rep": 0.19237194709319094,
+    "loss_other": 4.236060038031794,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9867864847183228,
+    "d2_l0_max": 0.707078754901886
+   }
+  ],
+  "lr5e-4_w1050_2050": [
+   {
+    "arm": "lr5e-4_w1050_2050",
+    "name": "lr5e-4_w1050_2050_single_rm12_h2_s300",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9079875717177313,
+    "p_best_with_one_layer0_head": 0.828186554119337,
+    "loss_rep_probe": 0.18124169477095722,
+    "first_step_with_loss_rep_below_2": 900,
+    "at_step_300": {
+     "band_l0": 0.5396263556667954,
+     "band_l1": 0.6565014708623402,
+     "source_l1": 0.03294923156499863,
+     "offsets_1_2_l0": 0.043103478848934174,
+     "loss_rep": 4.070806356278884
+    },
+    "source_l1_at_the_end": 0.9212632775306702,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.736
+       ],
+       [
+        0,
+        0.069
+       ],
+       [
+        1,
+        0.046
+       ]
+      ],
+      "attention_d1": 0.04640429466962814
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.993
+       ],
+       [
+        0,
+        0.018
+       ],
+       [
+        3,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.9927991628646851
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9888784759261383,
+    "loss_all": 2.893870590917549,
+    "loss_rep": 0.18209632467399098,
+    "loss_other": 4.238506016204488,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9938541054725647,
+    "d2_l0_max": 0.7034242153167725
+   },
+   {
+    "arm": "lr5e-4_w1050_2050",
+    "name": "lr5e-4_w1050_2050_single_rm12_h2_s301",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9032817594030854,
+    "p_best_with_one_layer0_head": 0.8337830487496302,
+    "loss_rep_probe": 0.18439625367134202,
+    "first_step_with_loss_rep_below_2": 900,
+    "at_step_300": {
+     "band_l0": 0.5730371933085707,
+     "band_l1": 0.6574321545058318,
+     "source_l1": 0.0292514581233263,
+     "offsets_1_2_l0": 0.03682024031877518,
+     "loss_rep": 4.061572548505933
+    },
+    "source_l1_at_the_end": 0.9201842546463013,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.994
+       ],
+       [
+        0,
+        0.017
+       ],
+       [
+        3,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.9936249256134033
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        2,
+        0.762
+       ],
+       [
+        0,
+        0.049
+       ],
+       [
+        1,
+        0.022
+       ]
+      ],
+      "attention_d1": 0.021931767463684082
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9880735252209697,
+    "loss_all": 2.890298974097543,
+    "loss_rep": 0.18392881490563978,
+    "loss_other": 4.232254768607631,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9930294156074524,
+    "d2_l0_max": 0.7070232629776001
+   },
+   {
+    "arm": "lr5e-4_w1050_2050",
+    "name": "lr5e-4_w1050_2050_single_rm12_h2_s302",
+    "n_head": 2,
+    "relay_delta": 0,
+    "p_all": 0.9173921336211909,
+    "p_best_with_one_layer0_head": 0.8420408651315862,
+    "loss_rep_probe": 0.1624409749547574,
+    "first_step_with_loss_rep_below_2": 950,
+    "at_step_300": {
+     "band_l0": 0.5541724221117826,
+     "band_l1": 0.6653433909018048,
+     "source_l1": 0.030028371140360832,
+     "offsets_1_2_l0": 0.03876345232129097,
+     "loss_rep": 4.061327965020137
+    },
+    "source_l1_at_the_end": 0.9321984648704529,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        2,
+        0.725
+       ],
+       [
+        0,
+        0.064
+       ],
+       [
+        4,
+        0.031
+       ]
+      ],
+      "attention_d1": 0.02175241895020008
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.992
+       ],
+       [
+        0,
+        0.017
+       ],
+       [
+        3,
+        0.004
+       ]
+      ],
+      "attention_d1": 0.9920276403427124
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.987628058388289,
+    "loss_all": 2.8913851625585254,
+    "loss_rep": 0.18053486592798015,
+    "loss_other": 4.235562436778462,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9925227165222168,
+    "d2_l0_max": 0.6873118281364441
+   },
+   {
+    "arm": "lr5e-4_w1050_2050",
+    "name": "lr5e-4_w1050_2050_single_rm12_h4_s300",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.6913026613671761,
+    "p_best_with_one_layer0_head": 0.28338241206760734,
+    "loss_rep_probe": 0.649852572246048,
+    "first_step_with_loss_rep_below_2": 1400,
+    "at_step_300": {
+     "band_l0": 0.5238973586226001,
+     "band_l1": 0.6231497697178459,
+     "source_l1": 0.030665138736367226,
+     "offsets_1_2_l0": 0.0440838448703289,
+     "loss_rep": 4.07905477079061
+    },
+    "source_l1_at_the_end": 0.6486369371414185,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        0,
+        0.541
+       ],
+       [
+        11,
+        0.074
+       ],
+       [
+        10,
+        0.049
+       ]
+      ],
+      "attention_d1": 0.028935899958014488
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        0,
+        0.088
+       ],
+       [
+        1,
+        0.066
+       ],
+       [
+        2,
+        0.057
+       ]
+      ],
+      "attention_d1": 0.06552371382713318
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        1,
+        0.538
+       ],
+       [
+        12,
+        0.065
+       ],
+       [
+        11,
+        0.046
+       ]
+      ],
+      "attention_d1": 0.5378761291503906
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        0,
+        0.611
+       ],
+       [
+        11,
+        0.059
+       ],
+       [
+        10,
+        0.045
+       ]
+      ],
+      "attention_d1": 0.001075942418538034
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.5296221665969929,
+    "loss_all": 3.0935098400878873,
+    "loss_rep": 0.6562015618848677,
+    "loss_other": 4.3020510870541075,
+    "formed": true,
+    "textbook": false,
+    "d1_l0_max": 0.19604389369487762,
+    "d2_l0_max": 0.025168539956212044
+   },
+   {
+    "arm": "lr5e-4_w1050_2050",
+    "name": "lr5e-4_w1050_2050_single_rm12_h4_s301",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.903143030951331,
+    "p_best_with_one_layer0_head": 0.7356771168682338,
+    "loss_rep_probe": 0.19208517595944952,
+    "first_step_with_loss_rep_below_2": 1450,
+    "at_step_300": {
+     "band_l0": 0.5319837448200689,
+     "band_l1": 0.6468710441087706,
+     "source_l1": 0.02924513630568981,
+     "offsets_1_2_l0": 0.041842568665742874,
+     "loss_rep": 4.068667767358673
+    },
+    "source_l1_at_the_end": 0.9329702854156494,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        1,
+        0.988
+       ],
+       [
+        0,
+        0.021
+       ],
+       [
+        4,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.9877169132232666
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        0,
+        0.096
+       ],
+       [
+        1,
+        0.08
+       ],
+       [
+        3,
+        0.059
+       ]
+      ],
+      "attention_d1": 0.08045541495084763
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        0,
+        0.124
+       ],
+       [
+        1,
+        0.081
+       ],
+       [
+        3,
+        0.061
+       ]
+      ],
+      "attention_d1": 0.08110974729061127
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        2,
+        0.758
+       ],
+       [
+        0,
+        0.027
+       ],
+       [
+        1,
+        0.026
+       ]
+      ],
+      "attention_d1": 0.026227140799164772
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.9874583491585478,
+    "loss_all": 2.8953556699670475,
+    "loss_rep": 0.1900913710244596,
+    "loss_other": 4.236763122793554,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9885940551757812,
+    "d2_l0_max": 0.699484646320343
+   },
+   {
+    "arm": "lr5e-4_w1050_2050",
+    "name": "lr5e-4_w1050_2050_single_rm12_h4_s302",
+    "n_head": 4,
+    "relay_delta": 0,
+    "p_all": 0.9131229973208923,
+    "p_best_with_one_layer0_head": 0.7538651145929355,
+    "loss_rep_probe": 0.17453703780673785,
+    "first_step_with_loss_rep_below_2": 1500,
+    "at_step_300": {
+     "band_l0": 0.5248561694902824,
+     "band_l1": 0.6493495779330776,
+     "source_l1": 0.029776452109217644,
+     "offsets_1_2_l0": 0.042256761342287064,
+     "loss_rep": 4.072228590563388
+    },
+    "source_l1_at_the_end": 0.8718671798706055,
+    "layer0": {
+     "l0h0": {
+      "top_offsets": [
+       [
+        0,
+        0.114
+       ],
+       [
+        1,
+        0.079
+       ],
+       [
+        2,
+        0.062
+       ]
+      ],
+      "attention_d1": 0.07852090895175934
+     },
+     "l0h1": {
+      "top_offsets": [
+       [
+        1,
+        0.991
+       ],
+       [
+        0,
+        0.019
+       ],
+       [
+        2,
+        0.002
+       ]
+      ],
+      "attention_d1": 0.991227924823761
+     },
+     "l0h2": {
+      "top_offsets": [
+       [
+        2,
+        0.466
+       ],
+       [
+        0,
+        0.174
+       ],
+       [
+        1,
+        0.12
+       ]
+      ],
+      "attention_d1": 0.119563989341259
+     },
+     "l0h3": {
+      "top_offsets": [
+       [
+        2,
+        0.678
+       ],
+       [
+        1,
+        0.068
+       ],
+       [
+        0,
+        0.061
+       ]
+      ],
+      "attention_d1": 0.0676257386803627
+     }
+    },
+    "layer1_modal_deltas": [
+     0,
+     0,
+     0,
+     0
+    ],
+    "deep_decoy_over_clean": 0.987521125690865,
+    "loss_all": 2.896073012653255,
+    "loss_rep": 0.19442829647060603,
+    "loss_other": 4.235685692491331,
+    "formed": true,
+    "textbook": true,
+    "d1_l0_max": 0.9926171898841858,
+    "d2_l0_max": 0.6427857875823975
+   }
+  ]
  }
 }
