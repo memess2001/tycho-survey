@@ -102,6 +102,12 @@ Added after the two core windows at d_model 128 (both gave 6 of 6 textbook circu
 most 4 for the one from step 700, and so had the plain expectation above): one later window at d_model 128, from
 step 1,200, after the relays of the 4-head runs have formed (steps 840 to 1,030). It asks whether there is a point
 of no return at this width at all; at d_model 64 the relay came back after such a window. No prediction on record.
+Added after that window (6 of 6 textbook circuits at d_model 128: the three relays that had formed were converted
+and did not come back): the same question at d_model 64 with a longer mask, steps 3,000 to 4,999 instead of 3,000
+to 3,499. If the relay is converted when the mask lasts four times as long, the "critical period" of a 500-step
+mask is a matter of how long the alternative takes to build, not a point of no return. Expectation recorded before
+the runs: more likely converted than not (the textbook circuit has the lower loss and the mask leaves it free to
+form), without confidence.
 
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/relay_period_pilot.py
 --jobs 4`` (``--skip-runs`` analyses the cache). Needs the outputs of ``relay_followup_pilot.py``,
@@ -168,6 +174,7 @@ ARMS = {
     "rm16_lr2e-3_b128_natural": ("rm16_lr2e-3_b128", None, FULL_STEPS),
     "d128_far_w550_1050": ("d128", (550, 1050), FULL_STEPS, "far"),
     "d128_far_w1200_1700": ("d128", (1200, 1700), FULL_STEPS, "far"),
+    "base_far_w3000_5000": ("base", (3000, 5000), FULL_STEPS, "far"),
 }
 #: the steps (t1, t2) the reviewer names for its two formulas, by setting: (loss formula, attention formula)
 FORMULA_STEPS = {"base": ((100, 300), (200, 300)), "lr5e-4": ((150, 350), (150, 350)),
