@@ -40,6 +40,28 @@ Recorded before the runs of (b) and (c) were started: the equal-N comparison (a)
 and 32 agree at equal N, cells with batch 128 lag by a few thousand sequences); neither outcome of (c) was known
 or expected with any confidence.
 
+Second set of (c), recorded after the first two arms and before its runs. The first two arms came out as step 3
+has it: qk0_half 6 of 6 textbook circuits, rest_half 0 of 6. With the two reference cells that is a two-by-two in
+which the circuit follows the learning rate of layer 0's query and key weights and nothing else. Stated as a
+hypothesis H: the circuit is set by lr/√B of layer 0's query and key weights alone, with the threshold where the
+whole network has it (textbook circuits at 0.88e-4 and 1.25e-4, relays at 1.77e-4 and above). Five arms test it
+away from the two-by-two:
+
+* qk1_double: the baseline with the learning rate of layer 1's query and key weights doubled. Layer 0's are at
+  1.77e-4, so H predicts relays (at most 1 of 6). If what counts is instead how fast layer 0's attention learns
+  relative to layer 1's (the ratio is one half here, as in qk0_half), it gives textbook circuits (at least 5).
+* qk0_0.71: the baseline with layer 0's query and key weights at 1/√2 of the learning rate (1.25e-4, where the
+  whole network gave 5 of 6). H predicts at least 4 of 6.
+* lr5e-4_b8_qk0_half: learning rate 5e-4, batch 8 (1 of 6 without the change), layer 0's query and key weights at
+  half (0.88e-4). H predicts at least 5 of 6.
+* lr2e-3_qk0_quarter: learning rate 2e-3, batch 32 (0 of 6), layer 0's query and key weights at a quarter
+  (0.88e-4) while everything else stays at 3.54e-4. H predicts at least 5 of 6.
+* lr2e-3_qk0_half: the same cell with those weights at half (1.77e-4). H predicts at most 1 of 6.
+
+H fails if qk1_double gives 3 or more textbook circuits, if either arm at 0.88e-4 gives 3 or fewer, or if
+lr2e-3_qk0_half gives 3 or more. Expectation recorded with it: no confident view on qk1_double and on
+lr2e-3_qk0_quarter (the rest of that network is at four times the noise scale of the weights that are slowed).
+
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/relay_noise_pilot.py
 --jobs 4`` (``--skip-runs`` analyses the cache). Needs the cached runs and the output of
 ``relay_period_pilot.py``. Runs are cached in ``work/relay_band``. Writes
@@ -70,8 +92,14 @@ LOW, HIGH = ("lr2.5e-4_b8", "lr5e-4", "b128"), ("lr5e-4_b8", "base", "lr2e-3_b12
 N_STEP, N_LAST = 3_200, 38_400                          # sequences between measurements, and in all
 GROUPS = ("pos", "tok", "qk0", "ov0", "qk1", "ov1", "head")
 KEYS = ("band_l0", "band_l1", "source_l1", "offsets_1_2_l0", "loss_rep")
-#: intervention arms: learning-rate factors by group of weights (see relay_band_pilot.weight_groups)
-ARMS = {"qk0_half": {"qk0": 0.5}, "rest_half": {"all": 0.5, "qk0": 1.0}}
+#: intervention arms: (cell, learning-rate factors by group of weights (see relay_band_pilot.weight_groups),
+#: what the hypothesis H of the docstring predicts: at least / at most this many textbook circuits, or None)
+ARMS = {"qk0_half": ("base", {"qk0": 0.5}, None), "rest_half": ("base", {"all": 0.5, "qk0": 1.0}, None),
+        "qk1_double": ("base", {"qk1": 2.0}, ("at most", 1)),
+        "qk0_0.71": ("base", {"qk0": 1 / math.sqrt(2)}, ("at least", 4)),
+        "lr5e-4_b8_qk0_half": ("lr5e-4_b8", {"qk0": 0.5}, ("at least", 5)),
+        "lr2e-3_qk0_quarter": ("lr2e-3", {"qk0": 0.25}, ("at least", 5)),
+        "lr2e-3_qk0_half": ("lr2e-3", {"qk0": 0.5}, ("at most", 1))}
 
 
 def cell_of(setting: str) -> tuple[float, int]:
@@ -122,9 +150,10 @@ def run_clock(args: tuple[dict, str]) -> str:
 
 
 def arm_jobs(arm: str) -> list[dict]:
+    cell, factors, _ = ARMS[arm]
     return [{**j, "name": f"noise_{arm}_{j['base']}", "arm": f"noise_{arm}", "steps": pp.FULL_STEPS,
-             "train": {**j["train"], "steps": pp.FULL_STEPS}, "lr_scale": ARMS[arm]}
-            for j in pp.arm_jobs("base_natural")]
+             "train": {**j["train"], "steps": pp.FULL_STEPS}, "lr_scale": factors}
+            for j in pp.arm_jobs(f"{cell}_natural")]
 
 
 def power_fit(cells: dict, value: dict) -> dict:
@@ -235,12 +264,13 @@ def main(argv: list[str] | None = None) -> int:
     # (c) the baseline with the learning rate halved for one group of weights
     samples = fp.sample(12, 32)
     reference = json.loads((REPO / "docs" / "results" / "v2_analysis" / "relay_period_pilot.json").read_text())
-    intervention = {"reference": {
-        "learning_rate_1e-3": {k: reference["noise_scale"]["cells"]["base"][k] for k in ("textbook", "of")},
-        "learning_rate_5e-4": {k: reference["noise_scale"]["cells"]["lr5e-4"][k] for k in ("textbook", "of")}},
-        "arms": {}}
+    intervention = {"reference_cells_without_a_change": {
+        c: {**{k: v[k] for k in ("learning_rate", "batch", "lr_over_root_batch", "textbook", "of")}}
+        for c, v in reference["noise_scale"]["cells"].items()}, "arms": {}}
     rows_out = {}
     for arm, js in arms.items():
+        cell, factors, predicted = ARMS[arm]
+        lr, batch = cells[cell]
         have = [j for j in js if (args.work / f"period_{j['name']}.npz").exists()]
         rows = []
         for j in have:
@@ -248,12 +278,23 @@ def main(argv: list[str] | None = None) -> int:
             step, st = pp.curves(j, args.work)
             r.update({"name": j["name"], "d1_l0_max": float(st["d1_l0_max"][-1]),
                       "d2_l0_max": float(st["d2_l0_max"][-1]),
-                      **{f"{k}_at_equal_sequences": [float(np.interp(n / 32, step, st[k])) for n in grid]
+                      **{f"{k}_at_equal_sequences": [float(np.interp(n / batch, step, st[k])) for n in grid]
                          for k in KEYS}})
             rows.append(r)
         rows_out[arm] = rows
+        n_textbook = int(sum(r["textbook"] for r in rows))
+        as_predicted = None
+        if predicted and len(rows) == len(js):
+            as_predicted = bool(n_textbook >= predicted[1] if predicted[0] == "at least" else
+                                n_textbook <= predicted[1])
         intervention["arms"][arm] = {
-            "learning_rate_factors": ARMS[arm], "textbook": int(sum(r["textbook"] for r in rows)),
+            "cell": cell, "learning_rate": lr, "batch": batch,
+            "textbook_in_the_cell_without_a_change": reference["noise_scale"]["cells"][cell]["textbook"],
+            "learning_rate_factors": factors,
+            "lr_over_root_batch_by_group": {g: lr * factors.get(g, factors.get("all", 1.0)) / math.sqrt(batch)
+                                            for g in ("qk0", "qk1", "pos")},
+            "hypothesis_predicts": list(predicted) if predicted else None, "as_predicted": as_predicted,
+            "textbook": n_textbook,
             "relays": int(sum(r["formed"] and not r["textbook"] for r in rows)),
             "not_formed": int(sum(not r["formed"] for r in rows)), "of": len(rows), "complete": len(rows) == len(js),
             "by_heads": {f"h{nh}": int(sum(r["textbook"] for r in rows if r["n_head"] == nh)) for nh in rb.HEADS},
@@ -305,11 +346,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"   1 - cosine to the initial {g}: " + " | ".join(
                 f"N {n}: lr^{t[str(n)]['lr_exponent']:+.2f} B^{t[str(n)]['batch_exponent']:+.2f}"
                 for n in (3200, 12800, 38400)))
-    print("== (c) the baseline with the learning rate halved for one group of weights (reference: 0 of 6 textbook "
-          "circuits at 1e-3, 6 of 6 at 5e-4)")
+    print("== (c) a cell with the learning rate changed for one group of weights")
     for arm, o in intervention["arms"].items():
-        print(f"   {arm:>10s} {o['learning_rate_factors']}: textbook {o['textbook']}/{o['of']} (2 heads "
-              f"{o['by_heads']['h2']}, 4 heads {o['by_heads']['h4']}) | relay positions {o['relay_deltas']} | decoy "
+        scale = o["lr_over_root_batch_by_group"]
+        print(f"   {arm:>19s} (cell {o['cell']}, {o['textbook_in_the_cell_without_a_change']}/6 without the change; "
+              f"lr/sqrt(B) of qk0 {scale['qk0']:.2e}, qk1 {scale['qk1']:.2e}, the rest {scale['pos']:.2e}): textbook "
+              f"{o['textbook']}/{o['of']} (2 heads {o['by_heads']['h2']}, 4 heads {o['by_heads']['h4']}) | H predicts "
+              f"{o['hypothesis_predicts']}: {o['as_predicted']} | relay positions {o['relay_deltas']} | decoy "
               f"{[round(x, 2) for x in o['deep_decoy_over_clean']]} | loss<2 at "
               f"{o['first_step_with_loss_rep_below_2']}")
     print("missing:", {k: len(v) for k, v in result["missing"].items()})
