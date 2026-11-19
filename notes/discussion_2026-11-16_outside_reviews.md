@@ -155,6 +155,14 @@
 - 别的宽度上的 K：从初始网络出发，积分"残差只有两个方向"的梯度流，对宽度 64 和 256 给出 40 个值（盲测）。
 - 解释了从第 500 步开始挡时 L0 的频带偏好为什么会回升（掩码有泄漏）。核对和实验见 §14。
 
+**Antigravity 的第九次回复（11 月 19 日；对 §14 的回应，读的是提交 `8351c3c`）**
+
+- 接受 §14 的核对，撤回上一轮"推进速度正比于学习率乘批量的平方根"的推导。
+- 在 5 个已有设置上直接量小批量梯度的信噪比和权重的范数（附脚本，可复跑），据此撤回上一轮"L1 的内容信号方差大"
+  的说法，并给出修正的三步推导。
+- 盲测一：rep_min 16 上噪声门槛的位置，四格。盲测二：加宽的掩码在宽度 32、64、128 上的关键期，七个窗口。两组都
+  写明了通过和失败的标准。核对和实验见 §15。
+
 ## 3. 一致的判断
 
 | 判断 | 谁 |
@@ -368,7 +376,7 @@ tiled 布局（词表 64，64 个 token，片段长 4 到 16）下，不做内�
 ## 7. 留给下一轮交叉讨论的问题
 
 （17 日：Antigravity 的回答和核对见 §9.1；这一轮之后新的开放问题见 §9.6；第二轮之后见 §10.8；第三轮之后见 §11.6；
-第四轮见 §12；第五轮见 §13；第六轮见 §14。）
+第四轮见 §12；第五轮见 §13；第六轮见 §14；第七轮见 §15。）
 
 1. 延迟规则（延迟约等于停留处输出增益的倒数）是否已经包含在 gradient starvation（Pezeshki 等 2021）的分析里？
 2. §6 第 3 条的两半，相对 distributional simplicity bias（Refinetti 2023，Belrose 2024，Rende 2024）、Edelman 2024、
@@ -407,6 +415,9 @@ tiled 布局（词表 64，64 个 token，片段长 4 到 16）下，不做内�
   以及 `kernel_gate_pilot.py` 里新加的五个强度和第二个公式的对照。
 - 第六轮：同两个脚本，各加一段（`relay_period_pilot.py`：噪声尺度的三格和加宽的掩码；`kernel_law_pilot.py`：宽度 64
   和 256 上的 K，以及两方向的流）。
+- 第七轮：`relay_period_pilot.py` 再加一段（rep_min 16 的四格；加宽的掩码在三个宽度上的九个窗口）；新脚本
+  `scripts/analysis_v2/relay_noise_pilot.py`（同名 JSON：相同序列数上的对比、权重离开初值的距离、分组改学习率的
+  干预）；`relay_band_pilot.py` 的训练循环多了一个按权重组缩放学习率的选项，不用时与原来逐位相同。
 - Part B 的现状：`docs/results/v2b_preregistration.md`（形成过程研究，已生效），
   `docs/results/v2_analysis/v2b_prereg_review.md`。
 - 文献：
@@ -418,6 +429,8 @@ tiled 布局（词表 64，64 个 token，片段长 4 到 16）下，不做内�
     arXiv:2412.01003.
   - Barak, Edelman, Goel, Kakade, Malach, Zhang (2022). Hidden progress in deep learning: SGD learns parities near
     the computational limit. *NeurIPS*. arXiv:2207.08799.
+  - Malladi, Lyu, Panigrahi, Arora (2022). On the SDEs and scaling rules for adaptive gradient algorithms.
+    *NeurIPS*. arXiv:2205.10287.
   - 其余见结果笔记的参考文献。
 
 ## 9. 11 月 17 日：Antigravity 对 §7 的回答，以及核对
