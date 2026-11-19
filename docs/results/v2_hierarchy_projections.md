@@ -68,6 +68,12 @@ standard library only; they do not import tycho). Numbers:
   off by up to a third); the growth of the read-out norm has the stated shape at half the stated size. What the
   conserved quantity does give, with no fitted constant, is the growth of the kernel for small coefficients at every
   width tried, and the whole curve for wide networks.
+* **Added 19 November, sixth round (§6.6): K at other widths, predicted without a fitted constant.** The reviewer
+  predicted 40 values of K at widths 64 and 256, where K had not been measured, by integrating from the initial
+  network the gradient flow in which the residual has two directions only. Mean absolute error 0.017 (K ranges from
+  0.29 to 1.00), all of its criteria met, against 0.050 for a plain scaling with the width and 0.100 for the values
+  of width 128. So the delay under SGD is fixed by the source's two strengths and the initial network; the sampling
+  noise and the other 62 directions of the residual do not matter for it.
 
 ## 1. Definitions
 
@@ -739,6 +745,50 @@ Record: `notes/discussion_2026-11-16_outside_reviews.md`, §13.3.
 * **Limits.** As in §6.3. The law pilot varies the width for the term alone only; K itself was measured at one
   width. The frozen-direction calculation assumes a residual with the term's direction alone.
 
+### 6.6 Sixth round: K at other widths (19 November)
+
+Status as in §6.1. The reviewer's sixth reply (to commit `6062933`) predicted K at widths 64 and 256, where it had not
+been measured, and stated that it had run no training at those widths. `scripts/analysis_v2/kernel_law_pilot.py` now
+runs the term with input {1} or {4} at strengths 0.5 to 2.5 at both widths (160 runs). Record:
+`notes/discussion_2026-11-16_outside_reviews.md`, §14.3.
+
+* **The prediction.** Start from the network at initialisation and run gradient descent in which the residual has
+  two directions only, the lower-order input and the term, with the residuals of §6.3's two-coefficient model at
+  the current pair of coefficients; every unit moves freely, so its gates can change. The same flow for the term
+  alone gives the ratio of times, and dividing by D gives K. Nothing is fitted. (A second set of values came from
+  a formula with two constants per width; it stays within 0.01 of the flow on average.) Recorded before the runs:
+  the flow is the network's own training with the sampling noise and the other 62 directions of the residual left
+  out, so it is a simulation and not a formula; and a plain alternative that needs no simulation, in which the
+  excess 1 / K − 1 scales as one over the width.
+* **Result.** K at 25 %, measured at widths 64 / 128 / 256, with the flow's values for 64 and 256 in brackets:
+
+  | lower-order strength | with {1} | with {4} |
+  |---|---|---|
+  | 1.0 | 0.743 / 0.922 / 0.980 (0.776, 0.986) | 0.950 / 0.959 / 0.981 (0.942, 0.985) |
+  | 1.5 | 0.525 / 0.761 / 0.921 (0.562, 0.931) | 0.851 / 0.867 / 0.953 (0.857, 0.959) |
+  | 2.0 | 0.381 / 0.624 / 0.844 (0.401, 0.848) | 0.740 / 0.767 / 0.938 (0.773, 0.916) |
+  | 2.5 | 0.286 / 0.489 / 0.766 (0.295, 0.755) | 0.689 / 0.697 / 0.893 (0.711, 0.863) |
+
+  Over the 40 values (five strengths, two inputs, 25 % and 50 %, two widths) the mean absolute error of the
+  reviewer's flow is 0.017 (largest 0.047; its bound 0.025), of its formula 0.018, of the plain scaling 0.050
+  (largest 0.155), and of taking K from width 128 0.100 (largest 0.278). All of its stated criteria are met. The
+  flow computed here independently agrees with the reviewer's 40 values to 0.0008.
+  * The two inputs behave differently at the narrow width, as predicted: from width 128 to 64, K with the shared
+    input falls by 0.18 on average over strengths 1.0 to 2.5, and K without it moves by 0.02. The plain scaling
+    misses this (0.62 against a measured 0.74 for strength 2.0 at 25 %).
+  * What is left is systematic in two places: at width 64 with the shared input the measured K is below the flow in
+    all ten cells (by 0.025 on average), and at width 256 without the shared input it is 0.02 above on average.
+* **The flow and the kernel.** For the term alone the kernel along the flow is within 3 % of the measured kernel
+  at all five widths of §6.5 (medians over seeds; the frozen-direction curve was up to 24 % low at widths 32 to
+  128). At width 128 the flow gives K within 0.0085 on average at strengths 0.5 to 2.5.
+* **What this amounts to.** The delay of the higher-order term under SGD is reproduced by the noise-free gradient
+  flow of the same initial network with a two-direction residual, at three widths and five strengths. The delay is
+  therefore fixed by the source's two strengths and the initial network; the sampling noise and the remaining
+  directions of the residual do not matter for it at this learning rate and batch size. Of the two factors, D has
+  a closed form (§6.3) and K is obtained by integrating the flow, which takes about a second.
+* **Limits.** As in §6.3. The measured K varies widely between seeds (for one cell from 0.57 to 0.95), so the
+  comparison is between medians over 8 seeds; one hidden layer, SGD at one learning rate and batch size.
+
 ## 7. Checks and reproduction
 
 * **Internal checks** (`checks` in the JSON; the script stops if they fail).
@@ -762,8 +812,8 @@ Record: `notes/discussion_2026-11-16_outside_reviews.md`, §13.3.
 * **The pilot of §6.1** needs torch: `PYTHONPATH=. python scripts/analysis_v2/delay_sweep_pilot.py --jobs 4`
   (264 runs with the second round, cached in `work/delay_sweep`; `--skip-runs` analyses the cache). §6.2 also needs
   `PYTHONPATH=. python scripts/analysis_v2/kernel_gate_pilot.py --jobs 4` (200 runs with the strengths of §6.3 to
-  §6.5) and, for §6.5, `PYTHONPATH=. python scripts/analysis_v2/kernel_law_pilot.py --jobs 4` (64 runs, cached in
-  `work/kernel_law`). None of these was recomputed independently.
+  §6.5) and, for §6.5 and §6.6, `PYTHONPATH=. python scripts/analysis_v2/kernel_law_pilot.py --jobs 4` (224 runs
+  and 280 flows, cached in `work/kernel_law`). None of these was recomputed independently.
 
 ## References
 

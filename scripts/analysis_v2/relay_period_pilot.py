@@ -58,6 +58,26 @@ learning rate 5e-4 with batch 8 (reading (i): textbook circuits, as at batch 32;
 One more window is added at learning rate 2e-3, [400, 900), to bracket the critical period there: the window from
 step 300 still flipped 5 of 6, against the reviewer's prediction.
 
+Second follow-up: the reviewer's sixth reply (19 November, to commit 6062933; it states that it ran none of these).
+(a) Which noise scale? Under Adam it argues for learning rate over the root of the batch size, not over the batch
+size. The five cells above cannot tell the two apart; three more without a mask can: learning rate 2.5e-4 with
+batch 8 (same lr/√B as the cells that give textbook circuits, same lr/B as the baseline: it predicts at least 5 of
+6 textbook circuits, by step 24,000; lr/B would give at most 1), learning rate 2e-3 with batch 128 (same lr/√B as
+the baseline, same lr/B as a textbook cell: it predicts at most 2 of 6; lr/B would give at least 5), and learning
+rate 1e-3 with batch 64 (between the two in lr/√B: it predicts 2 to 4 of 6; lr/B would give 6). Its prediction
+passes if the first gives at least 5 and the second at most 2, and fails in the opposite case or if the third gives
+6 of 6. (b) Why layer 0's band preference comes back during a mask that starts at step 500: its explanation is that
+the mask leaves the offset just below the band (10) and the offsets beyond it (32 and more) open, that layer 1 is
+by then locked on a relay and drives layer 0 to those offsets, and that the shared weights carry the masked band
+offsets along. Added here to test it: the same window with every offset from 4 on masked ("far"), which closes
+those leaks, and the band-masked window again with layer 0's attention just below, low in and beyond the band
+recorded. If the explanation holds, the preference does not come back under the wider mask.
+Added after the first six runs with the wider mask (all six ended with a strong layer-0 head on offset 2, the
+mark of the textbook circuit, where the band mask from the same step gave 0 of 6): two later windows with the
+wider mask, from step 1,000 (layer 0 holds the band, no circuit yet) and from step 3,000 (the relay has formed).
+They ask whether the critical period of the band mask is a point of no return for the network or a limit of that
+mask. Either outcome was open when they were started.
+
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/relay_period_pilot.py
 --jobs 4`` (``--skip-runs`` analyses the cache). Needs the outputs of ``relay_followup_pilot.py``,
 ``relay_band_pilot.py`` and ``relay_window_pilot.py``. Runs are cached in ``work/relay_band``. Writes
@@ -80,11 +100,14 @@ wp = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(wp)
 rb, fp, rp = wp.rb, wp.fp, wp.rp
 
-FULL_STEPS, SHORT_STEPS = 12_000, 2_500
+FULL_STEPS, SHORT_STEPS, LONG_STEPS = 12_000, 2_500, 24_000
 LOSS_DROP, NEAR_FLOOR = 0.295, 0.0085                   # the reviewer's two constants (set on the baseline runs)
 SETTINGS = {"base": {}, "lr5e-4": {"lr": 5e-4}, "lr2e-3": {"lr": 2e-3}, "d128": {"d_model": 128},
-            "d32": {"d_model": 32}, "b128": {"batch_size": 128}, "lr5e-4_b8": {"lr": 5e-4, "batch_size": 8}}
-#: arm -> (setting, window [start, end) of the band mask on layer 0 or None, steps); in order of priority
+            "d32": {"d_model": 32}, "b128": {"batch_size": 128}, "lr5e-4_b8": {"lr": 5e-4, "batch_size": 8},
+            "lr2.5e-4_b8": {"lr": 2.5e-4, "batch_size": 8}, "lr2e-3_b128": {"lr": 2e-3, "batch_size": 128},
+            "b64": {"batch_size": 64}}
+#: arm -> (setting, window [start, end) of the mask on layer 0 or None, steps[, masked offsets: "band" unless
+#: given]); in order of priority
 ARMS = {
     "base_natural": ("base", None, SHORT_STEPS), "base_w400_900": ("base", (400, 900), SHORT_STEPS),
     "base_w500_1000": ("base", (500, 1000), SHORT_STEPS),
@@ -99,6 +122,12 @@ ARMS = {
     "lr5e-4_w1050_2050": ("lr5e-4", (1050, 2050), FULL_STEPS),
     "b128_natural": ("b128", None, FULL_STEPS), "lr5e-4_b8_natural": ("lr5e-4_b8", None, FULL_STEPS),
     "lr2e-3_w400_900": ("lr2e-3", (400, 900), FULL_STEPS),
+    "base_x_w500_1000": ("base", (500, 1000), SHORT_STEPS, "band"),
+    "base_far_w500_1000": ("base", (500, 1000), FULL_STEPS, "far"),
+    "base_far_w1000_1500": ("base", (1000, 1500), FULL_STEPS, "far"),
+    "base_far_w3000_3500": ("base", (3000, 3500), FULL_STEPS, "far"),
+    "lr2.5e-4_b8_natural": ("lr2.5e-4_b8", None, LONG_STEPS), "b64_natural": ("b64", None, FULL_STEPS),
+    "lr2e-3_b128_natural": ("lr2e-3_b128", None, FULL_STEPS),
 }
 #: the steps (t1, t2) the reviewer names for its two formulas, by setting: (loss formula, attention formula)
 FORMULA_STEPS = {"base": ((100, 300), (200, 300)), "lr5e-4": ((150, 350), (150, 350)),
@@ -106,6 +135,9 @@ FORMULA_STEPS = {"base": ((100, 300), (200, 300)), "lr5e-4": ((150, 350), (150, 
                  "d32": ((100, 300), (200, 300)), "b128": ((100, 300), (200, 300)),
                  "lr5e-4_b8": ((150, 350), (150, 350))}
 STATS = ("band_l0", "band_l1", "source_l1", "offsets_1_2_l0", "loss_rep", "d1_l0_max", "d2_l0_max")
+#: recorded from the second follow-up on (layer 0, mean over heads): attention on the offset just below the band,
+#: on offsets 4 .. below the band, on the lowest nine offsets of the band, and beyond the band
+EXTRA_STATS = ("just_below_band_l0", "below_band_l0", "low_band_l0", "beyond_band_l0")
 
 
 def measure_at(steps: int) -> tuple[int, ...]:
@@ -121,11 +153,25 @@ def detail_stats(model, task) -> dict:
     bi, ti = np.nonzero(pr["rep"].numpy())
     out["d1_l0_max"] = float(a0[bi, :, ti, ti - 1].mean(0).max())
     out["d2_l0_max"] = float(a0[bi, :, ti, ti - 2].mean(0).max())
+
+    def mass(offsets) -> float:                          # attention on a set of offsets, mean over heads
+        total = np.zeros((len(bi), a0.shape[1]))
+        for d in offsets:
+            ok = ti >= d
+            total[ok] += a0[bi[ok], :, ti[ok], ti[ok] - d]
+        return float(total.mean())
+
+    lo, hi = task.rep_min - 1, task.rep_max - 1           # the band
+    out["just_below_band_l0"] = mass([lo - 1])
+    out["below_band_l0"] = mass(range(4, lo))
+    out["low_band_l0"] = mass(range(lo, lo + 9))
+    out["beyond_band_l0"] = mass(range(hi + 1, a0.shape[-1]))
     return out
 
 
 def arm_jobs(arm: str) -> list[dict]:
-    setting, window, steps = ARMS[arm]
+    setting, window, steps = ARMS[arm][:3]
+    forbid = ARMS[arm][3] if len(ARMS[arm]) > 3 else "band"
     base = {j["name"]: j for j in rp.jobs_list()}
     change = SETTINGS[setting]
     jobs = []
@@ -134,6 +180,7 @@ def arm_jobs(arm: str) -> list[dict]:
             t = base[f"single_rm12_h{nh}_s{seed}"]
             jobs.append({"name": f"{arm}_single_rm12_h{nh}_s{seed}", "base": f"single_rm12_h{nh}_s{seed}",
                          "arm": arm, "setting": setting, "seed": seed, "window": window or (0, 0), "steps": steps,
+                         "forbid": forbid,
                          "cfg": {**t["cfg"], **{k: v for k, v in change.items() if k == "d_model"}},
                          "train": {**t["train"], **{k: v for k, v in change.items() if k != "d_model"},
                                    "steps": steps},
@@ -148,10 +195,11 @@ def run_arm(args: tuple[dict, str]) -> str:
         return f"cached {out.name}"
     at = measure_at(job["steps"])
     model, task, stats, _ = rb.train(job, job["steps"], at, block_from=job["window"][0],
-                                     block_until=job["window"][1], layer=0, forbid="band", stats_fn=detail_stats)
+                                     block_until=job["window"][1], layer=0, forbid=job["forbid"],
+                                     stats_fn=detail_stats)
     model.eval()
     arrays = {f"param/{k}": v.detach().numpy() for k, v in model.state_dict().items()}
-    arrays.update({f"stat_{k}": np.asarray([stats[s][k] for s in at]) for k in STATS})
+    arrays.update({f"stat_{k}": np.asarray([stats[s][k] for s in at]) for k in STATS + EXTRA_STATS})
     np.savez_compressed(out, logodds=task.pattern_logodds(model)[None, :], steps=np.asarray([job["steps"]]),
                         lc_step=np.asarray(at), lc_loss_rep=arrays["stat_loss_rep"],
                         object_id=np.asarray(f"{job['arm']}:{job['base']}"), **arrays)
@@ -160,7 +208,7 @@ def run_arm(args: tuple[dict, str]) -> str:
 
 def curves(job: dict, work: Path) -> tuple[np.ndarray, dict]:
     with np.load(work / f"period_{job['name']}.npz") as f:
-        return f["lc_step"].astype(float), {k: f[f"stat_{k}"] for k in STATS}
+        return f["lc_step"].astype(float), {k: f[f"stat_{k}"] for k in STATS + EXTRA_STATS if f"stat_{k}" in f.files}
 
 
 def first_crossing(step: np.ndarray, y: np.ndarray, level: float, rising: bool) -> float | None:
@@ -180,7 +228,7 @@ def early(job: dict, work: Path) -> dict:
     step, st = curves(job, work)
     at = {int(s): i for i, s in enumerate(step)}
     loss, near = st["loss_rep"], st["offsets_1_2_l0"]
-    (a1, a2), (b1, b2) = FORMULA_STEPS[job["setting"]]
+    (a1, a2), (b1, b2) = FORMULA_STEPS.get(job["setting"], ((100, 300), (200, 300)))
     v = (loss[at[a1]] - loss[at[a2]]) / (a2 - a1)
     u = (math.log(near[at[b1]]) - math.log(near[at[b2]])) / (b2 - b1)
     after = step >= 100                                  # the two layers are equal at step 0
@@ -220,7 +268,7 @@ def main(argv: list[str] | None = None) -> int:
     # final circuits of the full-length arms
     rows = {}
     for arm, js in have.items():
-        if ARMS[arm][2] != FULL_STEPS:
+        if ARMS[arm][2] < FULL_STEPS:
             continue
         rows[arm] = []
         for j in js:
@@ -247,12 +295,13 @@ def main(argv: list[str] | None = None) -> int:
         per_run = {j["base"]: early(j, args.work) for j in have[nat]}
         keys = ("band_l0_at_300", "offsets_1_2_l0_at_300", "loss_drop_at_300", "t_crit_loss", "t_crit_attn")
         settings[setting] = {
-            "formula_steps": {"loss": list(FORMULA_STEPS[setting][0]), "attention": list(FORMULA_STEPS[setting][1])},
+            "formula_steps": dict(zip(("loss", "attention"), map(list, FORMULA_STEPS.get(
+                setting, ((100, 300), (200, 300)))))),
             "unperturbed_runs": per_run,
             "medians": {**{k: median([r[k] for r in per_run.values()]) for k in keys},
                         "measured": {k: median([r["measured"][k] for r in per_run.values()])
                                      for k in next(iter(per_run.values()))["measured"]} if per_run else {}},
-            "arms": {arm: outcome(arm) for arm in ARMS if ARMS[arm][0] == setting and ARMS[arm][2] == FULL_STEPS}}
+            "arms": {arm: outcome(arm) for arm in ARMS if ARMS[arm][0] == setting and ARMS[arm][2] >= FULL_STEPS}}
 
     # two things the reviewer's account does not cover: does the step-300 criterion of relay_window_pilot.py carry
     # over to other settings, and can a mask undo a textbook circuit that forms without it
@@ -342,8 +391,68 @@ def main(argv: list[str] | None = None) -> int:
                        "runs": {j["base"]: {k: [float(c[1][k][i]) for i in pick] for k in STATS}
                                 for j, c in zip(have[arm], cs)}}
 
+    # second follow-up (a): the unperturbed outcome by learning rate and batch size (d_model 64)
+    base_final = {r["name"]: r for r in json.loads(
+        (REPO / "docs" / "results" / "v2_analysis" / "relay_followup_pilot.json").read_text())["runs"]}
+    noise = {}
+    for setting, change in SETTINGS.items():
+        if "d_model" in change or f"{setting}_natural" not in ARMS:
+            continue
+        lr, batch = change.get("lr", 1e-3), change.get("batch_size", 32)
+        if setting == "base":                            # the baseline's circuits at 12,000 steps (earlier pilots)
+            finals = [base_final[j["base"]] for j in jobs["base_natural"]]
+            textbook = sum(r["relay_delta"] == 0 and r["intact"]["deep_decoy_over_clean"] >= 0.9 for r in finals)
+            cell = {"textbook": int(textbook), "relays": len(finals) - int(textbook), "not_formed": 0,
+                    "of": len(finals), "complete": True, "steps": FULL_STEPS}
+        else:
+            o = settings[setting]["arms"][f"{setting}_natural"]
+            cell = {k: o[k] for k in ("textbook", "relays", "not_formed", "of", "complete")}
+            cell.update({"steps": ARMS[f"{setting}_natural"][2], "relay_deltas": o["relay_deltas"],
+                         "first_step_with_loss_rep_below_2": o["first_step_with_loss_rep_below_2"]})
+        noise[setting] = {"learning_rate": lr, "batch": batch, "lr_over_root_batch": lr / math.sqrt(batch),
+                          "lr_over_batch": lr / batch, "lr_times_root_batch": lr * math.sqrt(batch), **cell,
+                          "loss_drop_at_300": settings[setting]["medians"].get("loss_drop_at_300"),
+                          "loss_rep_falls_below_2": settings[setting]["medians"].get("measured", {}).get(
+                              "loss_rep_falls_below_2")}
+    long_arm = "lr2.5e-4_b8_natural"                     # what its runs look like half-way, from the statistics
+    half_way = {}
+    for j in have[long_arm]:
+        step, st = curves(j, args.work)
+        i = int(np.argmin(np.abs(step - FULL_STEPS)))
+        half_way[j["base"]] = {k: float(st[k][i]) for k in ("loss_rep", "source_l1", "d1_l0_max", "d2_l0_max")}
+
+    def cell_count(setting: str) -> int | None:
+        c = noise.get(setting)
+        return c["textbook"] if c and c["complete"] else None
+
+    low, high, mid = cell_count("lr2.5e-4_b8"), cell_count("lr2e-3_b128"), cell_count("b64")
+    noise_prediction = {
+        "low_noise_by_root_batch_at_least_5": test(low, lambda n: n >= 5),
+        "high_noise_by_root_batch_at_most_2": test(high, lambda n: n <= 2),
+        "between_2_to_4": test(mid, lambda n: 2 <= n <= 4),
+        "passes_by_its_own_criteria": None if None in (low, high) else bool(low >= 5 and high <= 2),
+        "fails_by_its_own_criteria": None if None in (low, high, mid) else bool((high >= 5 and low <= 2) or mid == 6),
+        "runs_at_lr_2.5e-4_batch_8_at_step_12000": half_way}
+
+    # second follow-up (b): does layer 0's band preference come back when the leaks are closed
+    leak = {}
+    for arm in ("base_x_w500_1000", "base_far_w500_1000"):
+        cs = [curves(j, args.work) for j in have[arm]]
+        if not cs:
+            continue
+        step = cs[0][0]
+        pick = [i for i, s in enumerate(step) if s in (400, 500, 600, 700, 800, 900, 1000, 1250, 1500, 2000, 2500)]
+        keys = ("band_l0", "just_below_band_l0", "below_band_l0", "low_band_l0", "beyond_band_l0", "band_l1",
+                "source_l1", "d1_l0_max", "d2_l0_max", "loss_rep")
+        leak[arm] = {"masked_offsets": ARMS[arm][3], "window": list(ARMS[arm][1]),
+                     "step": [int(step[i]) for i in pick],
+                     **{k: [float(np.median([c[1][k][i] for c in cs])) for i in pick] for k in keys}}
+    if "base_far_w500_1000" in settings["base"]["arms"]:
+        leak["outcome_with_every_offset_from_4_masked"] = settings["base"]["arms"]["base_far_w500_1000"]
+
     result = {"status": "exploratory pilot; local runs; not independently recomputed",
               "missing": [j["name"] for arm, js in jobs.items() for j in js if j not in have[arm]],
+              "noise_scale": {"cells": noise, "prediction": noise_prediction}, "band_preference_under_a_mask": leak,
               "constants": {"loss_drop": LOSS_DROP, "offsets_1_2_floor": NEAR_FLOOR},
               "settings": settings, "prediction_1A": prediction_1a, "prediction_1B": prediction_1b,
               "textbook_without_mask_lost_with_mask": lost, "inside_the_window": inside, "runs": rows}
@@ -375,6 +484,27 @@ def main(argv: list[str] | None = None) -> int:
         for i, s in enumerate(blk["step"]):
             print(f"   {s:>5d} {blk['band_l0'][i]:.2f} {blk['band_l1'][i]:.2f} {blk['source_l1'][i]:.3f} "
                   f"{blk['d1_l0_max'][i]:.3f} {blk['d2_l0_max'][i]:.3f} {blk['loss_rep'][i]:.2f}")
+    print("== unperturbed outcome by learning rate and batch (d_model 64)")
+    for setting, c in sorted(noise.items(), key=lambda kv: kv[1]["lr_over_root_batch"]):
+        print(f"   {setting:>14s}: lr {c['learning_rate']:.1e} batch {c['batch']:>3d} lr/sqrt(B) "
+              f"{c['lr_over_root_batch']:.2e} lr/B {c['lr_over_batch']:.2e} lr*sqrt(B) {c['lr_times_root_batch']:.2e}"
+              f" | textbook {c['textbook']}/{c['of']} relays {c['relays']} not formed {c['not_formed']} "
+              f"({c['steps']} steps) | loss drop at 300 {c['loss_drop_at_300']} | loss<2 at "
+              f"{c['loss_rep_falls_below_2']}")
+    print("   prediction:", json.dumps({k: v for k, v in noise_prediction.items() if not k.startswith("runs_")}))
+    for name, v in half_way.items():
+        print(f"   lr 2.5e-4, batch 8, {name} at step 12,000: loss {v['loss_rep']:.2f} source {v['source_l1']:.2f} "
+              f"d1 {v['d1_l0_max']:.2f} d2 {v['d2_l0_max']:.2f}")
+    for arm, blk in leak.items():
+        if "step" not in blk:
+            continue
+        print(f"== {arm} (mask on {blk['masked_offsets']}, steps {blk['window']}; medians): step / band_l0 / just "
+              "below / below / low band / beyond / band_l1 / source_l1 / d1 / d2 / loss")
+        for i, st_ in enumerate(blk["step"]):
+            print(f"   {st_:>5d} {blk['band_l0'][i]:.2f} {blk['just_below_band_l0'][i]:.3f} "
+                  f"{blk['below_band_l0'][i]:.3f} {blk['low_band_l0'][i]:.2f} {blk['beyond_band_l0'][i]:.3f} "
+                  f"{blk['band_l1'][i]:.2f} {blk['source_l1'][i]:.3f} {blk['d1_l0_max'][i]:.3f} "
+                  f"{blk['d2_l0_max'][i]:.3f} {blk['loss_rep'][i]:.2f}")
     print("missing:", len(result["missing"]))
     return 0
 

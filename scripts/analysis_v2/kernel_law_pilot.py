@@ -33,9 +33,28 @@ Checks here.
   (``frozen_directions``). For small F this is λ − λ0 ≈ 4 (Σ_j n_j P_j) F² / λ0², and for a first-order direction with
   n_j = 1/4 (half of the gates open) the read-out norm grows by 2 (√(λ1² + 2 F_1²) − λ1).
 
+Second round (the reviewer's sixth reply, 19 November, to commit 6062933): the kernel's contribution K at other
+widths. K had been measured at width 128 only. The reviewer gives 40 values for widths 64 and 256 (strengths 0.5 to
+2.5, both inputs, 25 % and 50 %) and states that it ran no training at those widths. Its main prediction comes from
+integrating, from the network at initialisation, the gradient flow in which the residual has two directions only
+(the lower-order input and the term) and every unit is free to turn: ``two_direction_flow`` does the same here, as
+gradient descent with the pilots' learning rate. Its second set of values is a formula with constants per width.
+Its criteria: a mean absolute error of at most 0.025 over the 40 values (failure beyond 0.035), clearly better than
+taking K from width 128; with the shared input K rises with the width at strengths 1.0 to 2.5, with K at most 0.48
+at width 64 and at least 0.78 at width 256 for strength 2.0 at 25 % (failure if above 0.50 at width 64); without
+the shared input K at width 64 stays within 0.045 of width 128 on average over strengths 1.0 to 2.5, and at width
+256 it is at least 0.08 higher at strengths 2.0 and 2.5.
+Recorded here before the runs. (i) The flow is the network's own training with the sampling noise and the other 62
+directions of the residual left out; agreement shows that these do not matter for K, and it is a simulation, not a
+formula. (ii) A plain alternative that needs no simulation: the excess 1 / K − 1 scales as one over the width
+(the kernel at initialisation is proportional to the width), so K(m) = 1 / (1 + (128 / m)(1 / K(128) − 1)). It
+agrees with the reviewer on the direction at width 256 and differs most where the reviewer predicts that K without
+the shared input barely moves at width 64 (strength 2.0 at 25 %: 0.62 by the plain scaling, 0.77 by the reviewer).
+
 Runs: the Markov settings of ``kernel_gate_pilot.py`` (SGD, learning rate 0.03, batch 64, iid contexts, seeds
 600–607). The term alone for 12,000 steps at widths 32, 64, 128, 256 and 512; the three sources with a first-order
-term for 3,000 steps at width 128.
+term for 3,000 steps at width 128; and, for the second round, the term with input {1} or {4} at strengths 0.5,
+1.0, 1.5, 2.0 and 2.5 for 12,000 steps at widths 64 and 256.
 
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/kernel_law_pilot.py
 --jobs 4``. Runs are cached in ``work/kernel_law``. Writes ``docs/results/v2_analysis/kernel_law_pilot.json``.
@@ -61,7 +80,26 @@ ALONE = kg.ALONE
 WIDTHS = (32, 64, 128, 256, 512)
 FIRST_ORDER = ("4:3.0;1,3:0.8", "1:3.0;1,3:0.8", "4:1.5;1,3:0.8")
 #: (source, width, steps)
-JOBS = [(ALONE, w, 12_000) for w in WIDTHS] + [(c, 128, 3_000) for c in FIRST_ORDER]
+K_WIDTHS, K_STRENGTHS, K_PROGRESS = (64, 256), ("0.5", "1.0", "1.5", "2.0", "2.5"), (0.25, 0.5)
+JOBS = ([(ALONE, w, 12_000) for w in WIDTHS] + [(c, 128, 3_000) for c in FIRST_ORDER]
+        + [(kg.WITH[st][lag], w, 12_000) for w in K_WIDTHS for st in K_STRENGTHS for lag in ("lag 1", "lag 4")])
+#: The reviewer's 40 values: width -> strength -> (lag 1 at 25 %, lag 1 at 50 %, lag 4 at 25 %, lag 4 at 50 %), from
+#: its two-direction flow and from its formula.
+REVIEWER_FLOW = {
+    64: {"0.5": (0.9526, 0.9664, 0.9926, 0.9851), "1.0": (0.7755, 0.8370, 0.9424, 0.9302),
+         "1.5": (0.5620, 0.6552, 0.8571, 0.8576), "2.0": (0.4014, 0.4985, 0.7733, 0.7973),
+         "2.5": (0.2950, 0.3878, 0.7105, 0.7524)},
+    256: {"0.5": (1.0050, 0.9956, 0.9950, 0.9961), "1.0": (0.9860, 0.9653, 0.9845, 0.9851),
+          "1.5": (0.9312, 0.9050, 0.9587, 0.9604), "2.0": (0.8479, 0.8234, 0.9156, 0.9223),
+          "2.5": (0.7550, 0.7363, 0.8631, 0.8763)}}
+REVIEWER_FORMULA = {
+    64: {"0.5": (0.9460, 0.9624, 0.9838, 0.9854), "1.0": (0.7835, 0.8417, 0.9331, 0.9393),
+         "1.5": (0.5741, 0.6659, 0.8582, 0.8703), "2.0": (0.4001, 0.4982, 0.7794, 0.7966),
+         "2.5": (0.2812, 0.3692, 0.7076, 0.7284)},
+    256: {"0.5": (0.9935, 0.9924, 0.9965, 0.9968), "1.0": (0.9690, 0.9639, 0.9831, 0.9845),
+          "1.5": (0.9198, 0.9071, 0.9558, 0.9595), "2.0": (0.8489, 0.8269, 0.9158, 0.9225),
+          "2.5": (0.7665, 0.7357, 0.8677, 0.8778)}}
+CELLS = (("lag 1", "25 %"), ("lag 1", "50 %"), ("lag 4", "25 %"), ("lag 4", "50 %"))
 F_POINTS = (0.16, 0.4, 0.8, 1.2, 1.5)                   # the term's coefficient (target 1.6)
 F1_POINTS = (0.5, 1.0, 2.0, 3.0, 4.0, 5.0)              # the first-order coefficient
 
@@ -178,6 +216,76 @@ def frozen_directions(seed: int, width: int) -> dict:
             "kernel": {str(f): float(np.interp(f, coef, kernel)) for f in F_POINTS}}
 
 
+def two_direction_flow(seed: int, width: int, couplings: str, lr: float = 0.03, max_steps: int = 14_000,
+                       stop_at: float = 0.5) -> dict:
+    """Gradient descent from the network at initialisation when the residual has two directions only: the
+    lower-order input ψ (if the source has one) and the term χ, with the residuals of ``kernel_gate_pilot.residuals``
+    at the current pair of coefficients. Every unit moves freely, so its gate pattern can change. Returns the
+    step, the term's coefficient and the kernel in its direction, up to ``stop_at`` of the term's target."""
+    import torch
+
+    from tycho.tasks import make_task
+    from tycho.tasks.patterns import pattern_bits
+
+    torch.set_num_threads(1)
+    cfg = {"couplings": ALONE, "data_seed": seed, "depth": 1, "exact_metrics": True, "n_tokens": 200_000,
+           "shift_rho": -0.5, "train_context": "iid", "width": width, "window": 6}
+    task = make_task("markov_lang", cfg, seed)             # the initial network does not depend on the source
+    model = task.build_model()
+    x = task._model_inputs(pattern_bits(task.window)).to(torch.float64).numpy()
+    phi, _ = kg.hp.features(task.window)
+    chi = phi[:, kg.MASK_13]
+    singles = [part.split(":")[0] for part in couplings.split(";") if "," not in part.split(":")[0]]
+    psi = phi[:, 1 << (int(singles[0]) - 1)] if singles else None
+    beta1 = float(couplings.split(";")[0].split(":")[1]) if singles else 0.0
+    w = model.net[0].weight.detach().to(torch.float64).numpy().copy()
+    b = model.net[0].bias.detach().to(torch.float64).numpy().copy()
+    a = (model.net[2].weight[1] - model.net[2].weight[0]).detach().to(torch.float64).numpy().copy()
+    target, n = 2.0 * kg.TERM_STRENGTH, x.shape[0]
+    steps, coef, kernel = [], [], []
+    for step in range(max_steps + 1):
+        pre = x @ w.T + b
+        act, gate = np.maximum(pre, 0.0), (pre > 0).astype(float)
+        g_chi = act.T @ chi / n
+        dw_chi, db_chi = (gate * chi[:, None]).T @ x / n, gate.T @ chi / n
+        f = float(a @ g_chi)
+        steps.append(step)
+        coef.append(f)
+        kernel.append(float((2.0 * g_chi ** 2 + a * a * ((dw_chi ** 2).sum(1) + db_chi ** 2)).sum()))
+        if f >= stop_at * target or step == max_steps:
+            break
+        if psi is None:
+            r_chi = 0.5 * (math.tanh(target / 2.0) - math.tanh(f / 2.0))
+            da, dw, db = 2.0 * r_chi * g_chi, r_chi * dw_chi, r_chi * db_chi
+        else:
+            g_psi = act.T @ psi / n
+            r_psi, r_chi = kg.residuals(float(a @ g_psi), f, beta1)
+            da = 2.0 * (r_psi * g_psi + r_chi * g_chi)
+            dw = r_psi * (gate * psi[:, None]).T @ x / n + r_chi * dw_chi
+            db = r_psi * gate.T @ psi / n + r_chi * db_chi
+        a, w, b = a + lr * da, w + lr * a[:, None] * dw, b + lr * a * db
+    return {"steps": np.asarray(steps, dtype=float), "coef": np.asarray(coef), "kernel": np.asarray(kernel)}
+
+
+def flow_job(job: tuple[int, int, str, float, str]) -> str:
+    seed, width, couplings, stop_at, work = job
+    out = Path(work) / f"flow_{kg.slug(couplings)}_w{width}_s{seed}.npz"
+    if not out.exists():
+        np.savez_compressed(out, **two_direction_flow(seed, width, couplings, stop_at=stop_at))
+    return out.name
+
+
+def first_step_at(steps: np.ndarray, y: np.ndarray, level: float) -> float:
+    """The step at which y first reaches the level (linear interpolation)."""
+    hit = np.nonzero(y >= level)[0]
+    if len(hit) == 0:
+        return float("nan")
+    i = int(hit[0])
+    if i == 0:
+        return float(steps[0])
+    return float(steps[i - 1] + (level - y[i - 1]) / (y[i] - y[i - 1]) * (steps[i] - steps[i - 1]))
+
+
 def load(work: Path, couplings: str, width: int, seed: int, phi: np.ndarray) -> dict:
     with np.load(work / f"{kg.slug(couplings)}_w{width}_s{seed}.npz") as f:
         d = {k: f[k] for k in f.files}
@@ -286,9 +394,127 @@ def main(argv: list[str] | None = None) -> int:
                               "read_out_norm_at_step_0": stats([float(r["sum_a2"][0]) for r in runs]),
                               "by_first_order_coefficient": by_f1}
 
+    # second round: the kernel's contribution K at widths 64 and 256, against the reviewer's 40 values
+    gate_pilot = json.loads((REPO / "docs" / "results" / "v2_analysis" / "kernel_gate_pilot.json").read_text())
+
+    def k_at_128(strength: str, lag: str, k: str) -> float:
+        return gate_pilot["strength"][strength]["closed_form"][
+            "steps_over_alone_divided_by_the_delay_from_the_residual_alone"][lag][k]
+
+    flow_widths = (64, 128, 256)
+    flow_jobs = ([(s, w, ALONE, 0.95, str(args.work)) for w in WIDTHS for s in SEEDS]
+                 + [(s, w, kg.WITH[st][lag], 0.5, str(args.work)) for w in flow_widths for st in K_STRENGTHS
+                    for lag in ("lag 1", "lag 4") for s in SEEDS])
+    with Pool(args.jobs) as pool:
+        for _ in pool.imap_unordered(flow_job, flow_jobs, chunksize=4):
+            pass
+
+    def flow(couplings: str, width: int, seed: int) -> dict:
+        with np.load(args.work / f"flow_{kg.slug(couplings)}_w{width}_s{seed}.npz") as f:
+            return {k: f[k] for k in f.files}
+
+    target = 2.0 * kg.TERM_STRENGTH
+    flow_alone = {w: [flow(ALONE, w, s) for s in SEEDS] for w in WIDTHS}
+    sgd_alone = {w: [load(args.work, ALONE, w, s, phi) for s in SEEDS] for w in WIDTHS}
+    # the flow against the measured kernel of the term alone (the reviewer's first check of the flow)
+    flow_check = {str(w): {str(f): stats([at_level(r["coef"], r["kernel"], f) / float(np.interp(
+        f, fl["coef"], fl["kernel"])) for r, fl in zip(sgd_alone[w], flow_alone[w])]) for f in F_POINTS}
+        for w in WIDTHS}
+
+    cells = {}
+    for width in flow_widths:
+        for strength in K_STRENGTHS:
+            closed = kg.closed_form(float(strength))["progress"]
+            for i, (lag, k) in enumerate(CELLS):
+                level = float(k.split()[0]) / 100.0 * target
+                delay = closed[k]["delay_from_the_residual_alone"]
+                ratios, factors = [], []
+                for fa, s in zip(flow_alone[width], SEEDS):
+                    fw = flow(kg.WITH[strength][lag], width, s)
+                    ta = first_step_at(fa["steps"], fa["coef"], level)
+                    tw = first_step_at(fw["steps"], fw["coef"], level)
+                    ratios.append(tw / ta)
+                    factors.append(float(np.interp(ta, fa["steps"], fa["kernel"]))
+                                   / float(np.interp(tw, fw["steps"], fw["kernel"])))
+                cell = {"flow": float(np.median(ratios)) / delay, "kernel_factor_flow": float(np.median(factors)),
+                        "width_128_measured": k_at_128(strength, lag, k)}
+                if width == 128:
+                    cell["measured"] = cell["width_128_measured"]
+                    cell["kernel_factor_measured"] = gate_pilot["strength"][strength][lag][
+                        "kernel_alone_over_with"][k]["median"]
+                else:
+                    ratios, factors = [], []
+                    for ra, s in zip(sgd_alone[width], SEEDS):
+                        rw = load(args.work, kg.WITH[strength][lag], width, s, phi)
+                        ta = kg.crossing(ra["steps"].astype(float), ra["coef"], level)
+                        tw = kg.crossing(rw["steps"].astype(float), rw["coef"], level)
+                        ratios.append(tw / ta)
+                        factors.append(float(np.interp(ta, ra["steps"], ra["kernel"]))
+                                       / float(np.interp(tw, rw["steps"], rw["kernel"])))
+                    cell.update({"measured": float(np.median(ratios)) / delay,
+                                 "measured_min_max_over_seeds": [float(min(ratios)) / delay,
+                                                                 float(max(ratios)) / delay],
+                                 "kernel_factor_measured": float(np.median(factors)),
+                                 "reviewer_flow": REVIEWER_FLOW[width][strength][i],
+                                 "reviewer_formula": REVIEWER_FORMULA[width][strength][i],
+                                 "plain_scaling": 1.0 / (1.0 + 128.0 / width * (1.0 / cell["width_128_measured"]
+                                                                                 - 1.0))})
+                cells[f"{width} {strength} {lag} {k}"] = cell
+
+    def k_errors(widths: tuple[int, ...], which: str, strengths: tuple[str, ...] = K_STRENGTHS) -> dict:
+        e = [abs(c[which] - c["measured"]) for key, c in cells.items()
+             if int(key.split()[0]) in widths and key.split()[1] in strengths]
+        return {"mean_abs_error": float(np.mean(e)), "max_abs_error": float(np.max(e)), "n": len(e)}
+
+    candidates = ("reviewer_flow", "reviewer_formula", "flow", "plain_scaling", "width_128_measured")
+
+    def k_of(width: int, strength: str, lag: str, k: str) -> float:
+        return cells[f"{width} {strength} {lag} {k}"]["measured"]
+
+    strong = ("1.0", "1.5", "2.0", "2.5")
+    criteria = {
+        "shared_input_rises_with_width": bool(all(k_of(64, st, "lag 1", k) < k_of(128, st, "lag 1", k)
+                                                  < k_of(256, st, "lag 1", k) for st in strong
+                                                  for k in ("25 %", "50 %"))),
+        "shared_input_strength_2.0_at_25": {"width_64": k_of(64, "2.0", "lag 1", "25 %"), "at_most": 0.48,
+                                            "fails_above": 0.50, "width_256": k_of(256, "2.0", "lag 1", "25 %"),
+                                            "at_least": 0.78},
+        "not_shared_width_64_mean_shift": {"value": float(np.mean([abs(k_of(64, st, "lag 4", k)
+                                                                       - k_of(128, st, "lag 4", k))
+                                                                   for st in strong for k in ("25 %", "50 %")])),
+                                           "at_most": 0.045},
+        "shared_width_64_mean_shift": float(np.mean([k_of(128, st, "lag 1", k) - k_of(64, st, "lag 1", k)
+                                                     for st in strong for k in ("25 %", "50 %")])),
+        "not_shared_width_256_rise_at_2.0_and_2.5": {
+            "values": [k_of(256, st, "lag 4", k) - k_of(128, st, "lag 4", k) for st in ("2.0", "2.5")
+                       for k in ("25 %", "50 %")], "at_least": 0.08}}
+    k_by_width = {
+        "cells": cells,
+        "errors": {name: {which: k_errors(widths, which) for which in candidates}
+                   for name, widths in (("width 64", (64,)), ("width 256", (256,)), ("both", (64, 256)))},
+        "errors_at_strengths_1.0_and_2.0": {which: k_errors((64, 256), which, ("1.0", "2.0")) for which in candidates},
+        "reviewer_flow_minus_flow_here": {
+            "mean_abs": float(np.mean([abs(c["reviewer_flow"] - c["flow"]) for c in cells.values()
+                                       if "reviewer_flow" in c])),
+            "max_abs": float(np.max([abs(c["reviewer_flow"] - c["flow"]) for c in cells.values()
+                                     if "reviewer_flow" in c]))},
+        "flow_at_width_128": {"K": k_errors((128,), "flow"),
+                              "kernel_factor": {"mean_abs_error": float(np.mean(
+                                  [abs(c["kernel_factor_flow"] - c["kernel_factor_measured"])
+                                   for key, c in cells.items() if key.startswith("128 ")]))}},
+        "kernel_factor_errors_of_the_flow": {str(w): float(np.mean(
+            [abs(c["kernel_factor_flow"] - c["kernel_factor_measured"]) for key, c in cells.items()
+             if key.startswith(f"{w} ")])) for w in (64, 256)},
+        "passes_if": "mean abs error <= 0.025 over the 40 values, clearly below that of width 128's values",
+        "fails_if": "mean abs error > 0.035, or K with the shared input at width 64 above 0.50 for strength 2.0 at "
+                    "25 %, or K at width 256 not rising towards 1",
+        "criteria": criteria}
+
     result = {"status": "exploratory pilot; local runs; not independently recomputed", "seeds": list(SEEDS),
               "statement_2_kernel_law_by_width": law, "statement_1_invariant_drift": drift,
-              "statement_3_read_out_growth": readout}
+              "statement_3_read_out_growth": readout,
+              "second_round_flow_against_the_kernel_of_the_term_alone": flow_check,
+              "second_round_K_by_width": k_by_width}
     args.out.write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
 
     print("statement 2: kernel of the term alone, measured / law (median over seeds [min, max]) at F =", F_POINTS)
@@ -322,6 +548,25 @@ def main(argv: list[str] | None = None) -> int:
                   f"{v['kernel_in_the_first_order_direction_over_its_start']['median']:.3f} | "
                   f"{v['term_coefficient_then']['median']:.3f} | 2 x first-layer growth "
                   f"{v['first_layer_growth_times_2']['median']:.3f}")
+    print("second round: kernel of the term alone, measured (SGD) over the two-direction flow, at F =", F_POINTS)
+    for width, blk in flow_check.items():
+        print(f"  width {width:>3s}: " + " | ".join(f"{v['median']:.3f} [{v['min']:.3f}, {v['max']:.3f}]"
+                                                    for v in blk.values()))
+    print("second round: K measured / reviewer's flow / reviewer's formula / flow here / plain scaling / width 128")
+    for key, c in cells.items():
+        if "reviewer_flow" in c:
+            print(f"  {key}: {c['measured']:.4f} [{c['measured_min_max_over_seeds'][0]:.3f}, "
+                  f"{c['measured_min_max_over_seeds'][1]:.3f}] / {c['reviewer_flow']:.4f} / "
+                  f"{c['reviewer_formula']:.4f} / {c['flow']:.4f} / {c['plain_scaling']:.4f} / "
+                  f"{c['width_128_measured']:.4f}")
+    for name, by in k_by_width["errors"].items():
+        print(f"  {name}: " + "; ".join(f"{which} {v['mean_abs_error']:.4f} (max {v['max_abs_error']:.4f})"
+                                         for which, v in by.items()))
+    print("  strengths 1.0 and 2.0 only:", "; ".join(
+        f"{which} {v['mean_abs_error']:.4f}" for which, v in k_by_width["errors_at_strengths_1.0_and_2.0"].items()))
+    print("  reviewer's flow minus the flow here:", json.dumps(k_by_width["reviewer_flow_minus_flow_here"]),
+          "| flow at width 128:", json.dumps(k_by_width["flow_at_width_128"]))
+    print("  criteria:", json.dumps(criteria))
     return 0
 
 

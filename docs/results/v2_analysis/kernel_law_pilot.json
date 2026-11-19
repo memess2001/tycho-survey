@@ -2388,5 +2388,1025 @@
     }
    }
   }
+ },
+ "second_round_flow_against_the_kernel_of_the_term_alone": {
+  "32": {
+   "0.16": {
+    "median": 0.9724745240974095,
+    "min": 0.9115893683942372,
+    "max": 1.0902946495091541,
+    "n": 8
+   },
+   "0.4": {
+    "median": 1.010404088124657,
+    "min": 0.9497665355562329,
+    "max": 1.0706270552713832,
+    "n": 8
+   },
+   "0.8": {
+    "median": 1.0166715806570454,
+    "min": 0.8534380774656237,
+    "max": 1.0413739495379273,
+    "n": 8
+   },
+   "1.2": {
+    "median": 1.018005179430405,
+    "min": 0.8586137857442531,
+    "max": 1.0374050307574032,
+    "n": 8
+   },
+   "1.5": {
+    "median": 0.985428263776469,
+    "min": 0.8703637722641725,
+    "max": 1.0488996338679948,
+    "n": 8
+   }
+  },
+  "64": {
+   "0.16": {
+    "median": 0.9898664508713442,
+    "min": 0.9818074435863023,
+    "max": 1.0008857245491285,
+    "n": 8
+   },
+   "0.4": {
+    "median": 0.9995469026478663,
+    "min": 0.9928704466322201,
+    "max": 1.0244788924711725,
+    "n": 8
+   },
+   "0.8": {
+    "median": 1.0073615993372038,
+    "min": 0.9852163884745955,
+    "max": 1.031801525423768,
+    "n": 8
+   },
+   "1.2": {
+    "median": 0.9999489955304424,
+    "min": 0.9914287715662239,
+    "max": 1.0343788214781295,
+    "n": 8
+   },
+   "1.5": {
+    "median": 1.013630749775441,
+    "min": 1.0055193445470718,
+    "max": 1.0352849440539151,
+    "n": 8
+   }
+  },
+  "128": {
+   "0.16": {
+    "median": 0.9960035099802358,
+    "min": 0.9838053267102835,
+    "max": 1.0032975882684148,
+    "n": 8
+   },
+   "0.4": {
+    "median": 1.0048549731132193,
+    "min": 0.984433476813363,
+    "max": 1.0094911296115612,
+    "n": 8
+   },
+   "0.8": {
+    "median": 1.01524700135981,
+    "min": 0.9962069589578327,
+    "max": 1.028469613985701,
+    "n": 8
+   },
+   "1.2": {
+    "median": 1.021498025053567,
+    "min": 0.9977284655058576,
+    "max": 1.027996534395453,
+    "n": 8
+   },
+   "1.5": {
+    "median": 1.0284877790033906,
+    "min": 0.9934918948887161,
+    "max": 1.0402217164413592,
+    "n": 8
+   }
+  },
+  "256": {
+   "0.16": {
+    "median": 0.9991018904226773,
+    "min": 0.9973686387667469,
+    "max": 0.9999900730177027,
+    "n": 8
+   },
+   "0.4": {
+    "median": 1.0008387295891912,
+    "min": 0.995656386707994,
+    "max": 1.0038380382854708,
+    "n": 8
+   },
+   "0.8": {
+    "median": 1.0056098389883361,
+    "min": 1.0010211619140923,
+    "max": 1.0179558766009793,
+    "n": 8
+   },
+   "1.2": {
+    "median": 1.0105826063805599,
+    "min": 1.0048974569900577,
+    "max": 1.0272874378154293,
+    "n": 8
+   },
+   "1.5": {
+    "median": 1.0156669614703788,
+    "min": 1.0061220443380394,
+    "max": 1.0304540066557513,
+    "n": 8
+   }
+  },
+  "512": {
+   "0.16": {
+    "median": 0.9995225313317113,
+    "min": 0.9993790066644299,
+    "max": 0.999771946380607,
+    "n": 8
+   },
+   "0.4": {
+    "median": 0.9997461960432731,
+    "min": 0.999219796051983,
+    "max": 1.0003971816308614,
+    "n": 8
+   },
+   "0.8": {
+    "median": 1.0012473649761988,
+    "min": 0.9992487075180202,
+    "max": 1.0022444771167485,
+    "n": 8
+   },
+   "1.2": {
+    "median": 1.0038309315826317,
+    "min": 1.0007287668570266,
+    "max": 1.009033860338949,
+    "n": 8
+   },
+   "1.5": {
+    "median": 1.008818138637778,
+    "min": 1.002842262769862,
+    "max": 1.0166632430542097,
+    "n": 8
+   }
+  }
+ },
+ "second_round_K_by_width": {
+  "cells": {
+   "64 0.5 lag 1 25 %": {
+    "flow": 0.952487901986712,
+    "kernel_factor_flow": 0.9634496424717138,
+    "width_128_measured": 0.9851542122004181,
+    "measured": 0.9309439057148969,
+    "measured_min_max_over_seeds": [
+     0.8499211597660071,
+     1.044121097041712
+    ],
+    "kernel_factor_measured": 0.9536335485919597,
+    "reviewer_flow": 0.9526,
+    "reviewer_formula": 0.946,
+    "plain_scaling": 0.9707427710139667
+   },
+   "64 0.5 lag 1 50 %": {
+    "flow": 0.9663447228006643,
+    "kernel_factor_flow": 0.9805100037442749,
+    "width_128_measured": 0.9859229922118032,
+    "measured": 0.947618968525061,
+    "measured_min_max_over_seeds": [
+     0.9041578388587106,
+     1.025217946550407
+    ],
+    "kernel_factor_measured": 0.980906960014543,
+    "reviewer_flow": 0.9664,
+    "reviewer_formula": 0.9624,
+    "plain_scaling": 0.9722368071061976
+   },
+   "64 0.5 lag 4 25 %": {
+    "flow": 0.9924857143649772,
+    "kernel_factor_flow": 0.9857013740278473,
+    "width_128_measured": 0.9925171737684871,
+    "measured": 0.998454280023591,
+    "measured_min_max_over_seeds": [
+     0.9180060124070335,
+     1.0294816280291115
+    ],
+    "kernel_factor_measured": 0.9777299402678936,
+    "reviewer_flow": 0.9926,
+    "reviewer_formula": 0.9838,
+    "plain_scaling": 0.9851455011704716
+   },
+   "64 0.5 lag 4 50 %": {
+    "flow": 0.9849325462031954,
+    "kernel_factor_flow": 0.9939674307192792,
+    "width_128_measured": 0.9901426555340016,
+    "measured": 0.9903070062248677,
+    "measured_min_max_over_seeds": [
+     0.9393858854415479,
+     1.003490754924682
+    ],
+    "kernel_factor_measured": 0.99087671646146,
+    "reviewer_flow": 0.9851,
+    "reviewer_formula": 0.9854,
+    "plain_scaling": 0.9804777486245628
+   },
+   "64 1.0 lag 1 25 %": {
+    "flow": 0.7753544943655352,
+    "kernel_factor_flow": 0.8285338579591489,
+    "width_128_measured": 0.9223080877388053,
+    "measured": 0.7428085410505456,
+    "measured_min_max_over_seeds": [
+     0.5701188672463059,
+     0.9513500101308757
+    ],
+    "kernel_factor_measured": 0.8288501825039087,
+    "reviewer_flow": 0.7755,
+    "reviewer_formula": 0.7835,
+    "plain_scaling": 0.8558179543202048
+   },
+   "64 1.0 lag 1 50 %": {
+    "flow": 0.8368948833957133,
+    "kernel_factor_flow": 0.9281974302982237,
+    "width_128_measured": 0.915705979140324,
+    "measured": 0.8026158898533056,
+    "measured_min_max_over_seeds": [
+     0.6773109739088229,
+     0.8993583516139464
+    ],
+    "kernel_factor_measured": 0.9311696193602209,
+    "reviewer_flow": 0.837,
+    "reviewer_formula": 0.8417,
+    "plain_scaling": 0.8445181486976312
+   },
+   "64 1.0 lag 4 25 %": {
+    "flow": 0.9419396370925096,
+    "kernel_factor_flow": 0.9368186065432376,
+    "width_128_measured": 0.9585605078577428,
+    "measured": 0.9501863992738653,
+    "measured_min_max_over_seeds": [
+     0.8273815532946505,
+     0.9942976773288296
+    ],
+    "kernel_factor_measured": 0.9478087254928271,
+    "reviewer_flow": 0.9424,
+    "reviewer_formula": 0.9331,
+    "plain_scaling": 0.9204188194226904
+   },
+   "64 1.0 lag 4 50 %": {
+    "flow": 0.9299095755460801,
+    "kernel_factor_flow": 0.9778178089375064,
+    "width_128_measured": 0.9665105020577908,
+    "measured": 0.9558659832595094,
+    "measured_min_max_over_seeds": [
+     0.8728300918231402,
+     0.9629597428296367
+    ],
+    "kernel_factor_measured": 0.9741374213300182,
+    "reviewer_flow": 0.9302,
+    "reviewer_formula": 0.9393,
+    "plain_scaling": 0.9351914112162912
+   },
+   "64 1.5 lag 1 25 %": {
+    "flow": 0.5616741649684034,
+    "kernel_factor_flow": 0.6578731447598692,
+    "width_128_measured": 0.7608456080264409,
+    "measured": 0.5247009733457118,
+    "measured_min_max_over_seeds": [
+     0.35472105318062247,
+     0.7188666979133779
+    ],
+    "kernel_factor_measured": 0.662061969539957,
+    "reviewer_flow": 0.562,
+    "reviewer_formula": 0.5741,
+    "plain_scaling": 0.6140038827725639
+   },
+   "64 1.5 lag 1 50 %": {
+    "flow": 0.6550104875714712,
+    "kernel_factor_flow": 0.8386553369323588,
+    "width_128_measured": 0.7814584863461465,
+    "measured": 0.6244779157157807,
+    "measured_min_max_over_seeds": [
+     0.45325560689796157,
+     0.7012189023271302
+    ],
+    "kernel_factor_measured": 0.8304157027780583,
+    "reviewer_flow": 0.6552,
+    "reviewer_formula": 0.6659,
+    "plain_scaling": 0.6413064122886604
+   },
+   "64 1.5 lag 4 25 %": {
+    "flow": 0.8565390769165075,
+    "kernel_factor_flow": 0.884276475556952,
+    "width_128_measured": 0.866495309450166,
+    "measured": 0.850836136737664,
+    "measured_min_max_over_seeds": [
+     0.7378217598581264,
+     0.9337958563088549
+    ],
+    "kernel_factor_measured": 0.8967575261320225,
+    "reviewer_flow": 0.8571,
+    "reviewer_formula": 0.8582,
+    "plain_scaling": 0.7644391034940062
+   },
+   "64 1.5 lag 4 50 %": {
+    "flow": 0.8572081898545019,
+    "kernel_factor_flow": 0.9492679330758327,
+    "width_128_measured": 0.8937366997268025,
+    "measured": 0.8566150217939021,
+    "measured_min_max_over_seeds": [
+     0.754090748462894,
+     0.8986299599316139
+    ],
+    "kernel_factor_measured": 0.9766409814973467,
+    "reviewer_flow": 0.8576,
+    "reviewer_formula": 0.8703,
+    "plain_scaling": 0.8078878685626555
+   },
+   "64 2.0 lag 1 25 %": {
+    "flow": 0.4010852271500223,
+    "kernel_factor_flow": 0.5030626968513309,
+    "width_128_measured": 0.6236873628441724,
+    "measured": 0.38102510915367227,
+    "measured_min_max_over_seeds": [
+     0.2352925450764364,
+     0.5435094311521972
+    ],
+    "kernel_factor_measured": 0.48886581284252073,
+    "reviewer_flow": 0.4014,
+    "reviewer_formula": 0.4001,
+    "plain_scaling": 0.4531582040349731
+   },
+   "64 2.0 lag 1 50 %": {
+    "flow": 0.49828927921682986,
+    "kernel_factor_flow": 0.7180479451815528,
+    "width_128_measured": 0.6458137790677457,
+    "measured": 0.48184553481410364,
+    "measured_min_max_over_seeds": [
+     0.32128263220629844,
+     0.5161365802011872
+    ],
+    "kernel_factor_measured": 0.7008946296951045,
+    "reviewer_flow": 0.4985,
+    "reviewer_formula": 0.4982,
+    "plain_scaling": 0.4769017503539152
+   },
+   "64 2.0 lag 4 25 %": {
+    "flow": 0.7726438575159356,
+    "kernel_factor_flow": 0.8335699900414006,
+    "width_128_measured": 0.7669899339999713,
+    "measured": 0.740116482561872,
+    "measured_min_max_over_seeds": [
+     0.6556619960638023,
+     0.8533823095625264
+    ],
+    "kernel_factor_measured": 0.8584073317987764,
+    "reviewer_flow": 0.7733,
+    "reviewer_formula": 0.7794,
+    "plain_scaling": 0.6220467741095906
+   },
+   "64 2.0 lag 4 50 %": {
+    "flow": 0.7968480951299635,
+    "kernel_factor_flow": 0.9514749370660869,
+    "width_128_measured": 0.8249772439539703,
+    "measured": 0.7916558379855072,
+    "measured_min_max_over_seeds": [
+     0.6944234033825671,
+     0.8447116458760711
+    ],
+    "kernel_factor_measured": 0.9601439876503892,
+    "reviewer_flow": 0.7973,
+    "reviewer_formula": 0.7966,
+    "plain_scaling": 0.7020946953657577
+   },
+   "64 2.5 lag 1 25 %": {
+    "flow": 0.29472935925310717,
+    "kernel_factor_flow": 0.3903843712561415,
+    "width_128_measured": 0.48873679528857955,
+    "measured": 0.28623929573588963,
+    "measured_min_max_over_seeds": [
+     0.16788486065741123,
+     0.37229803793190214
+    ],
+    "kernel_factor_measured": 0.3870889413458305,
+    "reviewer_flow": 0.295,
+    "reviewer_formula": 0.2812,
+    "plain_scaling": 0.32339621170218663
+   },
+   "64 2.5 lag 1 50 %": {
+    "flow": 0.38766438290081784,
+    "kernel_factor_flow": 0.6050906011936503,
+    "width_128_measured": 0.5206833300227445,
+    "measured": 0.3604243975942376,
+    "measured_min_max_over_seeds": [
+     0.24533160825194153,
+     0.4041938658610744
+    ],
+    "kernel_factor_measured": 0.5784903483294543,
+    "reviewer_flow": 0.3878,
+    "reviewer_formula": 0.3692,
+    "plain_scaling": 0.3519755712823475
+   },
+   "64 2.5 lag 4 25 %": {
+    "flow": 0.7097239375889504,
+    "kernel_factor_flow": 0.7908353022190957,
+    "width_128_measured": 0.6965591070219209,
+    "measured": 0.6893113213813794,
+    "measured_min_max_over_seeds": [
+     0.5649900630228213,
+     0.7845708763344993
+    ],
+    "kernel_factor_measured": 0.8269958416641002,
+    "reviewer_flow": 0.7105,
+    "reviewer_formula": 0.7076,
+    "plain_scaling": 0.5344002254144681
+   },
+   "64 2.5 lag 4 50 %": {
+    "flow": 0.7519943793593257,
+    "kernel_factor_flow": 0.9337703133208389,
+    "width_128_measured": 0.7718258796626567,
+    "measured": 0.7609158926071015,
+    "measured_min_max_over_seeds": [
+     0.617033007300122,
+     0.862858589763297
+    ],
+    "kernel_factor_measured": 0.9491215096577235,
+    "reviewer_flow": 0.7524,
+    "reviewer_formula": 0.7284,
+    "plain_scaling": 0.6284335965739605
+   },
+   "128 0.5 lag 1 25 %": {
+    "flow": 0.9921876022527839,
+    "kernel_factor_flow": 0.9772335617621335,
+    "width_128_measured": 0.9851542122004181,
+    "measured": 0.9851542122004181,
+    "kernel_factor_measured": 0.9776850468736236
+   },
+   "128 0.5 lag 1 50 %": {
+    "flow": 0.9865670802921247,
+    "kernel_factor_flow": 0.9906035623516827,
+    "width_128_measured": 0.9859229922118032,
+    "measured": 0.9859229922118032,
+    "kernel_factor_measured": 0.9875583467329694
+   },
+   "128 0.5 lag 4 25 %": {
+    "flow": 0.9816958970374138,
+    "kernel_factor_flow": 0.9922322415500098,
+    "width_128_measured": 0.9925171737684871,
+    "measured": 0.9925171737684871,
+    "kernel_factor_measured": 0.9922351169074444
+   },
+   "128 0.5 lag 4 50 %": {
+    "flow": 0.9866814930354308,
+    "kernel_factor_flow": 0.995954976529611,
+    "width_128_measured": 0.9901426555340016,
+    "measured": 0.9901426555340016,
+    "kernel_factor_measured": 1.0006259171910177
+   },
+   "128 1.0 lag 1 25 %": {
+    "flow": 0.918934959899005,
+    "kernel_factor_flow": 0.898171383694461,
+    "width_128_measured": 0.9223080877388053,
+    "measured": 0.9223080877388053,
+    "kernel_factor_measured": 0.8921160183534256
+   },
+   "128 1.0 lag 1 50 %": {
+    "flow": 0.9114403961220705,
+    "kernel_factor_flow": 0.9482474207275673,
+    "width_128_measured": 0.915705979140324,
+    "measured": 0.915705979140324,
+    "kernel_factor_measured": 0.9464560612963344
+   },
+   "128 1.0 lag 4 25 %": {
+    "flow": 0.9365662565906124,
+    "kernel_factor_flow": 0.9585808097608307,
+    "width_128_measured": 0.9585605078577428,
+    "measured": 0.9585605078577428,
+    "kernel_factor_measured": 0.9595666482269964
+   },
+   "128 1.0 lag 4 50 %": {
+    "flow": 0.9520864001294759,
+    "kernel_factor_flow": 0.980649578764015,
+    "width_128_measured": 0.9665105020577908,
+    "measured": 0.9665105020577908,
+    "kernel_factor_measured": 0.982556023003039
+   },
+   "128 1.5 lag 1 25 %": {
+    "flow": 0.7806370686714903,
+    "kernel_factor_flow": 0.7710601432768944,
+    "width_128_measured": 0.7608456080264409,
+    "measured": 0.7608456080264409,
+    "kernel_factor_measured": 0.7574975489665023
+   },
+   "128 1.5 lag 1 50 %": {
+    "flow": 0.78098022449232,
+    "kernel_factor_flow": 0.8743883286986196,
+    "width_128_measured": 0.7814584863461465,
+    "measured": 0.7814584863461465,
+    "kernel_factor_measured": 0.8794712675000536
+   },
+   "128 1.5 lag 4 25 %": {
+    "flow": 0.8660799017743377,
+    "kernel_factor_flow": 0.9039325432472429,
+    "width_128_measured": 0.866495309450166,
+    "measured": 0.866495309450166,
+    "kernel_factor_measured": 0.9068500586296787
+   },
+   "128 1.5 lag 4 50 %": {
+    "flow": 0.8943369823124168,
+    "kernel_factor_flow": 0.9494327947112848,
+    "width_128_measured": 0.8937366997268025,
+    "measured": 0.8937366997268025,
+    "kernel_factor_measured": 0.9580831914850055
+   },
+   "128 2.0 lag 1 25 %": {
+    "flow": 0.6280302082847707,
+    "kernel_factor_flow": 0.6241504060884783,
+    "width_128_measured": 0.6236873628441724,
+    "measured": 0.6236873628441724,
+    "kernel_factor_measured": 0.6136788863322395
+   },
+   "128 2.0 lag 1 50 %": {
+    "flow": 0.6495002450136352,
+    "kernel_factor_flow": 0.780109212787226,
+    "width_128_measured": 0.6458137790677457,
+    "measured": 0.6458137790677457,
+    "kernel_factor_measured": 0.77375482789148
+   },
+   "128 2.0 lag 4 25 %": {
+    "flow": 0.7885943935316617,
+    "kernel_factor_flow": 0.8439915759875133,
+    "width_128_measured": 0.7669899339999713,
+    "measured": 0.7669899339999713,
+    "kernel_factor_measured": 0.8494578324669524
+   },
+   "128 2.0 lag 4 50 %": {
+    "flow": 0.8307424246137233,
+    "kernel_factor_flow": 0.9180267521089689,
+    "width_128_measured": 0.8249772439539703,
+    "measured": 0.8249772439539703,
+    "kernel_factor_measured": 0.9303653053655031
+   },
+   "128 2.5 lag 1 25 %": {
+    "flow": 0.4985183408350954,
+    "kernel_factor_flow": 0.5016754810675764,
+    "width_128_measured": 0.48873679528857955,
+    "measured": 0.48873679528857955,
+    "kernel_factor_measured": 0.5032339483609017
+   },
+   "128 2.5 lag 1 50 %": {
+    "flow": 0.5319644413618699,
+    "kernel_factor_flow": 0.6688561940261706,
+    "width_128_measured": 0.5206833300227445,
+    "measured": 0.5206833300227445,
+    "kernel_factor_measured": 0.6725043745861925
+   },
+   "128 2.5 lag 4 25 %": {
+    "flow": 0.7187506596113891,
+    "kernel_factor_flow": 0.7900208407716932,
+    "width_128_measured": 0.6965591070219209,
+    "measured": 0.6965591070219209,
+    "kernel_factor_measured": 0.7885941906688752
+   },
+   "128 2.5 lag 4 50 %": {
+    "flow": 0.7759266679974286,
+    "kernel_factor_flow": 0.8982972901278933,
+    "width_128_measured": 0.7718258796626567,
+    "measured": 0.7718258796626567,
+    "kernel_factor_measured": 0.8986951414816606
+   },
+   "256 0.5 lag 1 25 %": {
+    "flow": 1.0050143457691985,
+    "kernel_factor_flow": 0.990242580188893,
+    "width_128_measured": 0.9851542122004181,
+    "measured": 0.999842308685491,
+    "measured_min_max_over_seeds": [
+     0.9696903755705604,
+     1.0543890538712957
+    ],
+    "kernel_factor_measured": 0.9891652278041397,
+    "reviewer_flow": 1.005,
+    "reviewer_formula": 0.9935,
+    "plain_scaling": 0.992521594691061
+   },
+   "256 0.5 lag 1 50 %": {
+    "flow": 0.9956853104992877,
+    "kernel_factor_flow": 0.9925349649480617,
+    "width_128_measured": 0.9859229922118032,
+    "measured": 0.9983034551363822,
+    "measured_min_max_over_seeds": [
+     0.9697586112911851,
+     1.022784197888986
+    ],
+    "kernel_factor_measured": 0.99236798372494,
+    "reviewer_flow": 0.9956,
+    "reviewer_formula": 0.9924,
+    "plain_scaling": 0.9929116044059096
+   },
+   "256 0.5 lag 4 25 %": {
+    "flow": 0.9949582095705084,
+    "kernel_factor_flow": 0.9968157746919633,
+    "width_128_measured": 0.9925171737684871,
+    "measured": 1.0033611519760313,
+    "measured_min_max_over_seeds": [
+     0.9588537452961103,
+     1.0818710254658246
+    ],
+    "kernel_factor_measured": 0.9961646033203718,
+    "reviewer_flow": 0.995,
+    "reviewer_formula": 0.9965,
+    "plain_scaling": 0.9962445361425115
+   },
+   "256 0.5 lag 4 50 %": {
+    "flow": 0.9960500600194531,
+    "kernel_factor_flow": 0.9975730737222939,
+    "width_128_measured": 0.9901426555340016,
+    "measured": 1.0030926795327124,
+    "measured_min_max_over_seeds": [
+     0.9569220034371343,
+     1.0344287641758885
+    ],
+    "kernel_factor_measured": 0.9972957118520513,
+    "reviewer_flow": 0.9961,
+    "reviewer_formula": 0.9968,
+    "plain_scaling": 0.9950469156376363
+   },
+   "256 1.0 lag 1 25 %": {
+    "flow": 0.9862129923013261,
+    "kernel_factor_flow": 0.9555135888256168,
+    "width_128_measured": 0.9223080877388053,
+    "measured": 0.9799737414010052,
+    "measured_min_max_over_seeds": [
+     0.9085980162555218,
+     1.0626981005451164
+    ],
+    "kernel_factor_measured": 0.9544900727079431,
+    "reviewer_flow": 0.986,
+    "reviewer_formula": 0.969,
+    "plain_scaling": 0.9595840475536972
+   },
+   "256 1.0 lag 1 50 %": {
+    "flow": 0.9655705085684483,
+    "kernel_factor_flow": 0.9653976660249416,
+    "width_128_measured": 0.915705979140324,
+    "measured": 0.9767086572638777,
+    "measured_min_max_over_seeds": [
+     0.966602930670439,
+     1.0133376731696062
+    ],
+    "kernel_factor_measured": 0.965042024678765,
+    "reviewer_flow": 0.9653,
+    "reviewer_formula": 0.9639,
+    "plain_scaling": 0.9559984560378608
+   },
+   "256 1.0 lag 4 25 %": {
+    "flow": 0.9845369602888628,
+    "kernel_factor_flow": 0.9824378660362771,
+    "width_128_measured": 0.9585605078577428,
+    "measured": 0.9806696512450903,
+    "measured_min_max_over_seeds": [
+     0.904980554912895,
+     1.1210692495109869
+    ],
+    "kernel_factor_measured": 0.9823255380883364,
+    "reviewer_flow": 0.9845,
+    "reviewer_formula": 0.9831,
+    "plain_scaling": 0.978841862696607
+   },
+   "256 1.0 lag 4 50 %": {
+    "flow": 0.9852149064947614,
+    "kernel_factor_flow": 0.9880678585784812,
+    "width_128_measured": 0.9665105020577908,
+    "measured": 1.0272793651033638,
+    "measured_min_max_over_seeds": [
+     0.9364929173324318,
+     1.0671514938921751
+    ],
+    "kernel_factor_measured": 0.9862535285321878,
+    "reviewer_flow": 0.9851,
+    "reviewer_formula": 0.9845,
+    "plain_scaling": 0.9829700894517649
+   },
+   "256 1.5 lag 1 25 %": {
+    "flow": 0.9317555107230888,
+    "kernel_factor_flow": 0.8914464318234849,
+    "width_128_measured": 0.7608456080264409,
+    "measured": 0.9213210953083657,
+    "measured_min_max_over_seeds": [
+     0.8041687102276237,
+     1.0524386120804636
+    ],
+    "kernel_factor_measured": 0.8845672135106231,
+    "reviewer_flow": 0.9312,
+    "reviewer_formula": 0.9198,
+    "plain_scaling": 0.8641820776998139
+   },
+   "256 1.5 lag 1 50 %": {
+    "flow": 0.90549081221623,
+    "kernel_factor_flow": 0.9163517678558152,
+    "width_128_measured": 0.7814584863461465,
+    "measured": 0.9266107375236459,
+    "measured_min_max_over_seeds": [
+     0.8562053977948038,
+     0.9653869006055634
+    ],
+    "kernel_factor_measured": 0.9136882611590205,
+    "reviewer_flow": 0.905,
+    "reviewer_formula": 0.9071,
+    "plain_scaling": 0.877324385985501
+   },
+   "256 1.5 lag 4 25 %": {
+    "flow": 0.95892105838565,
+    "kernel_factor_flow": 0.9537283943643113,
+    "width_128_measured": 0.866495309450166,
+    "measured": 0.9533211870865559,
+    "measured_min_max_over_seeds": [
+     0.8082956894135157,
+     1.092671895273846
+    ],
+    "kernel_factor_measured": 0.9542134049710167,
+    "reviewer_flow": 0.9587,
+    "reviewer_formula": 0.9558,
+    "plain_scaling": 0.9284730639965219
+   },
+   "256 1.5 lag 4 50 %": {
+    "flow": 0.9607048577669486,
+    "kernel_factor_flow": 0.96713301990371,
+    "width_128_measured": 0.8937366997268025,
+    "measured": 1.001634568290665,
+    "measured_min_max_over_seeds": [
+     0.9089627984179847,
+     1.0630167755087043
+    ],
+    "kernel_factor_measured": 0.966086857314602,
+    "reviewer_flow": 0.9604,
+    "reviewer_formula": 0.9595,
+    "plain_scaling": 0.9438869720967401
+   },
+   "256 2.0 lag 1 25 %": {
+    "flow": 0.8486292945986512,
+    "kernel_factor_flow": 0.8074141207285386,
+    "width_128_measured": 0.6236873628441724,
+    "measured": 0.8436522315791203,
+    "measured_min_max_over_seeds": [
+     0.7028153359584657,
+     0.9629776874857696
+    ],
+    "kernel_factor_measured": 0.8016008758723108,
+    "reviewer_flow": 0.8479,
+    "reviewer_formula": 0.8489,
+    "plain_scaling": 0.7682357787790809
+   },
+   "256 2.0 lag 1 50 %": {
+    "flow": 0.8240277490404744,
+    "kernel_factor_flow": 0.8509589414705141,
+    "width_128_measured": 0.6458137790677457,
+    "measured": 0.8375370896029285,
+    "measured_min_max_over_seeds": [
+     0.797796290130242,
+     0.8950770348559337
+    ],
+    "kernel_factor_measured": 0.8439965843817276,
+    "reviewer_flow": 0.8234,
+    "reviewer_formula": 0.8269,
+    "plain_scaling": 0.7847956886514346
+   },
+   "256 2.0 lag 4 25 %": {
+    "flow": 0.9159932311063773,
+    "kernel_factor_flow": 0.9135456411031998,
+    "width_128_measured": 0.7669899339999713,
+    "measured": 0.9381263977892464,
+    "measured_min_max_over_seeds": [
+     0.7110150484367983,
+     1.0759942597427967
+    ],
+    "kernel_factor_measured": 0.909901885507639,
+    "reviewer_flow": 0.9156,
+    "reviewer_formula": 0.9158,
+    "plain_scaling": 0.868131639282993
+   },
+   "256 2.0 lag 4 50 %": {
+    "flow": 0.9228018255962704,
+    "kernel_factor_flow": 0.9383484350672153,
+    "width_128_measured": 0.8249772439539703,
+    "measured": 0.9471874743441717,
+    "measured_min_max_over_seeds": [
+     0.8154100755667297,
+     1.004888071190461
+    ],
+    "kernel_factor_measured": 0.93840207130659,
+    "reviewer_flow": 0.9223,
+    "reviewer_formula": 0.9225,
+    "plain_scaling": 0.9040959241404962
+   },
+   "256 2.5 lag 1 25 %": {
+    "flow": 0.7557624202430757,
+    "kernel_factor_flow": 0.7180537489848645,
+    "width_128_measured": 0.48873679528857955,
+    "measured": 0.7662528469933286,
+    "measured_min_max_over_seeds": [
+     0.573836836774748,
+     0.8511047913589455
+    ],
+    "kernel_factor_measured": 0.7030008054942489,
+    "reviewer_flow": 0.755,
+    "reviewer_formula": 0.7665,
+    "plain_scaling": 0.656579184225566
+   },
+   "256 2.5 lag 1 50 %": {
+    "flow": 0.7369290816007806,
+    "kernel_factor_flow": 0.7759589799348852,
+    "width_128_measured": 0.5206833300227445,
+    "measured": 0.7387913348844549,
+    "measured_min_max_over_seeds": [
+     0.6877843043173621,
+     0.7870878105990032
+    ],
+    "kernel_factor_measured": 0.7681317194043471,
+    "reviewer_flow": 0.7363,
+    "reviewer_formula": 0.7357,
+    "plain_scaling": 0.6848017858063279
+   },
+   "256 2.5 lag 4 25 %": {
+    "flow": 0.8636837005663272,
+    "kernel_factor_flow": 0.8672268247763433,
+    "width_128_measured": 0.6965591070219209,
+    "measured": 0.8927385727742635,
+    "measured_min_max_over_seeds": [
+     0.6272177400036987,
+     1.034532380107931
+    ],
+    "kernel_factor_measured": 0.8655098686398424,
+    "reviewer_flow": 0.8631,
+    "reviewer_formula": 0.8677,
+    "plain_scaling": 0.8211433414125321
+   },
+   "256 2.5 lag 4 50 %": {
+    "flow": 0.8768812763604548,
+    "kernel_factor_flow": 0.9057091805267168,
+    "width_128_measured": 0.7718258796626567,
+    "measured": 0.9230367571197777,
+    "measured_min_max_over_seeds": [
+     0.7743206487831201,
+     0.9988403783542774
+    ],
+    "kernel_factor_measured": 0.9053947674690048,
+    "reviewer_flow": 0.8763,
+    "reviewer_formula": 0.8778,
+    "plain_scaling": 0.8712209123050025
+   }
+  },
+  "errors": {
+   "width 64": {
+    "reviewer_flow": {
+     "mean_abs_error": 0.01844971147127027,
+     "max_abs_error": 0.0372990266542883,
+     "n": 20
+    },
+    "reviewer_formula": {
+     "mean_abs_error": 0.02094864104485922,
+     "max_abs_error": 0.0493990266542883,
+     "n": 20
+    },
+    "flow": {
+     "mean_abs_error": 0.018286521873722632,
+     "max_abs_error": 0.03697319162269164,
+     "n": 20
+    },
+    "plain_scaling": {
+     "mean_abs_error": 0.05759355107542021,
+     "max_abs_error": 0.15491109596691133,
+     "n": 20
+    },
+    "width_128_measured": {
+     "mean_abs_error": 0.08519348332300829,
+     "max_abs_error": 0.2426622536905001,
+     "n": 20
+    }
+   },
+   "width 256": {
+    "reviewer_flow": {
+     "mean_abs_error": 0.016034043651461067,
+     "max_abs_error": 0.04673675711977776,
+     "n": 20
+    },
+    "reviewer_formula": {
+     "mean_abs_error": 0.01482747349161439,
+     "max_abs_error": 0.045236757119777704,
+     "n": 20
+    },
+    "flow": {
+     "mean_abs_error": 0.015859854272330054,
+     "max_abs_error": 0.046155480759322964,
+     "n": 20
+    },
+    "plain_scaling": {
+     "mean_abs_error": 0.04162257213207098,
+     "max_abs_error": 0.10967366276776258,
+     "n": 20
+    },
+    "width_128_measured": {
+     "mean_abs_error": 0.1150404828859894,
+     "max_abs_error": 0.2775160517047491,
+     "n": 20
+    }
+   },
+   "both": {
+    "reviewer_flow": {
+     "mean_abs_error": 0.01724187756136567,
+     "max_abs_error": 0.04673675711977776,
+     "n": 40
+    },
+    "reviewer_formula": {
+     "mean_abs_error": 0.017888057268236807,
+     "max_abs_error": 0.0493990266542883,
+     "n": 40
+    },
+    "flow": {
+     "mean_abs_error": 0.017073188073026345,
+     "max_abs_error": 0.046155480759322964,
+     "n": 40
+    },
+    "plain_scaling": {
+     "mean_abs_error": 0.049608061603745604,
+     "max_abs_error": 0.15491109596691133,
+     "n": 40
+    },
+    "width_128_measured": {
+     "mean_abs_error": 0.10011698310449883,
+     "max_abs_error": 0.2775160517047491,
+     "n": 40
+    }
+   }
+  },
+  "errors_at_strengths_1.0_and_2.0": {
+   "reviewer_flow": {
+    "mean_abs_error": 0.019101771687046288,
+    "max_abs_error": 0.04217936510336384,
+    "n": 16
+   },
+   "reviewer_formula": {
+    "mean_abs_error": 0.020310989362171947,
+    "max_abs_error": 0.042779365103363776,
+    "n": 16
+   },
+   "flow": {
+    "mean_abs_error": 0.018972874844416187,
+    "max_abs_error": 0.04206445860860242,
+    "n": 16
+   },
+   "plain_scaling": {
+    "mean_abs_error": 0.051158917259797966,
+    "max_abs_error": 0.11806970845228137,
+    "n": 16
+   },
+   "width_128_measured": {
+    "mean_abs_error": 0.10531342689852644,
+    "max_abs_error": 0.2426622536905001,
+    "n": 16
+   }
+  },
+  "reviewer_flow_minus_flow_here": {
+   "mean_abs": 0.00033369148387572546,
+   "max_abs": 0.0007760624110496606
+  },
+  "flow_at_width_128": {
+   "K": {
+    "mean_abs_error": 0.008502817178198082,
+    "max_abs_error": 0.022191552589468144,
+    "n": 20
+   },
+   "kernel_factor": {
+    "mean_abs_error": 0.004539241659618798
+   }
+  },
+  "kernel_factor_errors_of_the_flow": {
+   "64": 0.011889039332796761,
+   "256": 0.002896857375428985
+  },
+  "passes_if": "mean abs error <= 0.025 over the 40 values, clearly below that of width 128's values",
+  "fails_if": "mean abs error > 0.035, or K with the shared input at width 64 above 0.50 for strength 2.0 at 25 %, or K at width 256 not rising towards 1",
+  "criteria": {
+   "shared_input_rises_with_width": true,
+   "shared_input_strength_2.0_at_25": {
+    "width_64": 0.38102510915367227,
+    "at_most": 0.48,
+    "fails_above": 0.5,
+    "width_256": 0.8436522315791203,
+    "at_least": 0.78
+   },
+   "not_shared_width_64_mean_shift": {
+    "value": 0.018769013516277536,
+    "at_most": 0.045
+   },
+   "shared_width_64_mean_shift": 0.181887721401464,
+   "not_shared_width_256_rise_at_2.0_and_2.5": {
+    "values": [
+     0.17113646378927516,
+     0.1222102303902014,
+     0.19617946575234257,
+     0.15121087745712103
+    ],
+    "at_least": 0.08
+   }
+  }
  }
 }
