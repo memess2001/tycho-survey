@@ -177,19 +177,6 @@ def main(argv: list[str] | None = None) -> int:
                          "within_high": (hi.max(0) - hi.min(0)).tolist(), "between": (hi.mean(0) - lo.mean(0)).tolist(),
                          "within_low_batch_8_and_32": np.abs(lo[0] - lo[1]).tolist(),
                          "within_high_batch_8_and_32": np.abs(hi[0] - hi[1]).tolist()}
-        # how far the batch-128 cell of each level is behind the other two, in sequences: the shift that brings its
-        # band_l1 curve onto the mean of the other two (over the stretch where the curves rise)
-        lag = {}
-        for name, group in (("low", LOW), ("high", HIGH)):
-            ref = np.mean([cached[c]["band_l1"] for c in group[:2]], axis=0)
-            mine = np.array(cached[group[2]]["band_l1"])
-            top = int(np.argmax(ref))                    # up to the reference curve's maximum
-            shifts = np.arange(0, 12_801, 400)
-            err = [float(np.mean((np.interp(np.array(grid[:top + 1]) + s, grid, mine) - ref[:top + 1]) ** 2))
-                   for s in shifts]
-            lag[name] = {"cell": group[2], "sequences": int(shifts[int(np.argmin(err))]),
-                         "steps_of_batch_128": int(shifts[int(np.argmin(err))]) // 128}
-        equal_n["batch_128_lag"] = lag
     equal_n["spread"] = spread
 
     # (b) displacement of the weights at equal numbers of sequences
@@ -200,14 +187,32 @@ def main(argv: list[str] | None = None) -> int:
             runs.setdefault(j["cell"], []).append(json.loads(f.read_text()))
     measured = {c: {k: np.median([r[k] for r in rs], axis=0).tolist() for k in rs[0]
                     if k not in ("cell", "run", "step")} for c, rs in runs.items() if len(rs) == 6}
-    repeat = None                                        # the new short runs against the cached ones
-    if measured and all(cached.get(c) for c in measured):
+    repeat = None                                        # the new short runs against the cached ones, at the steps
+    if measured and all(cached.get(c) for c in measured):   # at which the cached runs were measured
+        def on_grid(c: str, n: int) -> bool:
+            t = n / cells[c][1]
+            return t % 250 == 0 or (t <= pp.SHORT_STEPS and t % 50 == 0)
+
         repeat = float(max(abs(a - b) for c in measured for k in KEYS
-                           for a, b, n in zip(measured[c][k], cached[c][k], grid)
-                           if (n / cells[c][1]) % 50 == 0))
+                           for a, b, n in zip(measured[c][k], cached[c][k], grid) if on_grid(c, n)))
     displacement = {"sequences": grid, "cells": measured, "largest_difference_from_the_cached_runs": repeat,
                     "fit_lr_a_times_batch_b": {}, "moved_times_root_batch_over_lr": {},
-                    "one_minus_cosine_fit": {}}
+                    "moved_ratio_when_the_learning_rate_doubles": {}, "one_minus_cosine_fit": {}}
+    #: pairs of cells with the same batch size and twice the learning rate
+    doubled = (("lr2.5e-4_b8", "lr5e-4_b8"), ("lr5e-4", "base"), ("b128", "lr2e-3_b128"), ("base", "lr2e-3"))
+    if len(measured) == len(CELLS):
+        # how far the batch-128 cell of each level is behind the other two, in sequences: the shift that brings
+        # its layer-0 band attention onto the mean of the other two, over the first 19,200 sequences
+        lag = {}
+        early = [n for n in grid if n <= 19_200]
+        for name, group in (("low", LOW), ("high", HIGH)):
+            ref = np.mean([measured[c]["band_l0"] for c in group[:2]], axis=0)[:len(early)]
+            mine = np.array(measured[group[2]]["band_l0"])
+            shifts = np.arange(0, 9_601, 200)
+            err = [float(np.mean((np.interp(np.array(early) + s, grid, mine) - ref) ** 2)) for s in shifts]
+            best = int(shifts[int(np.argmin(err))])
+            lag[name] = {"cell": group[2], "sequences": best, "steps_of_batch_128": best / 128}
+        equal_n["batch_128_lag"] = lag
     if len(measured) == len(CELLS):
         for g in GROUPS:
             fits, coll, turn = {}, {}, {}
@@ -220,6 +225,9 @@ def main(argv: list[str] | None = None) -> int:
                                 "largest_over_smallest_with_lr_over_batch": (lambda v: max(v) / min(v))(
                                     [measured[c][f"moved_{g}"][i] * cells[c][1] / cells[c][0] for c in CELLS])}
                 turn[str(n)] = power_fit(cells, {c: 1.0 - measured[c][f"cos_{g}"][i] for c in CELLS})
+            displacement["moved_ratio_when_the_learning_rate_doubles"][g] = {
+                str(n): [measured[b][f"moved_{g}"][i] / measured[a][f"moved_{g}"][i] for a, b in doubled]
+                for i, n in enumerate(grid) if i}
             displacement["fit_lr_a_times_batch_b"][g] = fits
             displacement["moved_times_root_batch_over_lr"][g] = coll
             displacement["one_minus_cosine_fit"][g] = turn
@@ -276,8 +284,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"   {k}: within the low level", [round(spread[k]["within_low"][i], 3) for i in pick],
                   "| within the high level", [round(spread[k]["within_high"][i], 3) for i in pick],
                   "| between", [round(spread[k]["between"][i], 3) for i in pick])
-        print("   batch-128 cells behind the other two of their level:", equal_n["batch_128_lag"])
     if displacement["fit_lr_a_times_batch_b"]:
+        print("   batch-128 cells behind the other two of their level:", equal_n["batch_128_lag"])
         print("== (b) distance from the initial weights at equal N, fitted as lr^a B^b over the eight cells "
               "(largest difference of the new runs from the cached ones:", repeat, ")")
         for g in GROUPS:
@@ -287,6 +295,11 @@ def main(argv: list[str] | None = None) -> int:
                 f"N {n}: a {f[str(n)]['lr_exponent']:+.2f} b {f[str(n)]['batch_exponent']:+.2f} (spread of "
                 f"moved*sqrt(B)/lr x{c[str(n)]['largest_over_smallest']:.2f}; of moved*B/lr "
                 f"x{c[str(n)]['largest_over_smallest_with_lr_over_batch']:.2f})" for n in (3200, 12800, 38400)))
+        for g in GROUPS:
+            r = displacement["moved_ratio_when_the_learning_rate_doubles"][g]
+            print(f"   {g:>5s}, distance at twice the learning rate over distance at the same batch size: "
+                  + " | ".join(f"N {n}: " + ", ".join(f"{x:.2f}" for x in r[str(n)])
+                               for n in (3200, 6400, 12800, 25600, 38400)))
         for g in ("pos", "tok"):
             t = displacement["one_minus_cosine_fit"][g]
             print(f"   1 - cosine to the initial {g}: " + " | ".join(
