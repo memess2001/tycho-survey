@@ -98,12 +98,29 @@ def band_stats(model, task) -> dict:
     return out
 
 
+def weight_groups(model) -> dict:
+    """Named groups of weights, as lists of (parameter, rows): the query/key rows of each layer's attention
+    ("qk0", "qk1"), its value rows and output projection ("ov0", "ov1"), the embeddings ("pos", "tok") and the
+    unembedding ("head"). The LayerNorm parameters are in no group."""
+    d = model.d_model
+    groups = {"pos": [(model.pos.weight, slice(None))], "tok": [(model.tok.weight, slice(None))],
+              "head": [(model.head.weight, slice(None))]}
+    for i, block in enumerate(model.blocks):
+        a = block.attn
+        groups[f"qk{i}"] = [(a.qkv.weight, slice(0, 2 * d)), (a.qkv.bias, slice(0, 2 * d))]
+        groups[f"ov{i}"] = [(a.qkv.weight, slice(2 * d, 3 * d)), (a.qkv.bias, slice(2 * d, 3 * d)),
+                            (a.proj.weight, slice(None)), (a.proj.bias, slice(None))]
+    return groups
+
+
 def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int = 0, keep_state_at: int | None = None,
-          layer: int = 0, forbid: str = "far", block_from: int = 0, stats_fn=None):
+          layer: int = 0, forbid: str = "far", block_from: int = 0, stats_fn=None, lr_scale: dict | None = None):
     """The runner's update loop on one induction job. While block_from <= step < block_until, ``layer`` may not
     attend to the forbidden offsets: "far" = NEAR and beyond; "band" = rep_min − 1 .. rep_max − 1; "sham" =
     everything except the near offsets and the band. Measurements are taken without the restriction, with
-    ``stats_fn(model, task)`` (default: :func:`band_stats`).
+    ``stats_fn(model, task)`` (default: :func:`band_stats`). ``lr_scale`` multiplies the learning rate of some
+    weights: {"all": factor for every weight, group of :func:`weight_groups`: factor for that group}; Adam's step
+    is linear in the learning rate and its averages do not depend on it, so each step is scaled after it is taken.
     Returns (model, task, {step: statistics}, state at ``keep_state_at``)."""
     import torch
 
@@ -132,6 +149,14 @@ def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int =
         return plain(x, mask & allowed[: mask.shape[0], : mask.shape[1]] if blocked["on"] else mask)
 
     attn.forward = restricted
+    scale = None
+    if lr_scale:
+        scale = [torch.full_like(p, float(lr_scale.get("all", 1.0))) for p in params]
+        where = {id(p): i for i, p in enumerate(params)}
+        for group, factor in lr_scale.items():
+            if group != "all":
+                for p, rows in weight_groups(model)[group]:
+                    scale[where[id(p)]][rows] = float(factor)
     stats, kept = {}, None
     for step in range(steps + 1):
         if step in measure_at:
@@ -146,7 +171,12 @@ def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int =
         blocked["on"] = block_from <= step < block_until
         x, y = task.sample_batch(tc.batch_size, gen)
         loss = task.loss(model(x), y)
+        before = [p.detach().clone() for p in params] if scale else None
         opt.step(list(torch.autograd.grad(loss, params, allow_unused=True, materialize_grads=True)), tc.lr)
+        if scale:
+            with torch.no_grad():
+                for p, old, f in zip(params, before, scale):
+                    p.copy_(old + f * (p - old))
     blocked["on"] = False
     return model, task, stats, kept
 

@@ -40,6 +40,11 @@
 > Sixth round, 19 November: Antigravity replied to §13 (commit `6062933`) with two sets of blind predictions (the
 > noise scale under Adam; the kernel's part at other widths) and an explanation of why a mask can fail. §14 records
 > the reply and the tests.
+>
+> Seventh round, also 19 November: Antigravity replied to §14 (commit `8351c3c`) with direct measurements of the
+> gradient noise on existing settings, a corrected derivation of the noise scale, and two sets of blind predictions
+> (the noise threshold at rep_min 16; the critical period under the wider mask at other widths). §15 records the
+> reply and the tests.
 
 ---
 
@@ -1563,4 +1568,34 @@ K = 1 / (1 + b_un S)；共用输入时 K = 1 / (1 + b_un S / 2 + b_al F_1(0)²)�
 3. 两方向的流与实测之间成系统的偏差（宽度 64、共用输入时实测低 0.025）来自采样噪声还是残差的其余方向？
 4. K 有没有不用积分的近似？
 5. Adam 的缩短量；v1 的 Q4；结果笔记 §6 的另外两个检验。这些没有动。
+
+---
+
+## 15. 11 月 19 日（第七轮）：Antigravity 对 §14 的回复，以及核对
+
+状态同前：探索性，不改变计划；本节的运行都是本地的，没有独立复算。Antigravity 读的是提交 `8351c3c`。
+
+**本节还没有写完。** 这一版是中间提交，只记已经确定的部分；两组盲测和 Claude 加的两项检验还在跑，跑完后整节重写。
+
+已经确定的：
+
+- 它引用仓库的 106 个数，105 个与文件一致，1 个差在第四位小数。
+- 它附了一个诊断脚本（在 5 个已有设置上跑前 300 步，量小批量梯度的信噪比和权重的范数）。Claude 原样复跑，表 A 和
+  表 B 的 315 个数全部重现。它据此撤回了上一轮"L1 的内容信号方差大"的说法：在注意力打分上，L1 来源位置的梯度信噪比
+  反而是 L0 频带的 2.7 到 3.3 倍（30/30 个运行）。
+- 它修正后的推导有三步：Adam 在噪声主导时，按"看过的序列数"计，权重的移动只通过学习率除以批量的平方根依赖这两个
+  量；嵌入的尺度被归一化抵消，所以进度按序列数计；注意力的查询、键权重不被抵消，噪声尺度大时 L0 的频带注意力更早
+  变尖。第一步就是文献里 Adam 的平方根缩放律（Malladi、Lyu、Panigrahi、Arora 2022，arXiv:2205.10287；它没有
+  引）。
+- 用已有的运行按相同的序列数对比 8 格：噪声尺度相同的格大体重合（批量 8 和 32 的两格很接近，批量 128 的一格落后
+  几千条序列），两个噪声水平之间到 19,200 条序列时已经完全分开。
+
+在跑的：
+
+- 盲测一：rep_min 16 上四个（学习率，批量）组合，24 个运行。
+- 盲测二：加宽的掩码在宽度 32、64、128 上的七个时间窗，42 个运行。已出来的两个：宽度 32 从第 900 步挡是 6/6
+  （它预测至少 5），从第 1,500 步挡是 0/6（它预测 1 到 5）。
+- Claude 加的检验（`relay_noise_pilot.py`）：8 格里各组权重离开初值的距离随序列数怎样变（48 个短运行）；以及
+  基准设置下只把 L0 的查询、键权重的学习率减半，或者只把其余权重的学习率减半（12 个运行），看噪声是通过哪一组
+  权重起作用的。预期和判据写在脚本开头。
 

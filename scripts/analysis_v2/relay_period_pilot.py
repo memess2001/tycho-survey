@@ -78,6 +78,27 @@ wider mask, from step 1,000 (layer 0 holds the band, no circuit yet) and from st
 They ask whether the critical period of the band mask is a point of no return for the network or a limit of that
 mask. Either outcome was open when they were started.
 
+Third follow-up: the reviewer's seventh reply (19 November, to commit 8351c3c; it states that it ran none of these).
+(a) The noise threshold at rep_min 16 (d_model 64, no mask), where the baseline (learning rate 1e-3, batch 32,
+lr/√B 1.77e-4) gives 5 of 6 textbook circuits. From two clocks read off existing runs it predicts the threshold at
+lr/√B between 2.0e-4 and 2.9e-4, against about 1.5e-4 at rep_min 12: learning rate 2e-3 with batch 128 (1.77e-4):
+at least 4 of 6; learning rate 1e-3 with batch 16 (2.5e-4): at most 4; learning rate 2e-3 with batch 32
+(3.54e-4): at most 1; optionally learning rate 1e-3 with batch 8 (3.54e-4, 24,000 steps): at most 1. It fails if
+the first gives 2 or fewer, if the third gives 3 or more, or if the second gives 6 of 6 (or 5 with the third at 2
+or more). (b) The critical period under the wider mask at other widths (rep_min 12, 500-step windows, every offset
+from 4 on masked). d_model 32: from step 900 at least 5 of 6 flip (the band mask from that step gave 0 of 6); from
+step 1,500 between 1 and 5; from step 2,400 at most 1. d_model 128: from step 400 at least 5 of 6 are textbook
+circuits (the band mask gave 2 of 6), with at least 2 of the three 4-head runs; from step 700 at most 4, with at
+most 1 of the 4-head runs and the 2-head runs staying textbook. Optional: d_model 128 from step 550 (4 or 5),
+d_model 64 from step 750 (1 to 4). It fails if the first window at d_model 32 flips 2 or fewer, if the third
+flips 4 or more, if no 4-head run flips at d_model 128 from step 400, if 2 or more of them flip from step 700, or
+if the 2-head runs at d_model 128 fall to 1 of 3 or fewer.
+Recorded here before the runs: the baseline of (a) is one cell of six runs, so the first cell of (a) also tests
+whether that cell repeats; and for (b) the plain expectation from the wider mask at d_model 64 (flips from step
+500, not from step 1,000, where the unperturbed circuit forms at about 1,700) is a critical period at 0.3 to 0.6
+of the formation time, that is steps 1,200 to 2,400 at d_model 32 and, for the 4-head runs, 280 to 560 at d_model
+128, which agrees with the reviewer on every core window; the two optional windows are where they could differ.
+
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/relay_period_pilot.py
 --jobs 4`` (``--skip-runs`` analyses the cache). Needs the outputs of ``relay_followup_pilot.py``,
 ``relay_band_pilot.py`` and ``relay_window_pilot.py``. Runs are cached in ``work/relay_band``. Writes
@@ -105,7 +126,11 @@ LOSS_DROP, NEAR_FLOOR = 0.295, 0.0085                   # the reviewer's two con
 SETTINGS = {"base": {}, "lr5e-4": {"lr": 5e-4}, "lr2e-3": {"lr": 2e-3}, "d128": {"d_model": 128},
             "d32": {"d_model": 32}, "b128": {"batch_size": 128}, "lr5e-4_b8": {"lr": 5e-4, "batch_size": 8},
             "lr2.5e-4_b8": {"lr": 2.5e-4, "batch_size": 8}, "lr2e-3_b128": {"lr": 2e-3, "batch_size": 128},
-            "b64": {"batch_size": 64}}
+            "b64": {"batch_size": 64},
+            "rm16_b16": {"rep_min": 16, "batch_size": 16}, "rm16_lr2e-3": {"rep_min": 16, "lr": 2e-3},
+            "rm16_b8": {"rep_min": 16, "batch_size": 8},
+            "rm16_lr2e-3_b128": {"rep_min": 16, "lr": 2e-3, "batch_size": 128}}
+MODEL_KEYS = ("d_model", "rep_min")                     # settings that change the task or model, not the training
 #: arm -> (setting, window [start, end) of the mask on layer 0 or None, steps[, masked offsets: "band" unless
 #: given]); in order of priority
 ARMS = {
@@ -128,6 +153,16 @@ ARMS = {
     "base_far_w3000_3500": ("base", (3000, 3500), FULL_STEPS, "far"),
     "lr2.5e-4_b8_natural": ("lr2.5e-4_b8", None, LONG_STEPS), "b64_natural": ("b64", None, FULL_STEPS),
     "lr2e-3_b128_natural": ("lr2e-3_b128", None, FULL_STEPS),
+    "d32_far_w900_1400": ("d32", (900, 1400), FULL_STEPS, "far"),
+    "d32_far_w1500_2000": ("d32", (1500, 2000), FULL_STEPS, "far"),
+    "d32_far_w2400_2900": ("d32", (2400, 2900), FULL_STEPS, "far"),
+    "rm16_b16_natural": ("rm16_b16", None, FULL_STEPS), "rm16_lr2e-3_natural": ("rm16_lr2e-3", None, FULL_STEPS),
+    "rm16_b8_natural": ("rm16_b8", None, LONG_STEPS),
+    "base_far_w750_1250": ("base", (750, 1250), FULL_STEPS, "far"),
+    "d128_far_w400_900": ("d128", (400, 900), FULL_STEPS, "far"),
+    "d128_far_w700_1200": ("d128", (700, 1200), FULL_STEPS, "far"),
+    "rm16_lr2e-3_b128_natural": ("rm16_lr2e-3_b128", None, FULL_STEPS),
+    "d128_far_w550_1050": ("d128", (550, 1050), FULL_STEPS, "far"),
 }
 #: the steps (t1, t2) the reviewer names for its two formulas, by setting: (loss formula, attention formula)
 FORMULA_STEPS = {"base": ((100, 300), (200, 300)), "lr5e-4": ((150, 350), (150, 350)),
@@ -174,15 +209,17 @@ def arm_jobs(arm: str) -> list[dict]:
     forbid = ARMS[arm][3] if len(ARMS[arm]) > 3 else "band"
     base = {j["name"]: j for j in rp.jobs_list()}
     change = SETTINGS[setting]
+    rep_min = change.get("rep_min", 12)
     jobs = []
     for nh in rb.HEADS:
         for seed in rb.SEEDS:
             t = base[f"single_rm12_h{nh}_s{seed}"]
-            jobs.append({"name": f"{arm}_single_rm12_h{nh}_s{seed}", "base": f"single_rm12_h{nh}_s{seed}",
+            name = f"single_rm{rep_min}_h{nh}_s{seed}"
+            jobs.append({"name": f"{arm}_{name}", "base": name,
                          "arm": arm, "setting": setting, "seed": seed, "window": window or (0, 0), "steps": steps,
                          "forbid": forbid,
-                         "cfg": {**t["cfg"], **{k: v for k, v in change.items() if k == "d_model"}},
-                         "train": {**t["train"], **{k: v for k, v in change.items() if k != "d_model"},
+                         "cfg": {**t["cfg"], **{k: v for k, v in change.items() if k in MODEL_KEYS}},
+                         "train": {**t["train"], **{k: v for k, v in change.items() if k not in MODEL_KEYS},
                                    "steps": steps},
                          "released_id": None})
     return jobs
@@ -196,7 +233,7 @@ def run_arm(args: tuple[dict, str]) -> str:
     at = measure_at(job["steps"])
     model, task, stats, _ = rb.train(job, job["steps"], at, block_from=job["window"][0],
                                      block_until=job["window"][1], layer=0, forbid=job["forbid"],
-                                     stats_fn=detail_stats)
+                                     stats_fn=detail_stats, lr_scale=job.get("lr_scale"))
     model.eval()
     arrays = {f"param/{k}": v.detach().numpy() for k, v in model.state_dict().items()}
     arrays.update({f"stat_{k}": np.asarray([stats[s][k] for s in at]) for k in STATS + EXTRA_STATS})
@@ -263,7 +300,7 @@ def main(argv: list[str] | None = None) -> int:
             for msg in pool.imap(run_arm, [(j, str(args.work)) for js in jobs.values() for j in js]):
                 print(msg, flush=True)
     have = {arm: [j for j in js if (args.work / f"period_{j['name']}.npz").exists()] for arm, js in jobs.items()}
-    smp = fp.sample(12, 32)
+    samples = {12: fp.sample(12, 32)}                    # the common sequences on which circuits are classified
 
     # final circuits of the full-length arms
     rows = {}
@@ -272,7 +309,10 @@ def main(argv: list[str] | None = None) -> int:
             continue
         rows[arm] = []
         for j in js:
-            r = wp.row_of({**j, "name": f"period_{j['name']}"}, args.work, smp)
+            rep_min = j["cfg"]["rep_min"]
+            if rep_min not in samples:
+                samples[rep_min] = fp.sample(rep_min, 32)
+            r = wp.row_of({**j, "name": f"period_{j['name']}"}, args.work, samples[rep_min])
             step, st = curves(j, args.work)
             r.update({"name": j["name"], "d1_l0_max": float(st["d1_l0_max"][-1]),
                       "d2_l0_max": float(st["d2_l0_max"][-1])})
@@ -396,7 +436,7 @@ def main(argv: list[str] | None = None) -> int:
         (REPO / "docs" / "results" / "v2_analysis" / "relay_followup_pilot.json").read_text())["runs"]}
     noise = {}
     for setting, change in SETTINGS.items():
-        if "d_model" in change or f"{setting}_natural" not in ARMS:
+        if any(k in change for k in MODEL_KEYS) or f"{setting}_natural" not in ARMS:
             continue
         lr, batch = change.get("lr", 1e-3), change.get("batch_size", 32)
         if setting == "base":                            # the baseline's circuits at 12,000 steps (earlier pilots)
@@ -450,9 +490,80 @@ def main(argv: list[str] | None = None) -> int:
     if "base_far_w500_1000" in settings["base"]["arms"]:
         leak["outcome_with_every_offset_from_4_masked"] = settings["base"]["arms"]["base_far_w500_1000"]
 
+    # third follow-up (a): the unperturbed outcome at rep_min 16 by learning rate and batch size
+    def by_heads(rs: list[dict]) -> dict:
+        return {f"h{nh}": {"textbook": int(sum(r["textbook"] for r in rs if r["n_head"] == nh)),
+                           "of": int(sum(r["n_head"] == nh for r in rs))} for nh in rb.HEADS}
+
+    finals16 = [{"n_head": nh, **base_final[f"single_rm16_h{nh}_s{seed}"]} for nh in rb.HEADS for seed in rb.SEEDS]
+    for r in finals16:
+        r["textbook"] = bool(r["relay_delta"] == 0 and r["intact"]["deep_decoy_over_clean"] >= 0.9)
+    noise16 = {"base": {"learning_rate": 1e-3, "batch": 32, "lr_over_root_batch": 1e-3 / math.sqrt(32),
+                        "lr_over_batch": 1e-3 / 32, "textbook": int(sum(r["textbook"] for r in finals16)),
+                        "of": len(finals16), "complete": True, "steps": FULL_STEPS, "by_heads": by_heads(finals16),
+                        "relay_deltas": [r["relay_delta"] for r in finals16]}}
+    for setting, change in SETTINGS.items():
+        if change.get("rep_min") != 16:
+            continue
+        lr, batch = change.get("lr", 1e-3), change.get("batch_size", 32)
+        arm = f"{setting}_natural"
+        o = settings[setting]["arms"][arm]
+        noise16[setting] = {"learning_rate": lr, "batch": batch, "lr_over_root_batch": lr / math.sqrt(batch),
+                            "lr_over_batch": lr / batch,
+                            **{k: o[k] for k in ("textbook", "relays", "not_formed", "of", "complete",
+                                                 "relay_deltas", "first_step_with_loss_rep_below_2")},
+                            "steps": ARMS[arm][2], "by_heads": by_heads(rows.get(arm, []))}
+
+    def count16(setting: str) -> int | None:
+        c = noise16[setting]
+        return c["textbook"] if c["complete"] else None
+
+    n_a, n_b, n_c, n_d = (count16(k) for k in ("rm16_lr2e-3_b128", "rm16_b16", "rm16_lr2e-3", "rm16_b8"))
+    prediction16 = {
+        "1A_lr_2e-3_batch_128_at_least_4": test(n_a, lambda n: n >= 4),
+        "1B_lr_1e-3_batch_16_at_most_4": test(n_b, lambda n: n <= 4),
+        "1C_lr_2e-3_batch_32_at_most_1": test(n_c, lambda n: n <= 1),
+        "1D_lr_1e-3_batch_8_at_most_1": test(n_d, lambda n: n <= 1),
+        "passes_by_its_own_criteria": None if None in (n_a, n_b, n_c) else bool(
+            n_a >= 4 and n_c <= 1 and n_b <= 4 and (n_d is None or n_d <= 1)),
+        "fails_by_its_own_criteria": None if None in (n_a, n_b, n_c) else bool(
+            n_a <= 2 or n_c >= 3 or n_b == 6 or (n_b == 5 and n_c >= 2))}
+
+    # third follow-up (b): windows with the wider mask, by width
+    far = {arm: {**outcome(arm), "by_heads": by_heads(rows.get(arm, []))} for arm in ARMS
+           if len(ARMS[arm]) > 3 and ARMS[arm][3] == "far" and ARMS[arm][2] >= FULL_STEPS}
+
+    def far_count(arm: str, heads: int | None = None) -> int | None:
+        o = far[arm]
+        if not o["complete"]:
+            return None
+        return o["textbook"] if heads is None else o["by_heads"][f"h{heads}"]["textbook"]
+
+    f_a, f_b, f_c = (far_count(a) for a in ("d32_far_w900_1400", "d32_far_w1500_2000", "d32_far_w2400_2900"))
+    f_d, f_e = far_count("d128_far_w400_900"), far_count("d128_far_w700_1200")
+    d_h4, e_h4 = far_count("d128_far_w400_900", 4), far_count("d128_far_w700_1200", 4)
+    d_h2, e_h2 = far_count("d128_far_w400_900", 2), far_count("d128_far_w700_1200", 2)
+    core = (f_a, f_c, f_d, f_e)
+    prediction_far = {
+        "2A_d32_from_900_at_least_5": test(f_a, lambda n: n >= 5),
+        "2B_d32_from_1500_between_1_and_5": test(f_b, lambda n: 1 <= n <= 5),
+        "2C_d32_from_2400_at_most_1": test(f_c, lambda n: n <= 1),
+        "2D_d128_from_400_at_least_5_with_2_of_the_4_head_runs": None if f_d is None else bool(f_d >= 5 and d_h4 >= 2),
+        "2E_d128_from_700_at_most_4_with_at_most_1_of_the_4_head_runs": None if None in (f_d, f_e) else bool(
+            f_e <= 4 and e_h4 <= 1 and e_h4 < d_h4 and e_h2 >= 2),
+        "2F_d128_from_550_is_4_or_5": test(far_count("d128_far_w550_1050"), lambda n: 4 <= n <= 5),
+        "2G_d64_from_750_between_1_and_4": test(far_count("base_far_w750_1250"), lambda n: 1 <= n <= 4),
+        "passes_by_its_own_criteria": None if None in core else bool(
+            f_a >= 5 and f_c <= 1 and f_d >= 5 and d_h4 >= 2 and f_e <= 4 and e_h4 <= 1 and e_h4 < d_h4
+            and e_h2 >= 2),
+        "fails_by_its_own_criteria": None if None in core else bool(
+            f_a <= 2 or f_c >= 4 or d_h4 == 0 or e_h4 >= 2 or d_h2 <= 1 or e_h2 <= 1)}
+
     result = {"status": "exploratory pilot; local runs; not independently recomputed",
               "missing": [j["name"] for arm, js in jobs.items() for j in js if j not in have[arm]],
               "noise_scale": {"cells": noise, "prediction": noise_prediction}, "band_preference_under_a_mask": leak,
+              "noise_scale_at_rep_min_16": {"cells": noise16, "prediction": prediction16},
+              "wider_mask_windows": {"arms": far, "prediction": prediction_far},
               "constants": {"loss_drop": LOSS_DROP, "offsets_1_2_floor": NEAR_FLOOR},
               "settings": settings, "prediction_1A": prediction_1a, "prediction_1B": prediction_1b,
               "textbook_without_mask_lost_with_mask": lost, "inside_the_window": inside, "runs": rows}
@@ -505,6 +616,20 @@ def main(argv: list[str] | None = None) -> int:
                   f"{blk['below_band_l0'][i]:.3f} {blk['low_band_l0'][i]:.2f} {blk['beyond_band_l0'][i]:.3f} "
                   f"{blk['band_l1'][i]:.2f} {blk['source_l1'][i]:.3f} {blk['d1_l0_max'][i]:.3f} "
                   f"{blk['d2_l0_max'][i]:.3f} {blk['loss_rep'][i]:.2f}")
+    print("== unperturbed outcome at rep_min 16 by learning rate and batch")
+    for setting, c in sorted(noise16.items(), key=lambda kv: kv[1]["lr_over_root_batch"]):
+        print(f"   {setting:>18s}: lr {c['learning_rate']:.1e} batch {c['batch']:>3d} lr/sqrt(B) "
+              f"{c['lr_over_root_batch']:.2e} | textbook {c['textbook']}/{c['of']} "
+              f"(2 heads {c['by_heads']['h2']['textbook']}, 4 heads {c['by_heads']['h4']['textbook']}) | relay "
+              f"positions {c.get('relay_deltas')} | loss<2 at {c.get('first_step_with_loss_rep_below_2')}")
+    print("   prediction:", json.dumps(prediction16))
+    print("== windows with the wider mask")
+    for arm, o in far.items():
+        print(f"   {arm:>20s} {o['window']}: textbook {o['textbook']}/{o['of']} (2 heads "
+              f"{o['by_heads']['h2']['textbook']}, 4 heads {o['by_heads']['h4']['textbook']}) | relay positions "
+              f"{o['relay_deltas']} | decoy {[round(x, 2) for x in o['deep_decoy_over_clean']]} | loss<2 at "
+              f"{o['first_step_with_loss_rep_below_2']}")
+    print("   prediction:", json.dumps(prediction_far))
     print("missing:", len(result["missing"]))
     return 0
 
