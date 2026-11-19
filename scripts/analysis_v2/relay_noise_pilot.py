@@ -62,6 +62,11 @@ H fails if qk1_double gives 3 or more textbook circuits, if either arm at 0.88e-
 lr2e-3_qk0_half gives 3 or more. Expectation recorded with it: no confident view on qk1_double and on
 lr2e-3_qk0_quarter (the rest of that network is at four times the noise scale of the weights that are slowed).
 
+d. A summary made after all of the above (post hoc; no prediction on record): which layer's band attention (mean
+   over its heads) passes a level first, against the circuit at the end. The level is chosen on the 48 runs of
+   the eight cells and then applied to the intervention arms, to the unperturbed runs at d_model 32 and 128 and to
+   the cells at rep_min 16 of ``relay_period_pilot.py``.
+
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/relay_noise_pilot.py
 --jobs 4`` (``--skip-runs`` analyses the cache). Needs the cached runs and the output of
 ``relay_period_pilot.py``. Runs are cached in ``work/relay_band``. Writes
@@ -92,6 +97,7 @@ LOW, HIGH = ("lr2.5e-4_b8", "lr5e-4", "b128"), ("lr5e-4_b8", "base", "lr2e-3_b12
 N_STEP, N_LAST = 3_200, 38_400                          # sequences between measurements, and in all
 GROUPS = ("pos", "tok", "qk0", "ov0", "qk1", "ov1", "head")
 KEYS = ("band_l0", "band_l1", "source_l1", "offsets_1_2_l0", "loss_rep")
+LEVELS = (0.55, 0.65, 0.75, 0.85)                       # band attention levels of the summary (d)
 #: intervention arms: (cell, learning-rate factors by group of weights (see relay_band_pilot.weight_groups),
 #: what the hypothesis H of the docstring predicts: at least / at most this many textbook circuits, or None)
 ARMS = {"qk0_half": ("base", {"qk0": 0.5}, None), "rest_half": ("base", {"all": 0.5, "qk0": 1.0}, None),
@@ -154,6 +160,16 @@ def arm_jobs(arm: str) -> list[dict]:
     return [{**j, "name": f"noise_{arm}_{j['base']}", "arm": f"noise_{arm}", "steps": pp.FULL_STEPS,
              "train": {**j["train"], "steps": pp.FULL_STEPS}, "lr_scale": factors}
             for j in pp.arm_jobs(f"{cell}_natural")]
+
+
+def layer_1_first(job: dict, work: Path, level: float) -> bool | None:
+    """Does layer 1's band attention pass the level before layer 0's? None if neither does."""
+    step, st = pp.curves(job, work)
+    t0 = pp.first_crossing(step, st["band_l0"], level, True)
+    t1 = pp.first_crossing(step, st["band_l1"], level, True)
+    if t0 is None and t1 is None:
+        return None
+    return t0 is None or (t1 is not None and t1 < t0)
 
 
 def power_fit(cells: dict, value: dict) -> dict:
@@ -304,13 +320,63 @@ def main(argv: list[str] | None = None) -> int:
             "medians_at_equal_sequences": {k: np.median([r[f"{k}_at_equal_sequences"] for r in rows], axis=0).tolist()
                                            for k in KEYS} if rows else {}}
 
+    # every condition by the noise scale of three groups of weights
+    by_scales = [{"condition": c, "kind": "cell", "learning_rate": v["learning_rate"], "batch": v["batch"],
+                  "qk0": v["lr_over_root_batch"], "qk1": v["lr_over_root_batch"], "rest": v["lr_over_root_batch"],
+                  "textbook": v["textbook"], "of": v["of"]} for c, v in reference["noise_scale"]["cells"].items()]
+    by_scales += [{"condition": arm, "kind": "arm", "learning_rate": o["learning_rate"], "batch": o["batch"],
+                   "qk0": o["lr_over_root_batch_by_group"]["qk0"], "qk1": o["lr_over_root_batch_by_group"]["qk1"],
+                   "rest": o["lr_over_root_batch_by_group"]["pos"], "textbook": o["textbook"], "of": o["of"]}
+                  for arm, o in intervention["arms"].items()]
+    intervention["every_condition_by_noise_scale_of_three_groups"] = by_scales
+
+    # (d) which layer's band attention passes a level first, against the circuit at the end
+    base_final = {r["name"]: r for r in json.loads(
+        (REPO / "docs" / "results" / "v2_analysis" / "relay_followup_pilot.json").read_text())["runs"]}
+    labelled = {"cells": [], "intervention arms": [], "d_model 32 and 128": [], "rep_min 16": []}
+    for cell in CELLS:
+        rows = {r["name"]: r for r in reference["runs"].get(f"{cell}_natural", [])}
+        for j in pp.arm_jobs(f"{cell}_natural"):
+            if cell == "base":                           # the baseline's circuits at 12,000 steps (earlier pilots)
+                f = base_final[j["base"]]
+                label = bool(f["relay_delta"] == 0 and f["intact"]["deep_decoy_over_clean"] >= 0.9)
+            elif j["name"] in rows:
+                label = rows[j["name"]]["textbook"]
+            else:
+                continue
+            labelled["cells"].append((j, label))
+    for arm, js in arms.items():
+        rows = {r["name"]: r for r in rows_out[arm]}
+        labelled["intervention arms"] += [(j, rows[j["name"]]["textbook"]) for j in js if j["name"] in rows]
+    for group, names in (("d_model 32 and 128", ("d32_natural", "d128_natural")),
+                         ("rep_min 16", tuple(f"{c}_natural" for c in pp.SETTINGS if c.startswith("rm16_")))):
+        for name in names:
+            rows = {r["name"]: r for r in reference["runs"].get(name, [])}
+            labelled[group] += [(j, rows[j["name"]]["textbook"]) for j in pp.arm_jobs(name) if j["name"] in rows]
+    first = {"levels": list(LEVELS), "groups": {}}
+    for group, items in labelled.items():
+        first["groups"][group] = {}
+        for level in LEVELS:
+            calls = [(j, layer_1_first(j, args.work, level), label) for j, label in items]
+            decided = [(j, c, label) for j, c, label in calls if c is not None]
+            first["groups"][group][str(level)] = {
+                "runs": len(calls), "decided": len(decided), "correct": int(sum(c == label for _, c, label in decided)),
+                "layer_0_first": {"runs": int(sum(not c for _, c, _ in decided)),
+                                  "textbook": int(sum(label for _, c, label in decided if not c))},
+                "layer_1_first": {"runs": int(sum(c for _, c, _ in decided)),
+                                  "textbook": int(sum(label for _, c, label in decided if c))},
+                "misses": [{"run": j["name"], "n_head": j["cfg"]["n_head"], "layer_1_first": c, "textbook": label}
+                           for j, c, label in decided if c != label]}
+    on_cells = first["groups"]["cells"]
+    first["level_chosen_on_the_cells"] = max(LEVELS, key=lambda lv: (on_cells[str(lv)]["correct"], lv))
+
     result = {"status": "exploratory pilot; local runs; not independently recomputed",
               "missing": {"clock": [f"{j['cell']} {j['base']}" for j in clock if not (
                   args.work / f"noise_clock_{j['cell']}_{j['base']}.json").exists()],
                           "arms": [j["name"] for js in arms.values() for j in js if not (
                               args.work / f"period_{j['name']}.npz").exists()]},
               "equal_numbers_of_sequences": equal_n, "displacement": displacement, "intervention": intervention,
-              "runs": rows_out}
+              "first_layer_past_a_level": first, "runs": rows_out}
     args.out.write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
 
     pick = [i for i, n in enumerate(grid) if n in (6400, 12800, 19200, 25600, 38400)]
@@ -355,6 +421,20 @@ def main(argv: list[str] | None = None) -> int:
               f"{o['hypothesis_predicts']}: {o['as_predicted']} | relay positions {o['relay_deltas']} | decoy "
               f"{[round(x, 2) for x in o['deep_decoy_over_clean']]} | loss<2 at "
               f"{o['first_step_with_loss_rep_below_2']}")
+    print("   every condition by lr/sqrt(B) of layer 0's query/key weights, layer 1's, and the rest (units of 1e-4):")
+    for c in sorted(by_scales, key=lambda c: (c["rest"], c["qk0"] / c["qk1"], c["qk0"])):
+        print(f"      {c['condition']:>19s} {c['kind']:>4s}: qk0 {c['qk0'] * 1e4:.2f} qk1 {c['qk1'] * 1e4:.2f} rest "
+              f"{c['rest'] * 1e4:.2f} -> textbook {c['textbook']}/{c['of']}")
+    print("== (d) which layer's band attention passes a level first, against the circuit at the end (level chosen "
+          "on the cells:", first["level_chosen_on_the_cells"], ")")
+    for group, blk in first["groups"].items():
+        print(f"   {group:>18s}: " + " | ".join(
+            f"level {lv}: {b['correct']}/{b['decided']} of {b['runs']} (layer 0 first: {b['layer_0_first']['textbook']}"
+            f"/{b['layer_0_first']['runs']} textbook; layer 1 first: {b['layer_1_first']['textbook']}/"
+            f"{b['layer_1_first']['runs']})" for lv, b in blk.items()))
+    chosen = str(first["level_chosen_on_the_cells"])
+    print("   misses at the chosen level:", [(x["run"], f"h{x['n_head']}", x["layer_1_first"], x["textbook"])
+                                           for blk in first["groups"].values() for x in blk[chosen]["misses"]])
     print("missing:", {k: len(v) for k, v in result["missing"].items()})
     return 0
 
