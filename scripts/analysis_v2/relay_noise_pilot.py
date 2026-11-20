@@ -452,6 +452,9 @@ def main(argv: list[str] | None = None) -> int:
             "as_predicted": as_predicted,
             "textbook": n_textbook,
             "relays": int(sum(r["formed"] and not r["textbook"] for r in rows)),
+            # of those: layer 1 attends to the source itself (not displaced) but the key is not the two-token one
+            "at_the_source_without_the_two_token_key": int(sum(
+                r["formed"] and not r["textbook"] and r["relay_delta"] == 0 for r in rows)),
             "not_formed": int(sum(not r["formed"] for r in rows)), "of": len(rows), "complete": len(rows) == len(js),
             "by_heads": {f"h{nh}": int(sum(r["textbook"] for r in rows if r["n_head"] == nh)) for nh in rb.HEADS},
             "relay_deltas": [r["relay_delta"] for r in rows],
