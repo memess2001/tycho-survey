@@ -81,6 +81,27 @@ attention averages fewer value vectors), and in the reviewer's own table the run
 ones in which layer 0 had already taken the band. If the large output is a consequence of that and not the cause,
 halving the output side does not bring the textbook circuit back. No confident expectation either way.
 
+Fourth set of (c), added after the runs of the third set and before its own (20 November). The third set came out
+mostly as the reviewer predicted: with the learning rate halved for the output side of both layers, 6 of 6
+textbook circuits; for layer 0's output side alone, 6 of 6; for layer 1's alone, 0 of 6; for the token embedding,
+0 of 6; for the unembedding, 0 of 6; for the positional embedding, 3 of 6, where at most 2 were predicted. That
+fixes the lever (the step size of layer 0's output weights) but not the explanation. The reviewer's is that layer
+0's output swamps what layer 1 reads, and that this is also why the whole network's threshold lies between 0.88e-4
+and 1.77e-4. Another is that whatever slows layer 0's positional route helps, and its output weights are part of
+that route. Three arms change the size of layer 0's output directly, by a fixed factor on it in the forward pass,
+with every learning rate left alone (Adam does not respond to the scale of a gradient, so the weights move about
+as before and the output is smaller or larger by about the factor):
+
+* base_y0_quarter: the baseline (1.77e-4, 0 of 6) with layer 0's output times 0.25. If the size of that output is
+  what separates the two sides of the threshold: textbook circuits, at least 5 of 6.
+* lr5e-4_y0_times4: learning rate 5e-4 (0.88e-4, 6 of 6) with the output times 4: relays, at most 1 of 6.
+* lr2e-3_qk0_quarter_y0_quarter: the cell of the third set (1 of 6) with the output times 0.25: textbook circuits,
+  at least 5 of 6, as with the output weights at half the learning rate.
+
+These predictions are Claude's reading of the reviewer's account, not the reviewer's own. Expectation recorded
+with them: the third more likely than not (the size of layer 0's output at step 300 sorts the 48 runs of the third
+set almost perfectly); the first two open.
+
 d. A summary made after all of the above (post hoc; no prediction on record): which layer's band attention (mean
    over its heads) passes a level first, against the circuit at the end. The level is chosen on the 48 runs of
    the eight cells and then applied to the intervention arms, to the unperturbed runs at d_model 32 and 128 and to
@@ -118,7 +139,8 @@ GROUPS = ("pos", "tok", "qk0", "ov0", "qk1", "ov1", "head")
 KEYS = ("band_l0", "band_l1", "source_l1", "offsets_1_2_l0", "loss_rep")
 LEVELS = (0.55, 0.65, 0.75, 0.85)                       # band attention levels of the summary (d)
 #: intervention arms: (cell, learning-rate factors by group of weights (see relay_band_pilot.weight_groups),
-#: what the hypothesis H of the docstring predicts: at least / at most this many textbook circuits, or None)
+#: the prediction on record: at least / at most this many textbook circuits, or None[, {layer: fixed factor on
+#: that layer's attention output}])
 ARMS = {"qk0_half": ("base", {"qk0": 0.5}, None), "rest_half": ("base", {"all": 0.5, "qk0": 1.0}, None),
         "qk1_double": ("base", {"qk1": 2.0}, ("at most", 1)),
         "qk0_0.71": ("base", {"qk0": 1 / math.sqrt(2)}, ("at least", 4)),
@@ -131,12 +153,19 @@ ARMS = {"qk0_half": ("base", {"qk0": 0.5}, None), "rest_half": ("base", {"all": 
         "lr2e-3_qk0_quarter_head_half": ("lr2e-3", {"qk0": 0.25, "head": 0.5}, ("at most", 2)),
         "lr2e-3_qk0_quarter_rest_half": ("lr2e-3", {"all": 0.5, "qk0": 0.25, "qk1": 1.0}, ("at least", 5)),
         "lr2e-3_qk0_quarter_ov0_half": ("lr2e-3", {"qk0": 0.25, "ov0": 0.5}, ("at least", 5)),
-        "lr2e-3_qk0_quarter_ov1_half": ("lr2e-3", {"qk0": 0.25, "ov1": 0.5}, None)}
-#: whose prediction the third entry of an arm is; the arms of the third set
-EIGHTH = tuple(a for a in ARMS if a.startswith("lr2e-3_qk0_quarter_"))
+        "lr2e-3_qk0_quarter_ov1_half": ("lr2e-3", {"qk0": 0.25, "ov1": 0.5}, None),
+        "base_y0_quarter": ("base", {}, ("at least", 5), {0: 0.25}),
+        "lr5e-4_y0_times4": ("lr5e-4", {}, ("at most", 1), {0: 4.0}),
+        "lr2e-3_qk0_quarter_y0_quarter": ("lr2e-3", {"qk0": 0.25}, ("at least", 5), {0: 0.25})}
+#: the arms with a fixed factor on layer 0's output (fourth set); the arms of the eighth round (third and fourth
+#: sets); whose prediction the third entry of an arm is
+OUTPUT = tuple(a for a in ARMS if len(ARMS[a]) > 3)
+EIGHTH = tuple(a for a in ARMS if a.startswith("lr2e-3_qk0_quarter_")) + tuple(a for a in OUTPUT if a not in (
+    "lr2e-3_qk0_quarter_y0_quarter",))
 PREDICTED_BY = {**{a: "hypothesis H (Claude, seventh round)" for a in ARMS if a not in EIGHTH and ARMS[a][2]},
                 **{a: "the reviewer's eighth reply" for a in EIGHTH if ARMS[a][2]},
-                "lr2e-3_qk0_quarter_rest_half": "Claude (reference arm, eighth round)"}
+                "lr2e-3_qk0_quarter_rest_half": "Claude (reference arm, eighth round)",
+                **{a: "the reviewer's account of layer 0's output, as read by Claude" for a in OUTPUT}}
 
 
 def cell_of(setting: str) -> tuple[float, int]:
@@ -187,9 +216,10 @@ def run_clock(args: tuple[dict, str]) -> str:
 
 
 def arm_jobs(arm: str) -> list[dict]:
-    cell, factors, _ = ARMS[arm]
+    cell, factors = ARMS[arm][:2]
+    output = ARMS[arm][3] if len(ARMS[arm]) > 3 else None
     return [{**j, "name": f"noise_{arm}_{j['base']}", "arm": f"noise_{arm}", "steps": pp.FULL_STEPS,
-             "train": {**j["train"], "steps": pp.FULL_STEPS}, "lr_scale": factors}
+             "train": {**j["train"], "steps": pp.FULL_STEPS}, "lr_scale": factors or None, "out_scale": output}
             for j in pp.arm_jobs(f"{cell}_natural")]
 
 
@@ -316,7 +346,7 @@ def main(argv: list[str] | None = None) -> int:
         for c, v in reference["noise_scale"]["cells"].items()}, "arms": {}}
     rows_out = {}
     for arm, js in arms.items():
-        cell, factors, predicted = ARMS[arm]
+        cell, factors, predicted = ARMS[arm][:3]
         lr, batch = cells[cell]
         have = [j for j in js if (args.work / f"period_{j['name']}.npz").exists()]
         rows = []
@@ -338,6 +368,7 @@ def main(argv: list[str] | None = None) -> int:
             "cell": cell, "learning_rate": lr, "batch": batch,
             "textbook_in_the_cell_without_a_change": reference["noise_scale"]["cells"][cell]["textbook"],
             "learning_rate_factors": factors,
+            "output_factor_by_layer": {str(k): v for k, v in ARMS[arm][3].items()} if len(ARMS[arm]) > 3 else None,
             "lr_over_root_batch_by_group": {g: lr * factors.get(g, factors.get("all", 1.0)) / math.sqrt(batch)
                                             for g in GROUPS},
             "predicted": list(predicted) if predicted else None, "predicted_by": PREDICTED_BY.get(arm),
@@ -450,7 +481,7 @@ def main(argv: list[str] | None = None) -> int:
     print("== (c) a cell with the learning rate changed for one group of weights")
     for arm, o in intervention["arms"].items():
         print(f"   {arm:>28s} (cell {o['cell']}, {o['textbook_in_the_cell_without_a_change']}/6 without the change; "
-              f"factors {o['learning_rate_factors']}): textbook "
+              f"factors {o['learning_rate_factors']}, output {o['output_factor_by_layer']}): textbook "
               f"{o['textbook']}/{o['of']} (2 heads {o['by_heads']['h2']}, 4 heads {o['by_heads']['h4']}) | predicted "
               f"{o['predicted']} by {o['predicted_by']}: {o['as_predicted']} | relay positions "
               f"{o['relay_deltas']} | decoy "

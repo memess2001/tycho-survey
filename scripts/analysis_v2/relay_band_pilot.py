@@ -114,13 +114,17 @@ def weight_groups(model) -> dict:
 
 
 def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int = 0, keep_state_at: int | None = None,
-          layer: int = 0, forbid: str = "far", block_from: int = 0, stats_fn=None, lr_scale: dict | None = None):
+          layer: int = 0, forbid: str = "far", block_from: int = 0, stats_fn=None, lr_scale: dict | None = None,
+          out_scale: dict | None = None):
     """The runner's update loop on one induction job. While block_from <= step < block_until, ``layer`` may not
     attend to the forbidden offsets: "far" = NEAR and beyond; "band" = rep_min − 1 .. rep_max − 1; "sham" =
     everything except the near offsets and the band. Measurements are taken without the restriction, with
     ``stats_fn(model, task)`` (default: :func:`band_stats`). ``lr_scale`` multiplies the learning rate of some
     weights: {"all": factor for every weight, group of :func:`weight_groups`: factor for that group}; Adam's step
     is linear in the learning rate and its averages do not depend on it, so each step is scaled after it is taken.
+    ``out_scale`` = {layer: factor} multiplies the output of that layer's attention by a fixed factor throughout,
+    in training and in the measurements; before returning, the factor is folded into the layer's output projection,
+    so the returned model computes the same function without it.
     Returns (model, task, {step: statistics}, state at ``keep_state_at``)."""
     import torch
 
@@ -149,6 +153,10 @@ def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int =
         return plain(x, mask & allowed[: mask.shape[0], : mask.shape[1]] if blocked["on"] else mask)
 
     attn.forward = restricted
+    for lyr, factor in (out_scale or {}).items():
+        inner = model.blocks[int(lyr)].attn.forward
+        model.blocks[int(lyr)].attn.forward = (lambda x, mask, inner=inner, factor=float(factor):
+                                               factor * inner(x, mask))
     scale = None
     if lr_scale:
         scale = [torch.full_like(p, float(lr_scale.get("all", 1.0))) for p in params]
@@ -178,6 +186,12 @@ def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int =
                 for p, old, f in zip(params, before, scale):
                     p.copy_(old + f * (p - old))
     blocked["on"] = False
+    for lyr, factor in (out_scale or {}).items():        # fold the factor into the weights; the function is unchanged
+        a = model.blocks[int(lyr)].attn
+        a.forward = type(a).forward.__get__(a)
+        with torch.no_grad():
+            a.proj.weight.mul_(float(factor))
+            a.proj.bias.mul_(float(factor))
     return model, task, stats, kept
 
 

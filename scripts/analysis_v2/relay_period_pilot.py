@@ -278,7 +278,8 @@ def run_arm(args: tuple[dict, str]) -> str:
     at = measure_at(job["steps"])
     model, task, stats, _ = rb.train(job, job["steps"], at, block_from=job["window"][0],
                                      block_until=job["window"][1], layer=0, forbid=job["forbid"],
-                                     stats_fn=detail_stats, lr_scale=job.get("lr_scale"))
+                                     stats_fn=detail_stats, lr_scale=job.get("lr_scale"),
+                                     out_scale=job.get("out_scale"))
     model.eval()
     arrays = {f"param/{k}": v.detach().numpy() for k, v in model.state_dict().items()}
     arrays.update({f"stat_{k}": np.asarray([stats[s][k] for s in at]) for k in STATS + EXTRA_STATS})
