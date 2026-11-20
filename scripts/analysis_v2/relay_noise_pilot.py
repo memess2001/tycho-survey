@@ -137,7 +137,16 @@ of weights is to turn relays into textbook circuits. In the third set the token 
 rate made matters worse, which points the same way; expected: an improvement, whether as far as 5 of 6 is open.
 (iv) One arm is added for the gap the reply names itself (S has no term for layer 1's output weights): learning
 rate 5e-4 (6 of 6, S = 1.78) with those weights at a quarter of the learning rate. Expected: at most 3 of 6,
-against the formula.
+against the formula. (v) Added while the runs were in progress and before any outcome was looked at, from the
+settings and the committed counts alone: on the 25 conditions S is at the ceiling of any rule of the settings (139
+of 150 runs, every condition with a majority on its side of the threshold), and so are three other forms: S
+without its position factor; S with c entering as √c; and S with layer 0's output taken by itself instead of
+relative to the embeddings. The constant s* can lie anywhere from 0.71e-4 to 1.41e-4 if the threshold moves with
+it. The 25 conditions therefore do not tell these forms apart, and the new arms divide as follows. Relative to the
+embeddings against by itself (c against √c): the first and fourth cells of the first set and the token-embedding
+arm. The position factor: no arm (with and without it the calls for all eight arms are the same). The second
+setting of the second set is on the textbook side only for s* below about 1.3e-4. For the second and third cells
+of the first set and for Claude's arm every one of the forms says textbook circuits.
 
 d. A summary made after all of the above (post hoc; no prediction on record): which layer's band attention (mean
    over its heads) passes a level first, against the circuit at the end. The level is chosen on the 48 runs of
