@@ -21,11 +21,28 @@ gates before it can say anything useful about language models:
 |---|---|---|---|
 | v0 | system test: the platform runs end to end | done; DR0 | [v0_findings.md](results/v0_findings.md) |
 | v1 | sharper known-answer tasks with uniform probes (gate 1) | done; DR1 | [v1_preregistration.md](results/v1_preregistration.md), [v1_results.md](results/v1_results.md) |
-| v2 | gate 2: θ vs η with referees. Part A: correlated inputs and constructed cases (CPU). Part B: induction heads in small transformers (pilot on the CPU server, then the GPU servers) | A0, A1, A3 done; Part A run: "η wins" (1 of 12; see v2a_results.md); Part B pilot ready | [v2_design_draft.md](results/v2_design_draft.md), [v2a_preregistration.md](results/v2a_preregistration.md), [v2a_results.md](results/v2a_results.md) |
+| v2 | gate 2: θ vs η with referees. Part A: correlated inputs and constructed cases (CPU). Part B: induction heads in small transformers (pilot on the CPU server, then the GPU servers) | A0, A1, A3 done; Part A run: "η wins" (1 of 12; see v2a_results.md); Part B run as a formation study (DR2b): B1 and B2 met, mechanism comparison a tie (see v2b_results.md) | [v2_design_draft.md](results/v2_design_draft.md), [v2a_preregistration.md](results/v2a_preregistration.md), [v2a_results.md](results/v2a_results.md), [v2b_preregistration.md](results/v2b_preregistration.md), [v2b_results.md](results/v2b_results.md) |
 | v3 | depends on gate 2. Candidates: transformers at several sizes, Pythia checkpoints across scale, SAE features as variables | open | |
 | v4 | closer to real models: text-trained transformers, own GPT-2-small runs, pre-trained open models (gates 3 to 5) | open | |
 
 ## Change log
+
+### 20 November 2026: Part B run and analysed; a discussion about the research line
+
+* **Part B** (100 objects, DR2b; [v2b_results.md](results/v2b_results.md); verified independently).
+  * Every instrument check passed.
+  * B1: the circuit formed in 60 of 60 runs; larger models change earlier (phase change at a median step of 692, 339
+    and 211 for d_model 48, 96 and 192). Both predictions met.
+  * B2: in 60 of 60 runs the induction heads form before the previous-token head becomes clean. Prediction met.
+  * The θ/η mechanism comparison is a tie. η is favoured at C_U only when pairs of a circuit head with the layer-0
+    t − 2 ("context") head count as non-circuit pairs ("referee-dependent", which does not count as ahead). That
+    was the expected outcome, and it does not count toward gate 2.
+  * Not predicted: at d_model 192, 9 of 20 runs grow a strong t − 2 head in layer 0.
+* **The research line** (the researcher, 20 November). The aim is to find real anomalous phenomena in the survey
+  and, from them, regularities that are verified, general and hold across scale. Whether RI sees more than the η
+  view is a question about a tool, not the goal. The gates above are written around RI and may be rewritten. A
+  discussion draft ([notes/reframing_draft_2026-11-20.md](../notes/reframing_draft_2026-11-20.md)) is being
+  discussed with the advisor session and Antigravity; nothing is decided yet, and the plan above is unchanged.
 
 ### 16 November 2026 (later): Part B becomes a formation study; gate 2 stays open
 

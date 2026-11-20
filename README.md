@@ -69,5 +69,8 @@ launchd (`ops/install_macmini.sh --dry-run` shows what it would do); see [docs/O
 * [docs/results/v2a_preregistration.md](docs/results/v2a_preregistration.md): sky v2 Part A's design, the criteria
   fixed before the run, and its run-time estimate.
 * [docs/results/v2a_results.md](docs/results/v2a_results.md): the pre-registered analysis of sky v2 Part A.
+* [docs/results/v2b_preregistration.md](docs/results/v2b_preregistration.md) and
+  [docs/results/v2b_results.md](docs/results/v2b_results.md): sky v2 Part B, how induction circuits form in small
+  transformers; its pre-registration and results (DR2b).
 
 Tests: `python -m pytest -q` (add `--runslow` for the slow ones).
