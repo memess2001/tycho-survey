@@ -62,6 +62,25 @@ H fails if qk1_double gives 3 or more textbook circuits, if either arm at 0.88e-
 lr2e-3_qk0_half gives 3 or more. Expectation recorded with it: no confident view on qk1_double and on
 lr2e-3_qk0_quarter (the rest of that network is at four times the noise scale of the weights that are slowed).
 
+Third set of (c): the reviewer's eighth reply (20 November, to commit cb49962; it states that it ran none of
+these). Its account of why the textbook circuit is lost when the weights other than the two layers' query and key
+weights are at 3.54e-4: layer 0's output is a product of two weight matrices that are not normalised away (its
+value rows and its output projection), so it grows as the square of the noise scale while the embeddings grow
+linearly; at learning rate 2e-3 it makes up 90 per cent and more of what layer 1 reads, and layer 1 can no longer
+see positions and tokens. Its predictions, in the cell at learning rate 2e-3 and batch 32 with layer 0's query and
+key weights at a quarter (1 of 6 textbook circuits), with one more group of weights at half the learning rate:
+the output side of both layers ("ov0" and "ov1"): at least 5 of 6; the positional embedding: at most 2; the token
+embedding: at most 1; the unembedding: at most 2. In a note: of the two output sides it is layer 0's alone that
+decides (at least 5), not layer 1's. It fails if the output side gives 3 or fewer, or one of the other three 4 or
+more.
+Recorded here before the runs. (i) One reference arm is added: every weight except layer 1's query and key weights
+at half (layer 0's query and key weights stay at a quarter). That is the baseline with the one slowed and the
+other sped up; expected: at least 5 of 6. Without it, four arms that each change one group say nothing if none of
+them flips the outcome. (ii) The size of layer 0's output also rises when its attention sharpens (a sharper
+attention averages fewer value vectors), and in the reviewer's own table the runs with the largest output are the
+ones in which layer 0 had already taken the band. If the large output is a consequence of that and not the cause,
+halving the output side does not bring the textbook circuit back. No confident expectation either way.
+
 d. A summary made after all of the above (post hoc; no prediction on record): which layer's band attention (mean
    over its heads) passes a level first, against the circuit at the end. The level is chosen on the 48 runs of
    the eight cells and then applied to the intervention arms, to the unperturbed runs at d_model 32 and 128 and to
@@ -105,7 +124,19 @@ ARMS = {"qk0_half": ("base", {"qk0": 0.5}, None), "rest_half": ("base", {"all": 
         "qk0_0.71": ("base", {"qk0": 1 / math.sqrt(2)}, ("at least", 4)),
         "lr5e-4_b8_qk0_half": ("lr5e-4_b8", {"qk0": 0.5}, ("at least", 5)),
         "lr2e-3_qk0_quarter": ("lr2e-3", {"qk0": 0.25}, ("at least", 5)),
-        "lr2e-3_qk0_half": ("lr2e-3", {"qk0": 0.5}, ("at most", 1))}
+        "lr2e-3_qk0_half": ("lr2e-3", {"qk0": 0.5}, ("at most", 1)),
+        "lr2e-3_qk0_quarter_ov_half": ("lr2e-3", {"qk0": 0.25, "ov0": 0.5, "ov1": 0.5}, ("at least", 5)),
+        "lr2e-3_qk0_quarter_pos_half": ("lr2e-3", {"qk0": 0.25, "pos": 0.5}, ("at most", 2)),
+        "lr2e-3_qk0_quarter_tok_half": ("lr2e-3", {"qk0": 0.25, "tok": 0.5}, ("at most", 1)),
+        "lr2e-3_qk0_quarter_head_half": ("lr2e-3", {"qk0": 0.25, "head": 0.5}, ("at most", 2)),
+        "lr2e-3_qk0_quarter_rest_half": ("lr2e-3", {"all": 0.5, "qk0": 0.25, "qk1": 1.0}, ("at least", 5)),
+        "lr2e-3_qk0_quarter_ov0_half": ("lr2e-3", {"qk0": 0.25, "ov0": 0.5}, ("at least", 5)),
+        "lr2e-3_qk0_quarter_ov1_half": ("lr2e-3", {"qk0": 0.25, "ov1": 0.5}, None)}
+#: whose prediction the third entry of an arm is; the arms of the third set
+EIGHTH = tuple(a for a in ARMS if a.startswith("lr2e-3_qk0_quarter_"))
+PREDICTED_BY = {**{a: "hypothesis H (Claude, seventh round)" for a in ARMS if a not in EIGHTH and ARMS[a][2]},
+                **{a: "the reviewer's eighth reply" for a in EIGHTH if ARMS[a][2]},
+                "lr2e-3_qk0_quarter_rest_half": "Claude (reference arm, eighth round)"}
 
 
 def cell_of(setting: str) -> tuple[float, int]:
@@ -308,8 +339,9 @@ def main(argv: list[str] | None = None) -> int:
             "textbook_in_the_cell_without_a_change": reference["noise_scale"]["cells"][cell]["textbook"],
             "learning_rate_factors": factors,
             "lr_over_root_batch_by_group": {g: lr * factors.get(g, factors.get("all", 1.0)) / math.sqrt(batch)
-                                            for g in ("qk0", "qk1", "pos")},
-            "hypothesis_predicts": list(predicted) if predicted else None, "as_predicted": as_predicted,
+                                            for g in GROUPS},
+            "predicted": list(predicted) if predicted else None, "predicted_by": PREDICTED_BY.get(arm),
+            "as_predicted": as_predicted,
             "textbook": n_textbook,
             "relays": int(sum(r["formed"] and not r["textbook"] for r in rows)),
             "not_formed": int(sum(not r["formed"] for r in rows)), "of": len(rows), "complete": len(rows) == len(js),
@@ -322,18 +354,18 @@ def main(argv: list[str] | None = None) -> int:
 
     # every condition by the noise scale of three groups of weights
     by_scales = [{"condition": c, "kind": "cell", "learning_rate": v["learning_rate"], "batch": v["batch"],
-                  "qk0": v["lr_over_root_batch"], "qk1": v["lr_over_root_batch"], "rest": v["lr_over_root_batch"],
-                  "textbook": v["textbook"], "of": v["of"]} for c, v in reference["noise_scale"]["cells"].items()]
+                  **{g: v["lr_over_root_batch"] for g in GROUPS}, "textbook": v["textbook"], "of": v["of"]}
+                 for c, v in reference["noise_scale"]["cells"].items()]
     by_scales += [{"condition": arm, "kind": "arm", "learning_rate": o["learning_rate"], "batch": o["batch"],
-                   "qk0": o["lr_over_root_batch_by_group"]["qk0"], "qk1": o["lr_over_root_batch_by_group"]["qk1"],
-                   "rest": o["lr_over_root_batch_by_group"]["pos"], "textbook": o["textbook"], "of": o["of"]}
+                   **o["lr_over_root_batch_by_group"], "textbook": o["textbook"], "of": o["of"]}
                   for arm, o in intervention["arms"].items()]
-    intervention["every_condition_by_noise_scale_of_three_groups"] = by_scales
+    intervention["every_condition_by_noise_scale_of_the_groups"] = by_scales
 
     # (d) which layer's band attention passes a level first, against the circuit at the end
     base_final = {r["name"]: r for r in json.loads(
         (REPO / "docs" / "results" / "v2_analysis" / "relay_followup_pilot.json").read_text())["runs"]}
-    labelled = {"cells": [], "intervention arms": [], "d_model 32 and 128": [], "rep_min 16": []}
+    labelled = {"cells": [], "intervention arms": [], "d_model 32 and 128": [], "rep_min 16": [],
+                "intervention arms of the eighth round": [], "rep_min 8 and 20": []}
     for cell in CELLS:
         rows = {r["name"]: r for r in reference["runs"].get(f"{cell}_natural", [])}
         for j in pp.arm_jobs(f"{cell}_natural"):
@@ -347,9 +379,12 @@ def main(argv: list[str] | None = None) -> int:
             labelled["cells"].append((j, label))
     for arm, js in arms.items():
         rows = {r["name"]: r for r in rows_out[arm]}
-        labelled["intervention arms"] += [(j, rows[j["name"]]["textbook"]) for j in js if j["name"] in rows]
+        group = "intervention arms of the eighth round" if arm in EIGHTH else "intervention arms"
+        labelled[group] += [(j, rows[j["name"]]["textbook"]) for j in js if j["name"] in rows]
     for group, names in (("d_model 32 and 128", ("d32_natural", "d128_natural")),
-                         ("rep_min 16", tuple(f"{c}_natural" for c in pp.SETTINGS if c.startswith("rm16_")))):
+                         ("rep_min 16", tuple(f"{c}_natural" for c in pp.SETTINGS if c.startswith("rm16_"))),
+                         ("rep_min 8 and 20", tuple(f"{c}_natural" for c in pp.SETTINGS
+                                                    if c.startswith(("rm8_", "rm20_"))))):
         for name in names:
             rows = {r["name"]: r for r in reference["runs"].get(name, [])}
             labelled[group] += [(j, rows[j["name"]]["textbook"]) for j in pp.arm_jobs(name) if j["name"] in rows]
@@ -414,17 +449,17 @@ def main(argv: list[str] | None = None) -> int:
                 for n in (3200, 12800, 38400)))
     print("== (c) a cell with the learning rate changed for one group of weights")
     for arm, o in intervention["arms"].items():
-        scale = o["lr_over_root_batch_by_group"]
-        print(f"   {arm:>19s} (cell {o['cell']}, {o['textbook_in_the_cell_without_a_change']}/6 without the change; "
-              f"lr/sqrt(B) of qk0 {scale['qk0']:.2e}, qk1 {scale['qk1']:.2e}, the rest {scale['pos']:.2e}): textbook "
-              f"{o['textbook']}/{o['of']} (2 heads {o['by_heads']['h2']}, 4 heads {o['by_heads']['h4']}) | H predicts "
-              f"{o['hypothesis_predicts']}: {o['as_predicted']} | relay positions {o['relay_deltas']} | decoy "
+        print(f"   {arm:>28s} (cell {o['cell']}, {o['textbook_in_the_cell_without_a_change']}/6 without the change; "
+              f"factors {o['learning_rate_factors']}): textbook "
+              f"{o['textbook']}/{o['of']} (2 heads {o['by_heads']['h2']}, 4 heads {o['by_heads']['h4']}) | predicted "
+              f"{o['predicted']} by {o['predicted_by']}: {o['as_predicted']} | relay positions "
+              f"{o['relay_deltas']} | decoy "
               f"{[round(x, 2) for x in o['deep_decoy_over_clean']]} | loss<2 at "
               f"{o['first_step_with_loss_rep_below_2']}")
-    print("   every condition by lr/sqrt(B) of layer 0's query/key weights, layer 1's, and the rest (units of 1e-4):")
-    for c in sorted(by_scales, key=lambda c: (c["rest"], c["qk0"] / c["qk1"], c["qk0"])):
-        print(f"      {c['condition']:>19s} {c['kind']:>4s}: qk0 {c['qk0'] * 1e4:.2f} qk1 {c['qk1'] * 1e4:.2f} rest "
-              f"{c['rest'] * 1e4:.2f} -> textbook {c['textbook']}/{c['of']}")
+    print("   every condition by lr/sqrt(B) of each group of weights (units of 1e-4):")
+    for c in sorted(by_scales, key=lambda c: (c["pos"], c["qk0"] / c["qk1"], c["qk0"])):
+        print(f"      {c['condition']:>28s} {c['kind']:>4s}: " + " ".join(f"{g} {c[g] * 1e4:.2f}" for g in GROUPS)
+              + f" -> textbook {c['textbook']}/{c['of']}")
     print("== (d) which layer's band attention passes a level first, against the circuit at the end (level chosen "
           "on the cells:", first["level_chosen_on_the_cells"], ")")
     for group, blk in first["groups"].items():
