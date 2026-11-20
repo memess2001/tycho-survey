@@ -45,6 +45,9 @@
 > gradient noise on existing settings, a corrected derivation of the noise scale, and two sets of blind predictions
 > (the noise threshold at rep_min 16; the critical period under the wider mask at other widths). §15 records the
 > reply and the tests.
+>
+> 20 November: a discussion of the scale-up path and a first literature check of the findings, made while the runs
+> of the eighth round were in progress (§16). The eighth round itself follows in §17.
 
 ---
 
@@ -382,7 +385,7 @@ tiled 布局（词表 64，64 个 token，片段长 4 到 16）下，不做内�
 ## 7. 留给下一轮交叉讨论的问题
 
 （17 日：Antigravity 的回答和核对见 §9.1；这一轮之后新的开放问题见 §9.6；第二轮之后见 §10.8；第三轮之后见 §11.6；
-第四轮见 §12；第五轮见 §13；第六轮见 §14；第七轮见 §15。）
+第四轮见 §12；第五轮见 §13；第六轮见 §14；第七轮见 §15；规模路线和文献核对见 §16。）
 
 1. 延迟规则（延迟约等于停留处输出增益的倒数）是否已经包含在 gradient starvation（Pezeshki 等 2021）的分析里？
 2. §6 第 3 条的两半，相对 distributional simplicity bias（Refinetti 2023，Belrose 2024，Rende 2024）、Edelman 2024、
@@ -1834,3 +1837,139 @@ rep_min 16 上的噪声门槛；盲测二，加宽的掩码在宽度 32 和 128 
 4. 它估 rep_min 16 的门槛用的两个时钟的比值，在 rep_min 8 和 20 上还估得中吗？
 5. §14.7 的第 3 到 5 问（两方向的流与实测之间的小偏差；K 有没有不用积分的近似；Adam 的缩短量、v1 的 Q4、结果笔记
    §6 的另外两个检验）没有动。
+
+---
+
+## 16. 11 月 20 日：规模路线的讨论，和第一遍文献核对
+
+状态：探索性，不改变计划；`docs/ROADMAP.md` 和 `README.md` 没有动。起因：研究者问了 Antigravity 两组问题，并把它的回答
+交给 Claude 核对。第一组：小尺度上还差几轮、何时上更大的规模、多大、三档各带什么任务、通过后意味着什么。第二组：
+这些规律会不会已经被别人发表过，我们做过文献调查没有。本节记 Claude 的看法和一遍文献检索。
+
+**检索的性质。** 四路并行的网页检索，合计约 170 次检索和页面读取，大多停在摘要层面，不是系统综述。下面标
+"核实"的条目，Claude 自己确认过它存在、摘要内容对得上；标"转述"的只来自检索报告，没有再核。2026 年的文章只确认了
+存在和摘要。"没找到"不等于没有。
+
+### 16.1 规模和路线：对 Antigravity 五个回答的看法
+
+它的规模阶梯（1M 到 30M 参数的带 MLP 的 Transformer；自己训练的 GPT-2-small；Pythia 检查点）来自 11 月 12 日的讨论
+记录，数字属实：Pythia 是 16 个模型（8 个规模、两种数据）、每个 154 个检查点（核实，arXiv:2304.01373）；PolyPythias 是
+14M 到 410M 的 5 个规模各 9 个新种子，共 45 个运行（核实，arXiv:2503.09543）。Claude 不同意或要补充的有五点：
+
+1. **"还差 1 到 2 轮"。** 不该用轮数来量。八轮下来每轮关掉一两个问题，也打开一两个。应当换成停止条件：主张冻结成
+   三四条并各带失败标准；在另一台机器上整套重跑，每格 20 个以上的运行；两条事后归纳的说法（两层相对快慢；谁先过
+   线）各做一次预先登记的确认；换三样与主张无关的设置看结论还在不在；读完最接近的文献。
+2. **这个现象本身可能随规模消失。** 同一个噪声水平下，不干预时宽度 32 和 64 是 0/6，宽度 128 是 3/6；宽度 128 上
+   成形后的中继还翻得回来（§15.6）。越宽，中继越弱。把同一个任务直接搬到 1M 到 30M 参数，多半只会看到教科书电路。
+   上 GPU 之前有一个便宜的桥接实验：量噪声门槛随宽度怎样移动（宽度 32、64、128、256）。门槛很快升到实际训练不会用
+   的水平，就说明这是小模型现象，放大时要换一个有多种可竞争解的任务。
+3. **88 核的 CPU 服务器和 GPU 是两件事。** 前者现在就能用，用途是复算和加种子，不需要工程准备。后者的问题不是
+   何时，而是带什么问题上去。
+4. **Pythia 那一档已经有相近的观测。** Tigges、Hanna、Yu、Biderman 2024（核实，arXiv:2407.10827）在 70M 到 2.8B 的
+   Pythia 检查点上报告：归纳头等功能部件在相近的 token 数出现，跨规模一致。Aoyama、Wilcox、Schneider 2025（核实，
+   arXiv:2511.16893）用批量和上下文长度的一个公式预测语言模型预训练中归纳头何时出现，且与模型规模无关。后者与
+   §15.3 "进度按看过的序列数计"直接相邻。Pythia 每个规模只有一组超参数，检验不了噪声尺度的规律。
+5. **"通过后等于打通关卡 3 到 5"对照 ROADMAP 原文不成立。** 五道关卡说的是仪器：关卡 2（θ 视角是否看到 η 视角
+   看不到的东西）现在开着；关卡 3、4 写的是"一个测量预测之后的事件"和"基于它的干预有效"。这几轮的结果用的是普通的
+   注意力统计量和直接干预。按现在的 ROADMAP，它们不在关卡序列上；要算数，先要做重新定位的决定。另外，真实大模型
+   用很大的批量，按方向推对应这里"低噪声、教科书电路"的一侧，这条规律在标准预训练里可能不起作用；门槛的数值
+   不能跨模型比较，所以这只是一个要写进主张里的担心。
+
+### 16.2 文献核对：每条发现的最近邻
+
+| 我们的发现 | 最接近的已发表工作 | 没找到的 | 判断 |
+|---|---|---|---|
+| 规则 A：延迟等于低阶项拟合处输出增益的倒数（§9.2） | Qiu、Kuang、Goel 2024：捷径特征学到最优后，核心特征方向的梯度缩小为 4λ(1−λ) 倍（核实，并在原文里找到这句话） | 把它积分成训练时间并与实测延迟对比；它在 SGD 和 Adam 下各成立到哪里 | **因子已发表。** 我们多的是时间上的检验和失效范围 |
+| 延迟 = D × K，不含拟合常数（§11.3、§14.3） | LaBonte、Muthukumar 2026：理想化的单神经元引理里，增长率是"共用的读出权重"乘"逻辑损失的残差因子"，用了同一条守恒律（核实）。Kunin 等 2025：由约化的流给出各次下降的次序和时间，平方损失（核实） | 有限宽度上对核那一半的事先预测；预测与实测逐点对比 | D 是增量；K 和乘积的验证没找到先例 |
+| 噪声尺度相同则轨迹相同（§14.4） | Malladi 等 2022（§15.3） | | 已发表 |
+| 固定数据下，噪声尺度决定形成哪种电路，门槛随 rep_min 移动（§14.4、§15.5） | Sahasrabudhe 2026：学习率越高、批量越小，Transformer 停在边缘解上的平台越长（核实；单种子）。Kirsch 等 2022：批量决定记忆还是泛化（转述）。Qu、Liu 2026 的博客：平台学习率 6e-3 不出归纳头，6e-4 出（核实）。Aoyama 等 2025（见上） | 用噪声尺度这个变量；两种都能工作、结构已拆清的电路之间的转变 | 这一类现象已有报告；我们的具体形式没找到 |
+| 分组改学习率拨动电路；两层注意力权重的相对快慢决定结果（§15.4） | Gibson、Cui、Reddy 2026：把第一层"看前一个 token"的注意力的梯度缩到十分之一，记忆与泛化的边界移动约 2 倍，称之为子电路间的动力学竞争（存在已核实；实验细节是两次二手阅读的转述）。Nguyen、Reddy 2024：两个子电路的相对学习速度决定转变（核实）。Liu 等 2022：表示和解码器的学习率相图（转述）。Vashisht、Ramaswamy 2026：查询/键相对输出一侧学得越快，注意力越尖（核实） | 两层的查询/键权重之间的赛跑；对手是另一种注意力电路而不是 MLP 记忆；输出一侧的作用 | **原理已发表**，对象和方向不同（他们放慢第一层注意力不利于归纳，我们相反） |
+| 成形之前的关键期：限时挡住注意力就换电路（§12.4、§14.5） | Chen 等 2023：在 BERT 的训练中压制一种句法注意力结构，放开得早有益，压过某一点则长期受损；摘要把它读作相变终结了一个关键期（核实；正文对这是否算严格的关键期有保留，转述）。Singh 等 2025：上下文学习只能从某个窗口内的检查点出现，竞争者成形后不能（核实）。2026 年两篇：权重衰减的"关键窗口"决定推理还是记忆（arXiv:2605.04396，核实）；注意力先验撤除的方式决定电路能否保留（Yang 等，核实）。Achille 等 2019 | 用限时的注意力掩码在两种已识别的电路之间翻转，且窗口在损失下降之前 | 各个成分分别已有，组合没找到。Chen 等是审稿人第一个会提的 |
+| 能否翻回取决于宽度（§15.6） | Singh 等 2023：嵌入越宽，与对手电路的竞争越弱（转述）。Lyle 等 2023：大网络可塑性损失小（转述） | 电路之间可逆性的宽度对比 | 没找到直接先例；能用的检索词少，证据弱 |
+| 谁先过线预示最后的电路（§15.4） | Gibson 等 2026、Nguyen 和 Reddy 2024：早期领先的子电路胜出。Musat 等 2026：初始化决定哪个归纳电路胜出，简单的预测量只部分有效（核实） | 在一百多个运行上报告准确率的简单指标 | 概念已有；只能作为经验预测量来报告 |
+| 中继电路本身，以及它与 rep_min 的关系（§9.3、§10.4） | Kawata 等 2025：触发距离的分布决定单层 Transformer 学位置捷径还是归纳头（核实）。它的理论里没有要学的第 0 层，优化器不在故事里，两层耦合列为未来工作（转述） | 固定偏移的第 0 层中继加错位的第 1 层单键匹配作为稳定平台；依赖最小重复长度 | "距离分布选位置解还是内容解"归 Kawata 等；具体结构没找到。方向要对清楚：他们是越多样越利于归纳头，我们是频带越窄越利于教科书电路 |
+| 第 0 层输出淹没第 1 层输入；只降输出一侧的学习率就恢复（第八轮在检验） | Wortsman 等 2023：高学习率下注意力打分因查询和键的范数增长而发散（核实）。Zhai 等 2023：提高学习率导致注意力熵塌缩，与查询/键权重的谱范数绑定（核实）。Vashisht、Ramaswamy 2026（见上） | 这条机制链，和只动输出一侧学习率的修复 | 成分已知；链条没找到 |
+
+另有一条需要研究者确认来历（转述，Claude 没能核实）：GitHub 上的 `NitzanBrain/toy-induction-lockout`，自述作者是一个
+AI agent，2026 年 10 月 25 日发布，未经人审；设置与这里几乎相同（两层纯注意力、宽度 64、词表 64、上下文 64、重复
+长度 8 到 32），报告了一条"第 0 层按位置看、第 1 层在其上组合"的两层路线。
+
+### 16.3 对 Antigravity 的文献判断的修正
+
+- 它这次给的引用 Claude 查了 8 篇，全部存在，描述也对得上。"没有做过系统的文献调查"属实。
+- 它漏了几篇比它列的更要紧的：Qiu 等 2024（规则 A 的因子）、Gibson 等 2026（分组改梯度的干预）、Chen 等 2023
+  （训练中压制注意力结构）、Sahasrabudhe 2026（学习率和批量与平台）、Tigges 等 2024 和 Aoyama 等 2025（规模那一档）。
+- 它列为"依然很有差异化新意"的三条（噪声和分层学习率拨动电路；输出淹没；关键期和宽度）都要降一档：没有一条被
+  原样发表，但前两条的原理和第三条的各个成分都已经有人发表，其中多篇出在 2026 年。
+- 它建议精读的 5 篇里，arXiv:2511.01033 和 arXiv:2409.10559 是理论背景，优先级低于上面几篇。
+
+### 16.4 对主张定位的含义（仍然只是讨论）
+
+1. "噪声或学习率影响走哪条路"、"相对学习速度决定哪个子电路胜出"、"训练早期有决定性的窗口"都不能当作新概念来
+   主张。能主张的是另一层：在一个能完全拆开的两层系统里，三种互相独立的操作（挡注意力、调整体噪声、分组改学习
+   率）指向同一个机制，并且每一步有预先写下的预测和失败记录。也就是机制的完整和因果上的闭合，不是任何单个现象。
+2. 延迟那一半：规则 A 改为引用 Qiu 等 2024；我们的贡献是时间上的定量检验、失效范围和核的那一半。
+3. 这个方向在 2026 年很拥挤（最近邻里至少六篇出在 2026 年）。拖得越久，被覆盖的可能越大。
+4. 与 Kawata 等的关系要在精读之后写清楚：他们改数据，我们固定数据改优化器；他们是单层，我们是两层的竞争。
+
+### 16.5 待办
+
+- 精读，按优先级：Qiu 等 2024；Gibson 等 2026；Kawata 等 2025；Chen 等 2023；Sahasrabudhe 2026；Aoyama 等 2025；
+  Nguyen 和 Reddy 2024；LaBonte 和 Muthukumar 2026。读后把上表里"转述"的格子改成一手的。
+- 确认 `NitzanBrain/toy-induction-lockout` 的来历。
+- 让另一个系统独立做一遍同样的检索，交叉核对（Antigravity 这次没有找到 Qiu 等和 Gibson 等）。
+- 桥接实验（§16.1 第 2 条）和整套复算，放在 88 核服务器上。
+
+### 16.6 本节引用的文献
+
+核实过存在和摘要的：
+
+- Qiu, Kuang, Goel (2024). Complexity matters: feature learning in the presence of spurious correlations. *ICML*.
+  arXiv:2403.03375.
+- LaBonte, Muthukumar (2026). SGD provably prioritizes a shortcut spurious feature in the XOR model. *NeurIPS*.
+  arXiv:2606.30444.
+- Kunin et al. (2025). Alternating gradient flows: a theory of feature learning in two-layer neural networks.
+  *NeurIPS*. arXiv:2506.06489.
+- Kawata, Song, Bietti, Nishikawa, Suzuki, Vaiter, Wu (2025). From shortcut to induction head: how data diversity
+  shapes algorithm selection in transformers. *NeurIPS*. arXiv:2512.18634.
+- Gibson, Cui, Reddy (2026). Distinct mechanisms underlying in-context learning in transformers. arXiv:2604.12151.
+- Nguyen, Reddy (2024). Differential learning kinetics govern the transition from memorization to generalization
+  during in-context learning. *ICLR 2025*. arXiv:2412.00104.
+- Reddy (2023). The mechanistic basis of data dependence and abrupt learning in an in-context classification task.
+  *ICLR 2024*. arXiv:2312.03002.
+- Chen, Shwartz-Ziv, Cho, Leavitt, Saphra (2023). Sudden drops in the loss: syntax acquisition, phase transitions,
+  and simplicity bias in MLMs. *ICLR 2024*. arXiv:2309.07311.
+- Singh, Moskovitz, Dragutinović, Hill, Chan, Saxe (2025). Strategy coopetition explains the emergence and
+  transience of in-context learning. *ICML*. arXiv:2503.05631.
+- Sahasrabudhe (2026). Marginals before conditionals: staged disambiguation in gradient-trained transformers.
+  arXiv:2603.10074.
+- Aoyama, Wilcox, Schneider (2025). Predicting the emergence of induction heads in language model pretraining.
+  *ICML 2026*. arXiv:2511.16893.
+- Tigges, Hanna, Yu, Biderman (2024). LLM circuit analyses are consistent across training and scale. *NeurIPS*.
+  arXiv:2407.10827.
+- Vashisht, Ramaswamy (2026). Faster query-key learning sharpens attention in self-attention models. *ICML*.
+  arXiv:2608.06776.
+- Musat, Pimentel, Zucchet, Hofmann (2026). Invariant learning dynamics of transformers in inductive reasoning
+  tasks. arXiv:2607.11875.
+- Musat, Pimentel, Noci, Stolfo, Sachan, Hofmann (2025). On the emergence of induction heads for in-context
+  learning. arXiv:2511.01033.
+- Chen, Sheen, Wang, Yang (2024). Unveiling induction heads: provable training dynamics and feature learning in
+  transformers. *NeurIPS*. arXiv:2409.10559.
+- Wortsman et al. (2023). Small-scale proxies for large-scale transformer training instabilities. *ICLR 2024*.
+  arXiv:2309.14322.
+- Zhai et al. (2023). Stabilizing transformer training by preventing attention entropy collapse. *ICML*.
+  arXiv:2303.06296.
+- Zhang, Lin, Wang, Zhang, Xu (2024). Initialization is critical to whether transformers fit composite functions
+  by reasoning or memorizing. *NeurIPS*. arXiv:2405.05409.
+- Yang et al. (2026). Training trajectories determine circuit removability in annealable soft-prior transformers.
+  arXiv:2609.10287.
+- Critical windows of complexity control: when transformers decide to reason or memorize (2026). arXiv:2605.04396.
+- Qu, Liu (2026). Emergence of induction head depends on learning rate schedule. 博客文章，
+  kindxiaoming.github.io/blog/2026/induction-head-lr-schedule。
+- Biderman et al. (2023). Pythia: a suite for analyzing large language models across training and scaling. *ICML*.
+  arXiv:2304.01373. PolyPythias (2025). *ICLR*. arXiv:2503.09543.
+
+只来自检索报告、没有再核的：Kirsch 等 2022（arXiv:2212.04458）；Liu 等 2022（arXiv:2205.10343）；Singh 等 2023
+（arXiv:2311.08360）；Lyle 等 2023（arXiv:2303.01486）；Kleinman、Achille、Soatto 2023（arXiv:2308.12221）；
+Tian 等 2023（arXiv:2305.16380）。
+
