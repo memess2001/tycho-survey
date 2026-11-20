@@ -1,0 +1,48 @@
+# Sky v2, Part B: how induction circuits form (CPU server).
+# Design and criteria fixed before the run: docs/results/v2b_preregistration.md (binding). Every object is observed in
+# pattern mode over all 2^H head-ablation patterns at every evaluation step (71), and stores its final weights.
+# Run with: bash ops/linux/start_v2b.sh
+version: sky-v2b
+description: >
+  Part B. Attention-only TinyGPT with 2 layers and 3 heads per layer at d_model 48, 96 and 192 (20 seeds each),
+  trained on tiled sequences (a random segment of length 4 to 16 repeated over 64 tokens); controls without
+  repeats at each size, and 1-layer models at d_model 96 (10 seeds each). 100 objects. No refinement, no follow-ups.
+regions:
+  - name: induction-main
+    task: induction
+    seeds: 20
+    seed_base: 400
+    data_seed_from_seed: true
+    priority: 2.0
+    ri_policy: always
+    ri: {mode: patterns, n_probe: 1024, n_points: 80}
+    fixed: {vocab: 64, seq_len: 64, rep_min: 4, rep_max: 16, layout: tiled, attn_only: true, probe_size: 128,
+            n_layer: 2, n_head: 3, p_repeat: 1.0}
+    train: {steps: 12000, batch_size: 32, optimizer: adam, lr: 0.0003, n_log_evals: 80, n_lin_evals: 0, ntk_every: 0}
+    knobs:
+      d_model: {values: [48, 96, 192], kind: ordinal}
+  - name: induction-norepeat
+    task: induction
+    seeds: 10
+    seed_base: 450
+    data_seed_from_seed: true
+    priority: 1.0
+    ri_policy: always
+    ri: {mode: patterns, n_probe: 1024, n_points: 80}
+    fixed: {vocab: 64, seq_len: 64, rep_min: 4, rep_max: 16, layout: tiled, attn_only: true, probe_size: 128,
+            n_layer: 2, n_head: 3, p_repeat: 0.0}
+    train: {steps: 12000, batch_size: 32, optimizer: adam, lr: 0.0003, n_log_evals: 80, n_lin_evals: 0, ntk_every: 0}
+    knobs:
+      d_model: {values: [48, 96, 192], kind: ordinal}
+  - name: induction-1layer
+    task: induction
+    seeds: 10
+    seed_base: 450
+    data_seed_from_seed: true
+    priority: 1.0
+    ri_policy: always
+    ri: {mode: patterns, n_probe: 1024, n_points: 80}
+    fixed: {vocab: 64, seq_len: 64, rep_min: 4, rep_max: 16, layout: tiled, attn_only: true, probe_size: 128,
+            n_layer: 1, n_head: 3, p_repeat: 1.0, d_model: 96}
+    train: {steps: 12000, batch_size: 32, optimizer: adam, lr: 0.0003, n_log_evals: 80, n_lin_evals: 0, ntk_every: 0}
+    knobs: {}
