@@ -102,6 +102,43 @@ These predictions are Claude's reading of the reviewer's account, not the review
 with them: the third more likely than not (the size of layer 0's output at step 300 sorts the 48 runs of the third
 set almost perfectly); the first two open.
 
+Fifth set of (c): the reviewer's ninth reply (20 November, to commit b25f5ec; it states that it ran none of these).
+The fourth set came out as its account has it (baseline with layer 0's output times 0.25: 5 of 6 textbook
+circuits; learning rate 5e-4 with the output times 4: 0 of 6; the cell of the third set with the output times
+0.25: 6 of 6). The reply makes two things of this.
+
+First, how the factor c on layer 0's output trades against the noise scale s = lr/√B. Claude's question had
+supposed c to be worth √c in s, because that output grows as the square of s. The reply: what layer 1 reads is the
+ratio of that output to the embeddings, which themselves grow with s, so the ratio goes as c·s and c is worth c,
+not √c. Four cells with no learning rate changed tell the two apart: learning rate 2e-3 (3.54e-4) with the output
+times 0.25: at least 4 of 6 (√c would make it the baseline, relays); the same with 1/16: at least 4; the baseline
+with 0.5: at least 5; learning rate 5e-4 with the output times 2: at most 2 (√c would make it 1.25e-4, textbook).
+It fails if the first gives 2 or fewer, the fourth 4 or more, the third 3 or fewer, or the second 2 or fewer.
+
+Second, one quantity computed before training,
+
+    S = (s_qk0 / s_qk1) · 2(s0² + s_pos²) / (2 s0² + s_pos² + s_tok²) · (1 + R²),
+    R = c · s_ov0² / (s* · √((s_pos² + s_tok²) / 2)),   s* = 1.0e-4,   s0 = 1.606e-4,
+
+with s_g the noise scale of a group of weights, and a threshold at about 3.15 (textbook circuits below). On the 25
+conditions it had, every condition with 3 or more textbook circuits of 6 lies below and every one with 1 or fewer
+above. Three settings of its own choosing, all on the baseline: layer 0's query and key weights at half the
+learning rate with the output times 2 (S = 6.75; alone, the slower weights gave 6 of 6): at most 1 of 6; every
+weight but those at half with the output times 0.25 (S = 2.10; without the factor 0 of 6): at least 4; the token
+embedding at twice the learning rate and nothing else (S = 1.24; baseline 0 of 6): at least 5. It fails if the
+first gives 3 or more, the second 2 or fewer, or the third 3 or fewer.
+
+Recorded here before the runs. (i) The form of S, its two constants and its threshold were chosen with the 25
+outcomes in view, so its fit to them says little; the seven new conditions are the test. (ii) On the trade between
+c and s the reply's argument is the better one, and Claude expects its four cells to come out its way more often
+than not, with no confident view on the cell at 1/16 (so little of layer 0's output may leave the textbook circuit
+without its key). (iii) The third of its own settings is the most surprising: a higher learning rate for one group
+of weights is to turn relays into textbook circuits. In the third set the token embedding at half the learning
+rate made matters worse, which points the same way; expected: an improvement, whether as far as 5 of 6 is open.
+(iv) One arm is added for the gap the reply names itself (S has no term for layer 1's output weights): learning
+rate 5e-4 (6 of 6, S = 1.78) with those weights at a quarter of the learning rate. Expected: at most 3 of 6,
+against the formula.
+
 d. A summary made after all of the above (post hoc; no prediction on record): which layer's band attention (mean
    over its heads) passes a level first, against the circuit at the end. The level is chosen on the 48 runs of
    the eight cells and then applied to the intervention arms, to the unperturbed runs at d_model 32 and 128 and to
@@ -156,21 +193,52 @@ ARMS = {"qk0_half": ("base", {"qk0": 0.5}, None), "rest_half": ("base", {"all": 
         "lr2e-3_qk0_quarter_ov1_half": ("lr2e-3", {"qk0": 0.25, "ov1": 0.5}, None),
         "base_y0_quarter": ("base", {}, ("at least", 5), {0: 0.25}),
         "lr5e-4_y0_times4": ("lr5e-4", {}, ("at most", 1), {0: 4.0}),
-        "lr2e-3_qk0_quarter_y0_quarter": ("lr2e-3", {"qk0": 0.25}, ("at least", 5), {0: 0.25})}
-#: the arms with a fixed factor on layer 0's output (fourth set); the arms of the eighth round (third and fourth
-#: sets); whose prediction the third entry of an arm is
-OUTPUT = tuple(a for a in ARMS if len(ARMS[a]) > 3)
+        "lr2e-3_qk0_quarter_y0_quarter": ("lr2e-3", {"qk0": 0.25}, ("at least", 5), {0: 0.25}),
+        "lr2e-3_y0_quarter": ("lr2e-3", {}, ("at least", 4), {0: 0.25}),
+        "lr5e-4_y0_times2": ("lr5e-4", {}, ("at most", 2), {0: 2.0}),
+        "tok_double": ("base", {"tok": 2.0}, ("at least", 5)),
+        "qk0_half_y0_times2": ("base", {"qk0": 0.5}, ("at most", 1), {0: 2.0}),
+        "rest_half_y0_quarter": ("base", {"all": 0.5, "qk0": 1.0}, ("at least", 4), {0: 0.25}),
+        "base_y0_half": ("base", {}, ("at least", 5), {0: 0.5}),
+        "lr2e-3_y0_sixteenth": ("lr2e-3", {}, ("at least", 4), {0: 0.0625}),
+        "lr5e-4_ov1_quarter": ("lr5e-4", {"ov1": 0.25}, ("at most", 3))}
+#: the arms with a fixed factor on layer 0's output in the fourth set; the arms of the eighth round (third and
+#: fourth sets); the arms of the ninth round (fifth set); whose prediction the third entry of an arm is
+OUTPUT = ("base_y0_quarter", "lr5e-4_y0_times4", "lr2e-3_qk0_quarter_y0_quarter")
+NINTH = ("lr2e-3_y0_quarter", "lr5e-4_y0_times2", "tok_double", "qk0_half_y0_times2", "rest_half_y0_quarter",
+         "base_y0_half", "lr2e-3_y0_sixteenth", "lr5e-4_ov1_quarter")
 EIGHTH = tuple(a for a in ARMS if a.startswith("lr2e-3_qk0_quarter_")) + tuple(a for a in OUTPUT if a not in (
     "lr2e-3_qk0_quarter_y0_quarter",))
-PREDICTED_BY = {**{a: "hypothesis H (Claude, seventh round)" for a in ARMS if a not in EIGHTH and ARMS[a][2]},
+PREDICTED_BY = {**{a: "hypothesis H (Claude, seventh round)" for a in ARMS
+                   if a not in EIGHTH + NINTH and ARMS[a][2]},
                 **{a: "the reviewer's eighth reply" for a in EIGHTH if ARMS[a][2]},
                 "lr2e-3_qk0_quarter_rest_half": "Claude (reference arm, eighth round)",
-                **{a: "the reviewer's account of layer 0's output, as read by Claude" for a in OUTPUT}}
+                **{a: "the reviewer's account of layer 0's output, as read by Claude" for a in OUTPUT},
+                **{a: "the reviewer's ninth reply" for a in NINTH}, "lr5e-4_ov1_quarter": "Claude (ninth round)"}
+#: the constants of the reviewer's combined quantity S (ninth reply): the noise scale at which layer 0's output
+#: equals the embeddings in what layer 1 reads, the noise scale that stands for the initial embeddings, and the
+#: threshold of S
+S_STAR, S_ZERO, S_THRESHOLD = 1.0e-4, 1.606e-4, 3.15
 
 
 def cell_of(setting: str) -> tuple[float, int]:
     change = pp.SETTINGS[setting]
     return change.get("lr", 1e-3), change.get("batch_size", 32)
+
+
+def combined_quantity(lr: float, batch: int, factors: dict, output: dict | None, s_zero: float = S_ZERO) -> dict:
+    """The reviewer's S (ninth reply) for a condition: learning rate, batch size, learning-rate factors by group of
+    weights, and the fixed factor on layer 0's output. ``s_zero=0`` gives its asymptotic version."""
+    def scale(g: str) -> float:
+        return lr * factors.get(g, factors.get("all", 1.0)) / math.sqrt(batch)
+
+    c = float((output or {}).get(0, 1.0))
+    pos, tok = scale("pos"), scale("tok")
+    ratio = c * scale("ov0") ** 2 / (S_STAR * math.sqrt((pos ** 2 + tok ** 2) / 2))
+    position = 2 * (s_zero ** 2 + pos ** 2) / (2 * s_zero ** 2 + pos ** 2 + tok ** 2)
+    speed = scale("qk0") / scale("qk1")
+    return {"qk0_over_qk1": speed, "ratio_of_layer_0_output_to_embeddings": ratio, "position_share_factor": position,
+            "S": speed * position * (1 + ratio ** 2)}
 
 
 def displacement_stats():
@@ -396,7 +464,8 @@ def main(argv: list[str] | None = None) -> int:
     base_final = {r["name"]: r for r in json.loads(
         (REPO / "docs" / "results" / "v2_analysis" / "relay_followup_pilot.json").read_text())["runs"]}
     labelled = {"cells": [], "intervention arms": [], "d_model 32 and 128": [], "rep_min 16": [],
-                "intervention arms of the eighth round": [], "rep_min 8 and 20": []}
+                "intervention arms of the eighth round": [], "rep_min 8 and 20": [],
+                "intervention arms of the ninth round": []}
     for cell in CELLS:
         rows = {r["name"]: r for r in reference["runs"].get(f"{cell}_natural", [])}
         for j in pp.arm_jobs(f"{cell}_natural"):
@@ -410,7 +479,8 @@ def main(argv: list[str] | None = None) -> int:
             labelled["cells"].append((j, label))
     for arm, js in arms.items():
         rows = {r["name"]: r for r in rows_out[arm]}
-        group = "intervention arms of the eighth round" if arm in EIGHTH else "intervention arms"
+        group = ("intervention arms of the eighth round" if arm in EIGHTH else
+                 "intervention arms of the ninth round" if arm in NINTH else "intervention arms")
         labelled[group] += [(j, rows[j["name"]]["textbook"]) for j in js if j["name"] in rows]
     for group, names in (("d_model 32 and 128", ("d32_natural", "d128_natural")),
                          ("rep_min 16", tuple(f"{c}_natural" for c in pp.SETTINGS if c.startswith("rm16_"))),
@@ -436,13 +506,74 @@ def main(argv: list[str] | None = None) -> int:
     on_cells = first["groups"]["cells"]
     first["level_chosen_on_the_cells"] = max(LEVELS, key=lambda lv: (on_cells[str(lv)]["correct"], lv))
 
+    # the reviewer's combined quantity S, for every condition (the cells and the arms)
+    conditions = []
+    for cell, v in intervention["reference_cells_without_a_change"].items():
+        lr, batch = cells[cell]
+        conditions.append({"condition": cell, "set": "the 25 conditions the ninth reply had", "of": v["of"],
+                           "textbook": v["textbook"], **combined_quantity(lr, batch, {}, None),
+                           "S_asymptotic": combined_quantity(lr, batch, {}, None, 0.0)["S"]})
+    for arm, o in intervention["arms"].items():
+        output = ARMS[arm][3] if len(ARMS[arm]) > 3 else None
+        conditions.append({"condition": arm, "of": o["of"], "textbook": o["textbook"],
+                           "set": "the ninth round" if arm in NINTH else "the 25 conditions the ninth reply had",
+                           **combined_quantity(o["learning_rate"], o["batch"], ARMS[arm][1], output),
+                           "S_asymptotic": combined_quantity(o["learning_rate"], o["batch"], ARMS[arm][1], output,
+                                                             0.0)["S"]})
+
+    def score(rows: list[dict]) -> dict:
+        rows = [r for r in rows if r["of"]]
+        runs = [(r["S"], k < r["textbook"]) for r in rows for k in range(r["of"])]
+        pos_, neg_ = [v for v, t in runs if t], [v for v, t in runs if not t]
+        auc = (sum((a < b) + 0.5 * (a == b) for a in pos_ for b in neg_) / (len(pos_) * len(neg_))
+               if pos_ and neg_ else None)
+        return {"conditions": len(rows), "runs": len(runs),
+                "runs_on_the_predicted_side": int(sum((v < S_THRESHOLD) == t for v, t in runs)),
+                "most_any_rule_of_the_settings_could_get": int(sum(max(r["textbook"], r["of"] - r["textbook"])
+                                                                   for r in rows)),
+                "conditions_with_the_majority_on_the_predicted_side": int(sum(
+                    (r["S"] < S_THRESHOLD) == (2 * r["textbook"] > r["of"]) for r in rows
+                    if 2 * r["textbook"] != r["of"])),
+                "conditions_split_evenly": int(sum(2 * r["textbook"] == r["of"] for r in rows)),
+                "area_under_the_roc_curve": auc}
+
+    combined = {"constants": {"s_star": S_STAR, "s_zero": S_ZERO, "threshold": S_THRESHOLD},
+                "conditions": sorted(conditions, key=lambda r: r["S"]),
+                **{k: score([r for r in conditions if r["set"] == k])
+                   for k in ("the 25 conditions the ninth reply had", "the ninth round")}}
+
+    # the ninth reply's own criteria for its two sets of settings (None until every run of a set is in)
+    def count(*names: str) -> list | None:
+        got = [intervention["arms"][a] for a in names]
+        return [o["textbook"] for o in got] if all(o["complete"] for o in got) else None
+
+    by_factor = count("lr2e-3_y0_quarter", "lr2e-3_y0_sixteenth", "base_y0_half", "lr5e-4_y0_times2")
+    by_quantity = count("qk0_half_y0_times2", "rest_half_y0_quarter", "tok_double")
+    criteria = {"output_factor_against_noise_scale": None, "combined_quantity": None}
+    if by_factor:
+        a1, a2, a3, a4 = by_factor
+        criteria["output_factor_against_noise_scale"] = {
+            "textbook_of_6": dict(zip(("lr 2e-3, output times 0.25", "lr 2e-3, output times 1/16",
+                                       "baseline, output times 0.5", "lr 5e-4, output times 2"), by_factor)),
+            "passes": bool(a1 >= 4 and a2 >= 4 and a3 >= 5 and a4 <= 2 and a1 - a4 >= 3),
+            "fails": bool(a1 <= 2 or a4 >= 4 or a3 <= 3 or a2 <= 2)}
+    if by_quantity:
+        c1, c2, c3 = by_quantity
+        criteria["combined_quantity"] = {
+            "textbook_of_6": dict(zip(("layer 0's query and key weights at half, output times 2",
+                                       "every weight but those at half, output times 0.25",
+                                       "token embedding at twice the learning rate"), by_quantity)),
+            "passes": bool(c1 <= 1 and c2 >= 4 and c3 >= 5), "fails": bool(c1 >= 3 or c2 <= 2 or c3 <= 3)}
+    combined["criteria_of_the_ninth_reply"] = criteria
+
     result = {"status": "exploratory pilot; local runs; not independently recomputed",
               "missing": {"clock": [f"{j['cell']} {j['base']}" for j in clock if not (
                   args.work / f"noise_clock_{j['cell']}_{j['base']}.json").exists()],
                           "arms": [j["name"] for js in arms.values() for j in js if not (
                               args.work / f"period_{j['name']}.npz").exists()]},
               "equal_numbers_of_sequences": equal_n, "displacement": displacement, "intervention": intervention,
-              "first_layer_past_a_level": first, "runs": rows_out}
+              "first_layer_past_a_level": first, "combined_quantity_of_the_ninth_reply": combined,
+              "runs": rows_out}
     args.out.write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
 
     pick = [i for i, n in enumerate(grid) if n in (6400, 12800, 19200, 25600, 38400)]
@@ -501,6 +632,13 @@ def main(argv: list[str] | None = None) -> int:
     chosen = str(first["level_chosen_on_the_cells"])
     print("   misses at the chosen level:", [(x["run"], f"h{x['n_head']}", x["layer_1_first"], x["textbook"])
                                            for blk in first["groups"].values() for x in blk[chosen]["misses"]])
+    print("== the reviewer's combined quantity S (threshold", S_THRESHOLD, "; textbook circuits below)")
+    for r in combined["conditions"]:
+        print(f"   S {r['S']:7.3f} (asymptotic {r['S_asymptotic']:7.3f}) | qk0/qk1 {r['qk0_over_qk1']:.2f} R "
+              f"{r['ratio_of_layer_0_output_to_embeddings']:.2f} position {r['position_share_factor']:.2f} | textbook "
+              f"{r['textbook']}/{r['of']} | {r['condition']} ({r['set']})")
+    for k in ("the 25 conditions the ninth reply had", "the ninth round", "criteria_of_the_ninth_reply"):
+        print(f"   {k}:", json.dumps(combined[k]))
     print("missing:", {k: len(v) for k, v in result["missing"].items()})
     return 0
 
