@@ -1,0 +1,321 @@
+{
+ "status": "exploratory; not pre-registered",
+ "release": "releases/DR2b",
+ "first_run_started_utc": "2026-11-20T06:24:56.863281012+00:00",
+ "P1": {
+  "rule": "1-layer final repeat loss in [1.56, 2.0]",
+  "values": [
+   1.4850843538137783,
+   1.5049385118226097,
+   1.5349265822105658,
+   1.5349426127083292,
+   1.5483715859190985,
+   1.5514933210958426,
+   1.605963783471345,
+   1.61638460382852,
+   1.6236751064836816,
+   1.630995981422018
+  ],
+  "n_in": 4,
+  "n": 10
+ },
+ "P2": {
+  "rule": "d_model 96: max |2-layer - 1-layer median| <= 0.2 before the phase change",
+  "runs": [
+   {
+    "object_id": "11e3486ce4db7b3f",
+    "to_phase_change": {
+     "max_dev": 1.3104130055993422,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.1758884542143786,
+     "at_step": 64
+    }
+   },
+   {
+    "object_id": "13f59e59b89ae73e",
+    "to_phase_change": {
+     "max_dev": 1.4279555556676093,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.19661055875206923,
+     "at_step": 72
+    }
+   },
+   {
+    "object_id": "1bbe55f7afc3370d",
+    "to_phase_change": {
+     "max_dev": 1.632560545050129,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.2034102854087494,
+     "at_step": 72
+    }
+   },
+   {
+    "object_id": "2353da4cd6a7b951",
+    "to_phase_change": {
+     "max_dev": 1.299562291102607,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.16362139844362655,
+     "at_step": 57
+    }
+   },
+   {
+    "object_id": "26a29b14e62da1b4",
+    "to_phase_change": {
+     "max_dev": 1.3336858983107147,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.1846803849228027,
+     "at_step": 57
+    }
+   },
+   {
+    "object_id": "30d1378eda9d5597",
+    "to_phase_change": {
+     "max_dev": 1.4003874938427834,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.19064885535653175,
+     "at_step": 72
+    }
+   },
+   {
+    "object_id": "66324b0451c08d07",
+    "to_phase_change": {
+     "max_dev": 1.0374404283555139,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.19594311881626147,
+     "at_step": 72
+    }
+   },
+   {
+    "object_id": "79d1d240eaeb84f0",
+    "to_phase_change": {
+     "max_dev": 1.1647517702900656,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.1752795887248757,
+     "at_step": 64
+    }
+   },
+   {
+    "object_id": "7c90668852940e2f",
+    "to_phase_change": {
+     "max_dev": 1.2874212155229088,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.18491854190382861,
+     "at_step": 64
+    }
+   },
+   {
+    "object_id": "7e948ccbe030e2ab",
+    "to_phase_change": {
+     "max_dev": 1.2410754483742317,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.15976774604682387,
+     "at_step": 64
+    }
+   },
+   {
+    "object_id": "86fb14b213e6aafd",
+    "to_phase_change": {
+     "max_dev": 1.449433964132511,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.18128071993143724,
+     "at_step": 64
+    }
+   },
+   {
+    "object_id": "89908997b6b9cbed",
+    "to_phase_change": {
+     "max_dev": 1.4652245602387814,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.1763243343874401,
+     "at_step": 64
+    }
+   },
+   {
+    "object_id": "8b3df2d46a70fc98",
+    "to_phase_change": {
+     "max_dev": 1.6231268821998073,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.2201497140193811,
+     "at_step": 237
+    }
+   },
+   {
+    "object_id": "a913ad364e6522e8",
+    "to_phase_change": {
+     "max_dev": 1.508151558716184,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.16949702394058264,
+     "at_step": 64
+    }
+   },
+   {
+    "object_id": "ac913ad9beb02daf",
+    "to_phase_change": {
+     "max_dev": 1.2610759249742882,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.1801229281175578,
+     "at_step": 64
+    }
+   },
+   {
+    "object_id": "c2cdc869a7bdfd45",
+    "to_phase_change": {
+     "max_dev": 1.2967654745875654,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.16998494665467012,
+     "at_step": 64
+    }
+   },
+   {
+    "object_id": "ca1f8d9eb3d417f4",
+    "to_phase_change": {
+     "max_dev": 1.2789334585308787,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.15335772729521224,
+     "at_step": 57
+    }
+   },
+   {
+    "object_id": "cad3f9c3e86aee52",
+    "to_phase_change": {
+     "max_dev": 1.5901168700635038,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.19539881283281924,
+     "at_step": 72
+    }
+   },
+   {
+    "object_id": "e23579de217b33f4",
+    "to_phase_change": {
+     "max_dev": 1.3996503411967098,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.20639629768330225,
+     "at_step": 81
+    }
+   },
+   {
+    "object_id": "fcc4bb44caabf9ad",
+    "to_phase_change": {
+     "max_dev": 1.4675163683179548,
+     "at_step": 301
+    },
+    "to_leave_point": {
+     "max_dev": 0.19441526547649257,
+     "at_step": 64
+    }
+   }
+  ],
+  "to_phase_change": {
+   "n_within": 0,
+   "n": 20,
+   "min": 1.0374404283555139,
+   "max": 1.632560545050129
+  },
+  "to_leave_point": {
+   "n_within": 17,
+   "n": 20,
+   "min": 0.15335772729521224,
+   "max": 0.2201497140193811
+  },
+  "one_layer_median_vs_two_layer_median": {
+   "57": {
+    "one_layer_median": 3.95584538302785,
+    "two_layer_d96_median": 3.7735314020827166
+   },
+   "103": {
+    "one_layer_median": 3.736340136689609,
+    "two_layer_d96_median": 3.572047517874857
+   },
+   "166": {
+    "one_layer_median": 3.440786643025935,
+    "two_layer_d96_median": 3.3268312895629197
+   },
+   "211": {
+    "one_layer_median": 3.2145936955523693,
+    "two_layer_d96_median": 3.1532388010953945
+   },
+   "237": {
+    "one_layer_median": 3.0664859931171833,
+    "two_layer_d96_median": 3.015287502162324
+   },
+   "267": {
+    "one_layer_median": 2.9013259607882285,
+    "two_layer_d96_median": 2.5072057554008875
+   },
+   "301": {
+    "one_layer_median": 2.754747374356005,
+    "two_layer_d96_median": 1.3880792546022926
+   }
+  }
+ },
+ "P3": {
+  "rule": "leave loss rises or stays flat with d_model (Antigravity)",
+  "by_size": {
+   "48": {
+    "n": 20,
+    "median": 3.211995785983479,
+    "min": 2.996195796409169,
+    "max": 3.31958272291576,
+    "leave_step_median": 430.0,
+    "leave_step_min": 430,
+    "leave_step_max": 484
+   },
+   "96": {
+    "n": 20,
+    "median": 3.0078957307352887,
+    "min": 2.730004759676509,
+    "max": 3.1003188016960204,
+    "leave_step_median": 237.0,
+    "leave_step_min": 237,
+    "leave_step_max": 267
+   },
+   "192": {
+    "n": 20,
+    "median": 2.369314087534309,
+    "min": 2.199292429312132,
+    "max": 2.5921326158503053,
+    "leave_step_median": 166.0,
+    "leave_step_min": 147,
+    "leave_step_max": 166
+   }
+  }
+ }
+}
