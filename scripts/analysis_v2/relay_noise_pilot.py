@@ -148,10 +148,25 @@ arm. The position factor: no arm (with and without it the calls for all eight ar
 setting of the second set is on the textbook side only for s* below about 1.3e-4. For the second and third cells
 of the first set and for Claude's arm every one of the forms says textbook circuits.
 
+Outcome of the fifth set (textbook circuits of 6 at 12,000 steps). First set: 4, 2, 6 and 0. By the reply's own
+criteria it fails, on the cell at 1/16 alone; no run of its first three cells is a relay, and those that are not
+textbook circuits (2 and 4 runs) have layer 1 on the source with a one-token key. The two cells that tell c from
+√c came out the reply's way, against Claude's supposition. Second set: 0, 3 and 1. It fails, on the
+token-embedding arm (5 relays). Claude's arm: 0 of 6. On the eight arms S has 28 of 48 runs on its side of the
+threshold (40 possible), against 139 of 150 on the 25 conditions it was built on. Of the remarks above, (ii) and
+(iv) held and (iii) did not (1 of 6 against the baseline's 0 is no improvement).
+
 d. A summary made after all of the above (post hoc; no prediction on record): which layer's band attention (mean
    over its heads) passes a level first, against the circuit at the end. The level is chosen on the 48 runs of
    the eight cells and then applied to the intervention arms, to the unperturbed runs at d_model 32 and 128 and to
    the cells at rep_min 16 of ``relay_period_pilot.py``.
+
+e. The two stages on the way to a textbook circuit (post hoc, after the fifth set; no prediction on record). A run
+   that ends as a textbook circuit first has layer 1 settle on the source with a one-token key (the loss on
+   predictable tokens falls to between 0.5 and 0.8); the second key token comes later (the loss falls below 0.4
+   and stays there). Per condition: the step of each stage, their ratio, and the runs that are on the source at
+   the end without being textbook circuits. Ten such runs, from the arms with layer 0's output at a quarter or
+   less, are trained four times as long (48,000 steps) to see whether the second stage is late or absent.
 
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/relay_noise_pilot.py
 --jobs 4`` (``--skip-runs`` analyses the cache). Needs the cached runs and the output of
@@ -224,6 +239,15 @@ PREDICTED_BY = {**{a: "hypothesis H (Claude, seventh round)" for a in ARMS
                 "lr2e-3_qk0_quarter_rest_half": "Claude (reference arm, eighth round)",
                 **{a: "the reviewer's account of layer 0's output, as read by Claude" for a in OUTPUT},
                 **{a: "the reviewer's ninth reply" for a in NINTH}, "lr5e-4_ov1_quarter": "Claude (ninth round)"}
+#: runs that ended with layer 1 on the source and a one-token key (arms with layer 0's output at a quarter or
+#: less), trained four times as long; chosen after the outcomes of the ninth round
+LONG_STEPS = 48_000
+LONG = {"lr2e-3_y0_sixteenth": ("h2_s300", "h2_s301", "h2_s302", "h4_s300"),
+        "lr2e-3_y0_quarter": ("h2_s300", "h2_s301"), "rest_half_y0_quarter": ("h2_s300", "h2_s301", "h4_s302"),
+        "base_y0_quarter": ("h2_s301",)}
+#: the second stage of the textbook circuit: the loss on predictable tokens stays below this (with a one-token
+#: key it sits at 0.5 to 0.8)
+SECOND_KEY_LOSS = 0.4
 #: the constants of the reviewer's combined quantity S (ninth reply): the noise scale at which layer 0's output
 #: equals the embeddings in what layer 1 reads, the noise scale that stands for the initial embeddings, and the
 #: threshold of S
@@ -300,6 +324,31 @@ def arm_jobs(arm: str) -> list[dict]:
             for j in pp.arm_jobs(f"{cell}_natural")]
 
 
+def long_jobs() -> list[dict]:
+    return [{**j, "name": f"noise_{arm}_long{LONG_STEPS}_{j['base']}", "arm": f"noise_{arm}_long{LONG_STEPS}",
+             "steps": LONG_STEPS, "train": {**j["train"], "steps": LONG_STEPS}}
+            for arm, picks in LONG.items() for j in arm_jobs(arm) if j["base"].endswith(picks)]
+
+
+def stage_steps(job: dict, work: Path) -> dict:
+    """The two stages on the way to a textbook circuit, from a run's curves: the first step with most of layer 1's
+    attention on the source, and the first step from which the loss on predictable tokens stays below
+    ``SECOND_KEY_LOSS``."""
+    step, st = pp.curves(job, work)
+    on = np.flatnonzero(st["source_l1"] > 0.5)
+    low = st["loss_rep"] < SECOND_KEY_LOSS
+    stay = np.flatnonzero(low & (np.cumsum(~low[::-1])[::-1] == 0))
+    return {"on_the_source_at_the_end": bool(st["source_l1"][-1] > 0.5), "steps": float(step[-1]),
+            "source_step": float(step[on[0]]) if len(on) else None,
+            "second_key_step": float(step[stay[0]]) if len(stay) else None}
+
+
+def on_the_source(row: dict) -> bool:
+    """Layer 1 ends with most of its attention on the source itself (every textbook circuit does; so do the circuits
+    with a one-token key that an offset-1 head in layer 0 supplies)."""
+    return bool(row["formed"] and row["relay_delta"] == 0 and row["source_l1_at_the_end"] > 0.5)
+
+
 def layer_1_first(job: dict, work: Path, level: float) -> bool | None:
     """Does layer 1's band attention pass the level before layer 0's? None if neither does."""
     step, st = pp.curves(job, work)
@@ -330,13 +379,15 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     clock = clock_jobs()
     arms = {arm: arm_jobs(arm) for arm in ARMS}
+    longer = long_jobs()
     if not args.skip_runs:
         with Pool(args.jobs) as pool:
             if args.only != "arms":
                 for msg in pool.imap(run_clock, [(j, str(args.work)) for j in clock]):
                     print(msg, flush=True)
             if args.only != "clock":
-                for msg in pool.imap(pp.run_arm, [(j, str(args.work)) for js in arms.values() for j in js]):
+                for msg in pool.imap(pp.run_arm, [(j, str(args.work)) for js in arms.values() for j in js] + [
+                        (j, str(args.work)) for j in longer]):
                     print(msg, flush=True)
     cells = {c: cell_of(c) for c in CELLS}
     grid = list(range(0, N_LAST + 1, N_STEP))
@@ -452,9 +503,14 @@ def main(argv: list[str] | None = None) -> int:
             "as_predicted": as_predicted,
             "textbook": n_textbook,
             "relays": int(sum(r["formed"] and not r["textbook"] for r in rows)),
-            # of those: layer 1 attends to the source itself (not displaced) but the key is not the two-token one
+            # of those: layer 1's most attended position is the source itself (not displaced) but the key is not the
+            # two-token one; and, of these, the runs with most of layer 1's attention there (the others are relays
+            # through a band in layer 0 whose most attended position happens to be the source)
             "at_the_source_without_the_two_token_key": int(sum(
                 r["formed"] and not r["textbook"] and r["relay_delta"] == 0 for r in rows)),
+            "on_the_source_with_a_one_token_key": int(sum(on_the_source(r) and not r["textbook"] for r in rows)),
+            "on_the_source_with_a_one_token_key_by_heads": {f"h{nh}": int(sum(
+                on_the_source(r) and not r["textbook"] for r in rows if r["n_head"] == nh)) for nh in rb.HEADS},
             "not_formed": int(sum(not r["formed"] for r in rows)), "of": len(rows), "complete": len(rows) == len(js),
             "by_heads": {f"h{nh}": int(sum(r["textbook"] for r in rows if r["n_head"] == nh)) for nh in rb.HEADS},
             "relay_deltas": [r["relay_delta"] for r in rows],
@@ -519,40 +575,53 @@ def main(argv: list[str] | None = None) -> int:
     first["level_chosen_on_the_cells"] = max(LEVELS, key=lambda lv: (on_cells[str(lv)]["correct"], lv))
 
     # the reviewer's combined quantity S, for every condition (the cells and the arms)
+    def at_the_source_in_a_cell(cell: str) -> int:
+        """Runs of an unchanged cell that end with layer 1 on the source itself, with either key."""
+        if cell == "base":                               # the baseline's six runs are displaced relays (earlier pilots)
+            ends = [base_final[j["base"]] for j in pp.arm_jobs("base_natural")]
+            return int(sum(f["relay_delta"] == 0 and f["intact"]["loss_rep"] < 2 for f in ends))
+        return int(sum(on_the_source(r) for r in reference["runs"][f"{cell}_natural"]))
+
     conditions = []
     for cell, v in intervention["reference_cells_without_a_change"].items():
         lr, batch = cells[cell]
         conditions.append({"condition": cell, "set": "the 25 conditions the ninth reply had", "of": v["of"],
-                           "textbook": v["textbook"], **combined_quantity(lr, batch, {}, None),
+                           "textbook": v["textbook"], "at_the_source": at_the_source_in_a_cell(cell),
+                           **combined_quantity(lr, batch, {}, None),
                            "S_asymptotic": combined_quantity(lr, batch, {}, None, 0.0)["S"]})
     for arm, o in intervention["arms"].items():
         output = ARMS[arm][3] if len(ARMS[arm]) > 3 else None
         conditions.append({"condition": arm, "of": o["of"], "textbook": o["textbook"],
+                           "at_the_source": o["textbook"] + o["on_the_source_with_a_one_token_key"],
                            "set": "the ninth round" if arm in NINTH else "the 25 conditions the ninth reply had",
                            **combined_quantity(o["learning_rate"], o["batch"], ARMS[arm][1], output),
                            "S_asymptotic": combined_quantity(o["learning_rate"], o["batch"], ARMS[arm][1], output,
                                                              0.0)["S"]})
 
-    def score(rows: list[dict]) -> dict:
+    def score(rows: list[dict], outcome: str = "textbook") -> dict:
         rows = [r for r in rows if r["of"]]
-        runs = [(r["S"], k < r["textbook"]) for r in rows for k in range(r["of"])]
+        runs = [(r["S"], k < r[outcome]) for r in rows for k in range(r["of"])]
         pos_, neg_ = [v for v, t in runs if t], [v for v, t in runs if not t]
         auc = (sum((a < b) + 0.5 * (a == b) for a in pos_ for b in neg_) / (len(pos_) * len(neg_))
                if pos_ and neg_ else None)
         return {"conditions": len(rows), "runs": len(runs),
                 "runs_on_the_predicted_side": int(sum((v < S_THRESHOLD) == t for v, t in runs)),
-                "most_any_rule_of_the_settings_could_get": int(sum(max(r["textbook"], r["of"] - r["textbook"])
+                "most_any_rule_of_the_settings_could_get": int(sum(max(r[outcome], r["of"] - r[outcome])
                                                                    for r in rows)),
                 "conditions_with_the_majority_on_the_predicted_side": int(sum(
-                    (r["S"] < S_THRESHOLD) == (2 * r["textbook"] > r["of"]) for r in rows
-                    if 2 * r["textbook"] != r["of"])),
-                "conditions_split_evenly": int(sum(2 * r["textbook"] == r["of"] for r in rows)),
+                    (r["S"] < S_THRESHOLD) == (2 * r[outcome] > r["of"]) for r in rows
+                    if 2 * r[outcome] != r["of"])),
+                "conditions_split_evenly": int(sum(2 * r[outcome] == r["of"] for r in rows)),
                 "area_under_the_roc_curve": auc}
 
+    # the reply states S for textbook circuits; the second reading (layer 1 on the source with either key, against
+    # displaced relays and runs that did not form) was added after the outcomes of the ninth round
+    sets = ("the 25 conditions the ninth reply had", "the ninth round")
     combined = {"constants": {"s_star": S_STAR, "s_zero": S_ZERO, "threshold": S_THRESHOLD},
                 "conditions": sorted(conditions, key=lambda r: r["S"]),
-                **{k: score([r for r in conditions if r["set"] == k])
-                   for k in ("the 25 conditions the ninth reply had", "the ninth round")}}
+                **{k: score([r for r in conditions if r["set"] == k]) for k in sets},
+                "with_layer_1_on_the_source_as_the_outcome": {
+                    k: score([r for r in conditions if r["set"] == k], "at_the_source") for k in sets}}
 
     # the ninth reply's own criteria for its two sets of settings (None until every run of a set is in)
     def count(*names: str) -> list | None:
@@ -578,14 +647,80 @@ def main(argv: list[str] | None = None) -> int:
             "passes": bool(c1 <= 1 and c2 >= 4 and c3 >= 5), "fails": bool(c1 >= 3 or c2 <= 2 or c3 <= 3)}
     combined["criteria_of_the_ninth_reply"] = criteria
 
+    # (e) the two stages on the way to a textbook circuit, in every condition at rep_min 12 and d_model 64 without a
+    # mask (the baseline cell excepted: its six runs are displaced relays), and the runs trained four times as long
+    stage_sets = [(cell, None, pp.arm_jobs(f"{cell}_natural"),
+                   {r["name"]: r["textbook"] for r in reference["runs"].get(f"{cell}_natural", [])})
+                  for cell in CELLS if cell != "base"]
+    stage_sets += [(arm, ARMS[arm][3].get(0) if len(ARMS[arm]) > 3 else None, js,
+                    {r["name"]: r["textbook"] for r in rows_out[arm]}) for arm, js in arms.items()]
+    stage_rows, by_condition = [], {}
+    for name, factor, js, label in stage_sets:
+        got = []
+        for j in js:
+            if j["name"] not in label:
+                continue
+            got.append({"condition": name, "output_factor": factor, "run": j["base"], "n_head": j["cfg"]["n_head"],
+                        "textbook": bool(label[j["name"]]), **stage_steps(j, args.work)})
+        there = [r for r in got if r["on_the_source_at_the_end"]]
+        stage_rows += there
+        by_condition[name] = {
+            "runs": len(got), "on_the_source": len(there), "textbook": int(sum(r["textbook"] for r in there)),
+            "source_step": sorted(r["source_step"] for r in there),
+            "second_key_step_of_the_textbook_runs": sorted(r["second_key_step"] for r in there if r["textbook"]
+                                                           and r["second_key_step"] is not None),
+            "second_over_first": sorted(r["second_key_step"] / r["source_step"] for r in there if r["textbook"]
+                                        and r["second_key_step"] is not None),
+            "not_textbook": [{"run": r["run"], "n_head": r["n_head"], "source_step": r["source_step"],
+                              "steps_over_source_step": r["steps"] / r["source_step"]}
+                             for r in there if not r["textbook"]]}
+    ratios = np.array([r["second_key_step"] / r["source_step"] for r in stage_rows
+                       if r["textbook"] and r["second_key_step"] is not None])
+    small = [r for r in stage_rows if r["output_factor"] is not None and r["output_factor"] <= 0.25]
+    rest = [r for r in stage_rows if r not in small]
+
+    def tally(rows: list[dict]) -> dict:
+        return {"on_the_source": len(rows), "textbook": int(sum(r["textbook"] for r in rows)),
+                **{f"h{nh}": [int(sum(r["n_head"] == nh for r in rows)),
+                              int(sum(r["textbook"] for r in rows if r["n_head"] == nh))] for nh in rb.HEADS}}
+
+    long_rows = []
+    for j in longer:
+        if not (args.work / f"period_{j['name']}.npz").exists():
+            continue
+        r = wp.row_of({**j, "name": f"period_{j['name']}"}, args.work, samples)
+        step, st = pp.curves(j, args.work)
+        long_rows.append({"arm": j["arm"][len("noise_"):-len(f"_long{LONG_STEPS}")], "run": j["base"],
+                          "n_head": r["n_head"], "textbook": r["textbook"], "relay_delta": r["relay_delta"],
+                          "deep_decoy_over_clean": r["deep_decoy_over_clean"], "loss_rep": r["loss_rep"],
+                          "d1_l0_max": float(st["d1_l0_max"][-1]), "d2_l0_max": float(st["d2_l0_max"][-1]),
+                          "source_l1_at_the_end": r["source_l1_at_the_end"], **stage_steps(j, args.work),
+                          "loss_rep_every_6000_steps": [float(np.interp(t, step, st["loss_rep"]))
+                                                        for t in range(6_000, LONG_STEPS + 1, 6_000)],
+                          "d2_l0_max_every_6000_steps": [float(np.interp(t, step, st["d2_l0_max"]))
+                                                         for t in range(6_000, LONG_STEPS + 1, 6_000)]})
+    two_stages = {
+        "second_key_loss": SECOND_KEY_LOSS, "by_condition": by_condition,
+        "all_runs_on_the_source": tally(stage_rows),
+        "output_factor_a_quarter_or_less": tally(small), "the_other_conditions": tally(rest),
+        "second_over_first_in_the_textbook_runs": {
+            "runs": int(len(ratios)), "median": float(np.median(ratios)),
+            "quartiles": [float(np.percentile(ratios, 25)), float(np.percentile(ratios, 75))],
+            "range": [float(ratios.min()), float(ratios.max())]} if len(ratios) else None,
+        "trained_four_times_as_long": {"steps": LONG_STEPS, "runs": long_rows,
+                                       "textbook": int(sum(r["textbook"] for r in long_rows)), "of": len(long_rows),
+                                       "planned": len(longer)}}
+
     result = {"status": "exploratory pilot; local runs; not independently recomputed",
               "missing": {"clock": [f"{j['cell']} {j['base']}" for j in clock if not (
                   args.work / f"noise_clock_{j['cell']}_{j['base']}.json").exists()],
                           "arms": [j["name"] for js in arms.values() for j in js if not (
+                              args.work / f"period_{j['name']}.npz").exists()],
+                          "longer": [j["name"] for j in longer if not (
                               args.work / f"period_{j['name']}.npz").exists()]},
               "equal_numbers_of_sequences": equal_n, "displacement": displacement, "intervention": intervention,
               "first_layer_past_a_level": first, "combined_quantity_of_the_ninth_reply": combined,
-              "runs": rows_out}
+              "two_stages": two_stages, "runs": rows_out}
     args.out.write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
 
     pick = [i for i, n in enumerate(grid) if n in (6400, 12800, 19200, 25600, 38400)]
@@ -648,9 +783,31 @@ def main(argv: list[str] | None = None) -> int:
     for r in combined["conditions"]:
         print(f"   S {r['S']:7.3f} (asymptotic {r['S_asymptotic']:7.3f}) | qk0/qk1 {r['qk0_over_qk1']:.2f} R "
               f"{r['ratio_of_layer_0_output_to_embeddings']:.2f} position {r['position_share_factor']:.2f} | textbook "
-              f"{r['textbook']}/{r['of']} | {r['condition']} ({r['set']})")
+              f"{r['textbook']}/{r['of']}, layer 1 on the source {r['at_the_source']}/{r['of']} | {r['condition']} "
+              f"({r['set']})")
     for k in ("the 25 conditions the ninth reply had", "the ninth round", "criteria_of_the_ninth_reply"):
         print(f"   {k}:", json.dumps(combined[k]))
+    for k, v in combined["with_layer_1_on_the_source_as_the_outcome"].items():
+        print(f"   with layer 1 on the source (either key) as the outcome, {k}:", json.dumps(v))
+    print("== (e) two stages: layer 1 on the source, then the second key token (loss below", SECOND_KEY_LOSS,
+          "for good)")
+    for name, v in two_stages["by_condition"].items():
+        if v["on_the_source"]:
+            print(f"   {name:>32s}: on the source {v['on_the_source']}/{v['runs']} from step "
+                  f"{[int(x) for x in v['source_step']]} | textbook {v['textbook']}, second stage at "
+                  f"{[int(x) for x in v['second_key_step_of_the_textbook_runs']]} | second / first "
+                  f"{[round(x, 1) for x in v['second_over_first']]} | not textbook: "
+                  f"{[(x['run'].split('_', 2)[2], round(x['steps_over_source_step'], 1)) for x in v['not_textbook']]}")
+    for k in ("all_runs_on_the_source", "output_factor_a_quarter_or_less", "the_other_conditions",
+              "second_over_first_in_the_textbook_runs"):
+        print(f"   {k}:", json.dumps(two_stages[k]))
+    longest = two_stages["trained_four_times_as_long"]
+    print(f"   trained to {LONG_STEPS} steps: textbook {longest['textbook']}/{longest['of']} (planned "
+          f"{longest['planned']})")
+    for r in longest["runs"]:
+        print(f"      {r['arm']} {r['run']}: textbook {r['textbook']} | decoy {r['deep_decoy_over_clean']:.2f} | loss "
+              f"{r['loss_rep']:.2f} | offset-2 attention {r['d2_l0_max']:.2f} | second stage at {r['second_key_step']} "
+              f"| loss every 6,000 steps {[round(x, 2) for x in r['loss_rep_every_6000_steps']]}")
     print("missing:", {k: len(v) for k, v in result["missing"].items()})
     return 0
 
