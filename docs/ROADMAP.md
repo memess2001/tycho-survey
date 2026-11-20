@@ -29,13 +29,14 @@ gates before it can say anything useful about language models:
 
 ### 20 November 2026: Part B run and analysed; a discussion about the research line
 
-* **Part B** (100 objects, DR2b; [v2b_results.md](results/v2b_results.md); independent verification pending).
+* **Part B** (100 objects, DR2b; [v2b_results.md](results/v2b_results.md); verified independently).
   * Every instrument check passed.
   * B1: the circuit formed in 60 of 60 runs; larger models change earlier (phase change at a median step of 692, 339
     and 211 for d_model 48, 96 and 192). Both predictions met.
   * B2: in 60 of 60 runs the induction heads form before the previous-token head becomes clean. Prediction met.
-  * The θ/η mechanism comparison is a tie, with η ahead only when the layer-0 t − 2 head is counted outside the
-    circuit. That was the expected outcome, and it does not count toward gate 2.
+  * The θ/η mechanism comparison is a tie. η is favoured at C_U only when pairs of a circuit head with the layer-0
+    t − 2 ("context") head count as non-circuit pairs ("referee-dependent", which does not count as ahead). That
+    was the expected outcome, and it does not count toward gate 2.
   * Not predicted: at d_model 192, 9 of 20 runs grow a strong t − 2 head in layer 0.
 * **The research line** (the researcher, 20 November). The aim is to find real anomalous phenomena in the survey
   and, from them, regularities that are verified, general and hold across scale. Whether RI sees more than the η
