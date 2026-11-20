@@ -165,8 +165,9 @@ e. The two stages on the way to a textbook circuit (post hoc, after the fifth se
    that ends as a textbook circuit first has layer 1 settle on the source with a one-token key (the loss on
    predictable tokens falls to between 0.5 and 0.8); the second key token comes later (the loss falls below 0.4
    and stays there). Per condition: the step of each stage, their ratio, and the runs that are on the source at
-   the end without being textbook circuits. Ten such runs, from the arms with layer 0's output at a quarter or
-   less, are trained four times as long (48,000 steps) to see whether the second stage is late or absent.
+   the end without being textbook circuits, with the offset each head of layer 0 attends to most. Ten such runs,
+   from the arms with layer 0's output at a quarter or less, are trained four times as long (48,000 steps) to see
+   whether the second stage is late or absent.
 
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/relay_noise_pilot.py
 --jobs 4`` (``--skip-runs`` analyses the cache). Needs the cached runs and the output of
@@ -649,11 +650,15 @@ def main(argv: list[str] | None = None) -> int:
 
     # (e) the two stages on the way to a textbook circuit, in every condition at rep_min 12 and d_model 64 without a
     # mask (the baseline cell excepted: its six runs are displaced relays), and the runs trained four times as long
+    def layer_0_offsets(row: dict) -> list[int]:
+        """The most attended offset of each head of layer 0 (1 is the previous token)."""
+        return sorted(int(h["top_offsets"][0][0]) for h in row["layer0"].values())
+
     stage_sets = [(cell, None, pp.arm_jobs(f"{cell}_natural"),
-                   {r["name"]: r["textbook"] for r in reference["runs"].get(f"{cell}_natural", [])})
+                   {r["name"]: r for r in reference["runs"].get(f"{cell}_natural", [])})
                   for cell in CELLS if cell != "base"]
     stage_sets += [(arm, ARMS[arm][3].get(0) if len(ARMS[arm]) > 3 else None, js,
-                    {r["name"]: r["textbook"] for r in rows_out[arm]}) for arm, js in arms.items()]
+                    {r["name"]: r for r in rows_out[arm]}) for arm, js in arms.items()]
     stage_rows, by_condition = [], {}
     for name, factor, js, label in stage_sets:
         got = []
@@ -661,7 +666,8 @@ def main(argv: list[str] | None = None) -> int:
             if j["name"] not in label:
                 continue
             got.append({"condition": name, "output_factor": factor, "run": j["base"], "n_head": j["cfg"]["n_head"],
-                        "textbook": bool(label[j["name"]]), **stage_steps(j, args.work)})
+                        "textbook": bool(label[j["name"]]["textbook"]),
+                        "layer_0_offsets": layer_0_offsets(label[j["name"]]), **stage_steps(j, args.work)})
         there = [r for r in got if r["on_the_source_at_the_end"]]
         stage_rows += there
         by_condition[name] = {
@@ -672,7 +678,8 @@ def main(argv: list[str] | None = None) -> int:
             "second_over_first": sorted(r["second_key_step"] / r["source_step"] for r in there if r["textbook"]
                                         and r["second_key_step"] is not None),
             "not_textbook": [{"run": r["run"], "n_head": r["n_head"], "source_step": r["source_step"],
-                              "steps_over_source_step": r["steps"] / r["source_step"]}
+                              "steps_over_source_step": r["steps"] / r["source_step"],
+                              "layer_0_offsets": r["layer_0_offsets"]}
                              for r in there if not r["textbook"]]}
     ratios = np.array([r["second_key_step"] / r["source_step"] for r in stage_rows
                        if r["textbook"] and r["second_key_step"] is not None])
@@ -683,6 +690,10 @@ def main(argv: list[str] | None = None) -> int:
         return {"on_the_source": len(rows), "textbook": int(sum(r["textbook"] for r in rows)),
                 **{f"h{nh}": [int(sum(r["n_head"] == nh for r in rows)),
                               int(sum(r["textbook"] for r in rows if r["n_head"] == nh))] for nh in rb.HEADS}}
+
+    def heads(rows: list[dict]) -> dict:
+        return {"runs": len(rows), "with_a_head_on_offset_2": int(sum(2 in r["layer_0_offsets"] for r in rows)),
+                "with_every_head_on_offset_1": int(sum(set(r["layer_0_offsets"]) == {1} for r in rows))}
 
     long_rows = []
     for j in longer:
@@ -695,6 +706,7 @@ def main(argv: list[str] | None = None) -> int:
                           "deep_decoy_over_clean": r["deep_decoy_over_clean"], "loss_rep": r["loss_rep"],
                           "d1_l0_max": float(st["d1_l0_max"][-1]), "d2_l0_max": float(st["d2_l0_max"][-1]),
                           "source_l1_at_the_end": r["source_l1_at_the_end"], **stage_steps(j, args.work),
+                          "layer_0_offsets": layer_0_offsets(r), "layer1_modal_deltas": r["layer1_modal_deltas"],
                           "loss_rep_every_6000_steps": [float(np.interp(t, step, st["loss_rep"]))
                                                         for t in range(6_000, LONG_STEPS + 1, 6_000)],
                           "d2_l0_max_every_6000_steps": [float(np.interp(t, step, st["d2_l0_max"]))
@@ -703,6 +715,8 @@ def main(argv: list[str] | None = None) -> int:
         "second_key_loss": SECOND_KEY_LOSS, "by_condition": by_condition,
         "all_runs_on_the_source": tally(stage_rows),
         "output_factor_a_quarter_or_less": tally(small), "the_other_conditions": tally(rest),
+        "layer_0_heads_of_the_textbook_runs": heads([r for r in stage_rows if r["textbook"]]),
+        "layer_0_heads_of_the_other_runs_on_the_source": heads([r for r in stage_rows if not r["textbook"]]),
         "second_over_first_in_the_textbook_runs": {
             "runs": int(len(ratios)), "median": float(np.median(ratios)),
             "quartiles": [float(np.percentile(ratios, 25)), float(np.percentile(ratios, 75))],
@@ -799,6 +813,7 @@ def main(argv: list[str] | None = None) -> int:
                   f"{[round(x, 1) for x in v['second_over_first']]} | not textbook: "
                   f"{[(x['run'].split('_', 2)[2], round(x['steps_over_source_step'], 1)) for x in v['not_textbook']]}")
     for k in ("all_runs_on_the_source", "output_factor_a_quarter_or_less", "the_other_conditions",
+              "layer_0_heads_of_the_textbook_runs", "layer_0_heads_of_the_other_runs_on_the_source",
               "second_over_first_in_the_textbook_runs"):
         print(f"   {k}:", json.dumps(two_stages[k]))
     longest = two_stages["trained_four_times_as_long"]
@@ -806,8 +821,9 @@ def main(argv: list[str] | None = None) -> int:
           f"{longest['planned']})")
     for r in longest["runs"]:
         print(f"      {r['arm']} {r['run']}: textbook {r['textbook']} | decoy {r['deep_decoy_over_clean']:.2f} | loss "
-              f"{r['loss_rep']:.2f} | offset-2 attention {r['d2_l0_max']:.2f} | second stage at {r['second_key_step']} "
-              f"| loss every 6,000 steps {[round(x, 2) for x in r['loss_rep_every_6000_steps']]}")
+              f"{r['loss_rep']:.2f} | layer-0 heads on offsets {r['layer_0_offsets']} | layer-1 positions "
+              f"{r['layer1_modal_deltas']} | second stage at {r['second_key_step']} | loss every 6,000 steps "
+              f"{[round(x, 2) for x in r['loss_rep_every_6000_steps']]}")
     print("missing:", {k: len(v) for k, v in result["missing"].items()})
     return 0
 
