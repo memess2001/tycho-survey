@@ -195,6 +195,12 @@ Claude's expectations. (1) R1 below the baseline's, and more likely near the top
 (2B) With the fold 0 or 1 of 8, as it says; with the factor dropped no confident view (guess 2 of 8, and at least
 one of the three runs at 1/16 ends off the source). The four control runs: textbook circuits with the fold.
 
+Outcome of the sixth set. (1) R1 at step 300 is 1.01 and 6 of 6 runs are textbook circuits: both as the reply had
+them (Claude's count was too low). (2A) 6 of 6. (2B) Of the eight runs that had stalled, 6 become textbook circuits
+with the fold and 8 with the factor dropped; by the reply's criterion both fail, and so does Claude's expectation
+for the fold. With the factor dropped the three runs at 1/16 lose everything for 100 to 200 steps and all three end
+as textbook circuits on the source. The four control runs are textbook circuits under both switches.
+
 d. A summary made after all of the above (post hoc; no prediction on record): which layer's band attention (mean
    over its heads) passes a level first, against the circuit at the end. The level is chosen on the 48 runs of
    the eight cells and then applied to the intervention arms, to the unperturbed runs at d_model 32 and 128 and to

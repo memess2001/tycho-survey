@@ -163,6 +163,12 @@ baseline cells give 13,101 sequences at rep_min 16 and 10,058 at rep_min 20, a r
 0.56; its 7,300 for rep_min 20 lies between the three cells there (6,888, 10,058 and 10,251), and its anchor of
 22,000 at rep_min 12 is the earliest runs, the median being beyond 25,600 in both textbook cells. Claude's
 expectation for the baseline at rep_min 24 is therefore later than its 3,750 to 5,000: between 6,000 and 9,000.
+Outcome of the fifth follow-up (textbook circuits of 6). rep_min 4: 4 at 1.25e-4, with layer 1 on the source in all
+six, and 0 at 2.5e-4 (relays at 9 or 10 in the 2-head runs and at 4, 1 and 1 in the 4-head runs). rep_min 24: 6 at
+the baseline; 4 at 5.0e-4, with no relay and two runs that never form; 0 at 7.07e-4, with two relays at 23 and four
+runs that never form. All four cells are as the reply had them. The ignition time at the baseline of rep_min 24 is
+9,073 sequences (13,205 and 10,507 at rep_min 16 and 20 on the same grid): later than its 3,750 to 5,000, and just
+past the upper end of Claude's range.
 
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/relay_period_pilot.py
 --jobs 4`` (``--skip-runs`` analyses the cache). Needs the outputs of ``relay_followup_pilot.py``,
