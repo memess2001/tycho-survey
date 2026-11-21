@@ -158,6 +158,11 @@ the reviewer measured it for rep_min 16 and 20. The ignition time is read as in 
 diagnostic (not part of this script): the number of sequences at which the median over the six runs of layer 1's
 source score from the current token against layer 0's output passes 0.5, by linear interpolation between
 measurements (this reading gives its 13,101 at rep_min 16); here on a grid of 1,600 sequences.
+Added before that measurement was made, from the ninth round's rerun of its diagnostic: with the same reading the
+baseline cells give 13,101 sequences at rep_min 16 and 10,058 at rep_min 20, a ratio of 0.77 where its formula has
+0.56; its 7,300 for rep_min 20 lies between the three cells there (6,888, 10,058 and 10,251), and its anchor of
+22,000 at rep_min 12 is the earliest runs, the median being beyond 25,600 in both textbook cells. Claude's
+expectation for the baseline at rep_min 24 is therefore later than its 3,750 to 5,000: between 6,000 and 9,000.
 
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/relay_period_pilot.py
 --jobs 4`` (``--skip-runs`` analyses the cache). Needs the outputs of ``relay_followup_pilot.py``,
