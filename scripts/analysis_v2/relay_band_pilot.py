@@ -115,7 +115,7 @@ def weight_groups(model) -> dict:
 
 def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int = 0, keep_state_at: int | None = None,
           layer: int = 0, forbid: str = "far", block_from: int = 0, stats_fn=None, lr_scale: dict | None = None,
-          out_scale: dict | None = None):
+          out_scale: dict | None = None, out_switch: dict | None = None):
     """The runner's update loop on one induction job. While block_from <= step < block_until, ``layer`` may not
     attend to the forbidden offsets: "far" = NEAR and beyond; "band" = rep_min − 1 .. rep_max − 1; "sham" =
     everything except the near offsets and the band. Measurements are taken without the restriction, with
@@ -125,6 +125,11 @@ def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int =
     ``out_scale`` = {layer: factor} multiplies the output of that layer's attention by a fixed factor throughout,
     in training and in the measurements; before returning, the factor is folded into the layer's output projection,
     so the returned model computes the same function without it.
+    ``out_switch`` = {"step": s, "fold": bool} takes the factors of ``out_scale`` away from step s on (before the
+    update of that step and after its measurement). With ``fold`` the factor goes into the output projection and
+    Adam's two averages for the projection are rescaled to match (first moment / factor, second / factor²), so the
+    function is unchanged at the switch and training continues as it would without a factor from these weights.
+    Without ``fold`` the factor is simply dropped: the layer's output jumps by 1 / factor at step s.
     Returns (model, task, {step: statistics}, state at ``keep_state_at``)."""
     import torch
 
@@ -153,10 +158,10 @@ def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int =
         return plain(x, mask & allowed[: mask.shape[0], : mask.shape[1]] if blocked["on"] else mask)
 
     attn.forward = restricted
-    for lyr, factor in (out_scale or {}).items():
-        inner = model.blocks[int(lyr)].attn.forward
-        model.blocks[int(lyr)].attn.forward = (lambda x, mask, inner=inner, factor=float(factor):
-                                               factor * inner(x, mask))
+    factors = {int(lyr): float(factor) for lyr, factor in (out_scale or {}).items()}
+    for lyr in factors:
+        inner = model.blocks[lyr].attn.forward
+        model.blocks[lyr].attn.forward = (lambda x, mask, inner=inner, lyr=lyr: factors[lyr] * inner(x, mask))
     scale = None
     if lr_scale:
         scale = [torch.full_like(p, float(lr_scale.get("all", 1.0))) for p in params]
@@ -176,6 +181,19 @@ def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int =
             kept = {k: v.detach().clone() for k, v in model.state_dict().items()}
         if step == steps:
             break
+        if out_switch and step == int(out_switch["step"]):
+            where_p = {id(p): i for i, p in enumerate(params)}
+            for lyr, factor in factors.items():
+                if out_switch["fold"] and opt.exp_avg is None:
+                    raise ValueError("out_switch with fold needs Adam")
+                if out_switch["fold"]:
+                    a = model.blocks[lyr].attn
+                    with torch.no_grad():
+                        for w in (a.proj.weight, a.proj.bias):
+                            w.mul_(factor)
+                            opt.exp_avg[where_p[id(w)]].div_(factor)
+                            opt.exp_avg_sq[where_p[id(w)]].div_(factor * factor)
+                factors[lyr] = 1.0
         blocked["on"] = block_from <= step < block_until
         x, y = task.sample_batch(tc.batch_size, gen)
         loss = task.loss(model(x), y)
@@ -186,12 +204,12 @@ def train(job: dict, steps: int, measure_at: tuple[int, ...], block_until: int =
                 for p, old, f in zip(params, before, scale):
                     p.copy_(old + f * (p - old))
     blocked["on"] = False
-    for lyr, factor in (out_scale or {}).items():        # fold the factor into the weights; the function is unchanged
-        a = model.blocks[int(lyr)].attn
+    for lyr, factor in factors.items():                  # fold the factor into the weights; the function is unchanged
+        a = model.blocks[lyr].attn
         a.forward = type(a).forward.__get__(a)
         with torch.no_grad():
-            a.proj.weight.mul_(float(factor))
-            a.proj.bias.mul_(float(factor))
+            a.proj.weight.mul_(factor)
+            a.proj.bias.mul_(factor)
     return model, task, stats, kept
 
 

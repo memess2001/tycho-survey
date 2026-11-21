@@ -131,6 +131,34 @@ rep_min 8 and about 3.2e-4 at rep_min 20, and with it nearly the same six predic
 for rep_min 20 could tell the reviewer's method from this extrapolation (the reviewer: at most 3, centre 0 to 2;
 the extrapolation: 2 to 4), so a pass here says little about the method.
 
+Fifth follow-up: the reviewer's tenth reply (21 November, to commit 9566534; it states that it ran none of these).
+The noise threshold at rep_min 4 and 24. From the data distribution alone (no training) it computes, for each
+rep_min, the gradient of layer 0 towards the band and of layer 1 towards the source under uniform attention, their
+signal-to-noise ratios per sequence, and the gain from copying the band; it anchors these at rep_min 12 (threshold
+1.45e-4, ignition after 22,000 sequences) and gets two bounds on the threshold: the ratio of the two gradients over
+the growth curve of rep_min 12 at the ignition time (1.78e-4 at rep_min 4, 4.54e-4 at 24), and the gain from copying
+the band (0.52e-4 and 6.54e-4). It takes the first below rep_min 12 and the second above: about 1.55e-4 to 1.78e-4
+at rep_min 4 and 6.0e-4 to 6.5e-4 at rep_min 24, where it also expects runs that never form. Cells (d_model 64, no
+mask, six runs each). rep_min 4: learning rate 1e-3 with batch 64 (1.25e-4; 12,000 steps): at least 4 textbook
+circuits, with layer 1 on the source in at least 5; 2e-3 with 64 (2.5e-4; 12,000 steps): at most 1, the relays at
+positions 6 to 16. Fails if the first gives 3 or fewer or the second 3 or more. rep_min 24: 1.414e-3 with batch 8
+(5.0e-4; 24,000 steps): at least 4, and at most 1 clean relay; 2e-3 with 8 (7.07e-4; 24,000 steps): at most 2, a
+mixture of relays at 22 or 23 and runs that do not form. Fails if the first gives 2 or fewer, or 3 or more clean
+relays, or if the second gives 4 or more. It also gives the ignition time at rep_min 24 from the same quantities:
+about 3,750 to 5,000 sequences.
+Recorded here before the runs. The quantities were chosen with the thresholds at rep_min 8, 16 and 20 known, and
+which bound applies on which side of rep_min 12 was read off those thresholds, so the cells at rep_min 24 and the
+ignition time are what tests the account. The two cells at rep_min 4 are safe: the baseline there (1.77e-4) gave 2
+of 6, so every reading of the existing cells puts the threshold between 1.25e-4 and 2.5e-4; Claude's guess is 5 and
+1. At rep_min 24 the open question is whether runs form at all at batch 8 with these learning rates; the guess for
+the first cell is 4 of 6, without confidence, and for the second at most 2 with most runs unformed, which would
+say nothing about relays. Added by Claude: the baseline at rep_min 24 (learning rate 1e-3, batch 32, 1.77e-4;
+12,000 steps), which no earlier pilot has; expected 6 of 6. It gives the ignition time at the noise scale at which
+the reviewer measured it for rep_min 16 and 20. The ignition time is read as in its ninth reply, with its own
+diagnostic (not part of this script): the number of sequences at which the median over the six runs of layer 1's
+source score from the current token against layer 0's output passes 0.5, by linear interpolation between
+measurements (this reading gives its 13,101 at rep_min 16); here on a grid of 1,600 sequences.
+
 Usage, from the repository root (needs torch): ``PYTHONPATH=. python scripts/analysis_v2/relay_period_pilot.py
 --jobs 4`` (``--skip-runs`` analyses the cache). Needs the outputs of ``relay_followup_pilot.py``,
 ``relay_band_pilot.py`` and ``relay_window_pilot.py``. Runs are cached in ``work/relay_band``. Writes
@@ -165,7 +193,11 @@ SETTINGS = {"base": {}, "lr5e-4": {"lr": 5e-4}, "lr2e-3": {"lr": 2e-3}, "d128": 
             "rm20_b16": {"rep_min": 20, "batch_size": 16}, "rm20_lr2e-3": {"rep_min": 20, "lr": 2e-3},
             "rm20_lr2e-3_b16": {"rep_min": 20, "lr": 2e-3, "batch_size": 16},
             "rm8_lr5e-4_b64": {"rep_min": 8, "lr": 5e-4, "batch_size": 64}, "rm8_lr5e-4": {"rep_min": 8, "lr": 5e-4},
-            "rm8_b64": {"rep_min": 8, "batch_size": 64}}
+            "rm8_b64": {"rep_min": 8, "batch_size": 64},
+            "rm4_b64": {"rep_min": 4, "batch_size": 64},
+            "rm4_lr2e-3_b64": {"rep_min": 4, "lr": 2e-3, "batch_size": 64},
+            "rm24_lr1.414e-3_b8": {"rep_min": 24, "lr": 1.414e-3, "batch_size": 8},
+            "rm24_lr2e-3_b8": {"rep_min": 24, "lr": 2e-3, "batch_size": 8}, "rm24_base": {"rep_min": 24}}
 MODEL_KEYS = ("d_model", "rep_min")                     # settings that change the task or model, not the training
 #: arm -> (setting, window [start, end) of the mask on layer 0 or None, steps[, masked offsets: "band" unless
 #: given]); in order of priority
@@ -208,6 +240,10 @@ ARMS = {
     "rm8_lr5e-4_natural": ("rm8_lr5e-4", None, FULL_STEPS), "rm8_b64_natural": ("rm8_b64", None, FULL_STEPS),
     "rm8_lr5e-4_b64_natural": ("rm8_lr5e-4_b64", None, FULL_STEPS),
     "d128_far_w3000_3500": ("d128", (3000, 3500), FULL_STEPS, "far"),
+    "rm4_b64_natural": ("rm4_b64", None, FULL_STEPS), "rm4_lr2e-3_b64_natural": ("rm4_lr2e-3_b64", None, FULL_STEPS),
+    "rm24_base_natural": ("rm24_base", None, FULL_STEPS),
+    "rm24_lr1.414e-3_b8_natural": ("rm24_lr1.414e-3_b8", None, LONG_STEPS),
+    "rm24_lr2e-3_b8_natural": ("rm24_lr2e-3_b8", None, LONG_STEPS),
 }
 #: the steps (t1, t2) the reviewer names for its two formulas, by setting: (loss formula, attention formula)
 FORMULA_STEPS = {"base": ((100, 300), (200, 300)), "lr5e-4": ((150, 350), (150, 350)),
@@ -275,15 +311,19 @@ def run_arm(args: tuple[dict, str]) -> str:
     out = Path(work) / f"period_{job['name']}.npz"
     if out.exists():
         return f"cached {out.name}"
+    from tycho.tasks.patterns import MAX_PATTERN_INPUTS
+
     at = measure_at(job["steps"])
     model, task, stats, _ = rb.train(job, job["steps"], at, block_from=job["window"][0],
                                      block_until=job["window"][1], layer=0, forbid=job["forbid"],
                                      stats_fn=detail_stats, lr_scale=job.get("lr_scale"),
-                                     out_scale=job.get("out_scale"))
+                                     out_scale=job.get("out_scale"), out_switch=job.get("out_switch"))
     model.eval()
     arrays = {f"param/{k}": v.detach().numpy() for k, v in model.state_dict().items()}
     arrays.update({f"stat_{k}": np.asarray([stats[s][k] for s in at]) for k in STATS + EXTRA_STATS})
-    np.savez_compressed(out, logodds=task.pattern_logodds(model)[None, :], steps=np.asarray([job["steps"]]),
+    heads = int(job["cfg"]["n_layer"]) * int(job["cfg"]["n_head"])    # the ablation table has 2^heads entries
+    table = task.pattern_logodds(model)[None, :] if heads <= MAX_PATTERN_INPUTS else np.zeros((1, 0))
+    np.savez_compressed(out, logodds=table, steps=np.asarray([job["steps"]]),
                         lc_step=np.asarray(at), lc_loss_rep=arrays["stat_loss_rep"],
                         object_id=np.asarray(f"{job['arm']}:{job['base']}"), **arrays)
     return f"done {job['name']}"
@@ -542,29 +582,37 @@ def main(argv: list[str] | None = None) -> int:
                            "of": int(sum(r["n_head"] == nh for r in rs))} for nh in rb.HEADS}
 
     def cells_at(rep_min: int) -> dict:
-        """The unperturbed cells at one rep_min: the baseline of the earlier pilots and the settings here."""
-        finals = [{"n_head": nh, **base_final[f"single_rm{rep_min}_h{nh}_s{seed}"]}
-                  for nh in rb.HEADS for seed in rb.SEEDS]
-        for r in finals:
-            r["textbook"] = bool(r["relay_delta"] == 0 and r["intact"]["deep_decoy_over_clean"] >= 0.9)
-        cells = {"base": {"learning_rate": 1e-3, "batch": 32, "lr_over_root_batch": 1e-3 / math.sqrt(32),
-                          "lr_over_batch": 1e-3 / 32, "textbook": int(sum(r["textbook"] for r in finals)),
-                          "of": len(finals), "complete": True, "steps": FULL_STEPS, "by_heads": by_heads(finals),
-                          "relay_deltas": [r["relay_delta"] for r in finals]}}
+        """The unperturbed cells at one rep_min: the baseline of the earlier pilots (where there is one) and the
+        settings here."""
+        cells = {}
+        if f"single_rm{rep_min}_h{rb.HEADS[0]}_s{rb.SEEDS[0]}" in base_final:
+            finals = [{"n_head": nh, **base_final[f"single_rm{rep_min}_h{nh}_s{seed}"]}
+                      for nh in rb.HEADS for seed in rb.SEEDS]
+            for r in finals:
+                r["textbook"] = bool(r["relay_delta"] == 0 and r["intact"]["deep_decoy_over_clean"] >= 0.9)
+            cells["base"] = {"learning_rate": 1e-3, "batch": 32, "lr_over_root_batch": 1e-3 / math.sqrt(32),
+                             "lr_over_batch": 1e-3 / 32, "textbook": int(sum(r["textbook"] for r in finals)),
+                             "of": len(finals), "complete": True, "steps": FULL_STEPS, "by_heads": by_heads(finals),
+                             "relay_deltas": [r["relay_delta"] for r in finals]}
         for setting, change in SETTINGS.items():
             if change.get("rep_min") != rep_min:
                 continue
             lr, batch = change.get("lr", 1e-3), change.get("batch_size", 32)
             arm = f"{setting}_natural"
             o = settings[setting]["arms"][arm]
+            rs = rows.get(arm, [])
             cells[setting] = {"learning_rate": lr, "batch": batch, "lr_over_root_batch": lr / math.sqrt(batch),
                               "lr_over_batch": lr / batch,
                               **{k: o[k] for k in ("textbook", "relays", "not_formed", "of", "complete",
                                                    "relay_deltas", "first_step_with_loss_rep_below_2")},
-                              "steps": ARMS[arm][2], "by_heads": by_heads(rows.get(arm, []))}
+                              # of the runs that formed: layer 1 on the source itself, or displaced (a clean relay)
+                              "on_the_source": int(sum(r["formed"] and r["relay_delta"] == 0 for r in rs)),
+                              "displaced_relays": int(sum(r["formed"] and r["relay_delta"] != 0 for r in rs)),
+                              "steps": ARMS[arm][2], "by_heads": by_heads(rs)}
         return cells
 
     noise16, noise8, noise20 = cells_at(16), cells_at(8), cells_at(20)
+    noise4, noise24 = cells_at(4), cells_at(24)
 
     def count16(setting: str) -> int | None:
         c = noise16[setting]
@@ -590,6 +638,25 @@ def main(argv: list[str] | None = None) -> int:
         "C20C_lr_2e-3_batch_16_at_most_1": test(c20, lambda n: n <= 1),
         "passes_by_its_own_criteria": None if None in (a20, b20, c20) else bool(a20 >= 3 and b20 <= 3 and c20 <= 1),
         "fails_by_its_own_criteria": None if None in (a20, b20, c20) else bool(a20 <= 1 or b20 >= 5 or c20 >= 3)}
+
+    # fifth follow-up: the thresholds at rep_min 4 and 24 (the reviewer's tenth reply)
+    a4, b4 = (count_in(noise4, k) for k in ("rm4_b64", "rm4_lr2e-3_b64"))
+    prediction4 = {
+        "4A_lr_1e-3_batch_64_at_least_4": test(a4, lambda n: n >= 4),
+        "4A_layer_1_on_the_source_in_at_least_5": None if a4 is None else bool(
+            noise4["rm4_b64"]["on_the_source"] >= 5),
+        "4B_lr_2e-3_batch_64_at_most_1": test(b4, lambda n: n <= 1),
+        "4B_relay_positions": None if b4 is None else noise4["rm4_lr2e-3_b64"]["relay_deltas"],
+        "passes_by_its_own_criteria": None if None in (a4, b4) else bool(a4 >= 4 and b4 <= 1),
+        "fails_by_its_own_criteria": None if None in (a4, b4) else bool(a4 <= 3 or b4 >= 3)}
+    a24, b24 = (count_in(noise24, k) for k in ("rm24_lr1.414e-3_b8", "rm24_lr2e-3_b8"))
+    relays24 = noise24["rm24_lr1.414e-3_b8"]["displaced_relays"]
+    prediction24 = {
+        "24A_lr_1.414e-3_batch_8_at_least_4": test(a24, lambda n: n >= 4),
+        "24A_at_most_1_clean_relay": None if a24 is None else bool(relays24 <= 1),
+        "24B_lr_2e-3_batch_8_at_most_2": test(b24, lambda n: n <= 2),
+        "passes_by_its_own_criteria": None if None in (a24, b24) else bool(a24 >= 4 and relays24 <= 1 and b24 <= 2),
+        "fails_by_its_own_criteria": None if None in (a24, b24) else bool(a24 <= 2 or relays24 >= 3 or b24 >= 4)}
 
     n_a, n_b, n_c, n_d = (count16(k) for k in ("rm16_lr2e-3_b128", "rm16_b16", "rm16_lr2e-3", "rm16_b8"))
     prediction16 = {
@@ -652,6 +719,8 @@ def main(argv: list[str] | None = None) -> int:
               "noise_scale_at_rep_min_16": {"cells": noise16, "prediction": prediction16},
               "noise_scale_at_rep_min_8": {"cells": noise8, "prediction": prediction8},
               "noise_scale_at_rep_min_20": {"cells": noise20, "prediction": prediction20},
+              "noise_scale_at_rep_min_4": {"cells": noise4, "prediction": prediction4},
+              "noise_scale_at_rep_min_24": {"cells": noise24, "prediction": prediction24},
               "wider_mask_windows": {"arms": far, "prediction": prediction_far,
                                      "prediction_of_the_eighth_reply": prediction_far8},
               "constants": {"loss_drop": LOSS_DROP, "offsets_1_2_floor": NEAR_FLOOR},
@@ -713,13 +782,15 @@ def main(argv: list[str] | None = None) -> int:
               f"(2 heads {c['by_heads']['h2']['textbook']}, 4 heads {c['by_heads']['h4']['textbook']}) | relay "
               f"positions {c.get('relay_deltas')} | loss<2 at {c.get('first_step_with_loss_rep_below_2')}")
     print("   prediction:", json.dumps(prediction16))
-    for rep_min, cells, pred in ((8, noise8, prediction8), (20, noise20, prediction20)):
+    for rep_min, cells, pred in ((8, noise8, prediction8), (20, noise20, prediction20), (4, noise4, prediction4),
+                                 (24, noise24, prediction24)):
         print(f"== unperturbed outcome at rep_min {rep_min} by learning rate and batch")
         for setting, c in sorted(cells.items(), key=lambda kv: kv[1]["lr_over_root_batch"]):
             print(f"   {setting:>18s}: lr {c['learning_rate']:.1e} batch {c['batch']:>3d} lr/sqrt(B) "
                   f"{c['lr_over_root_batch']:.2e} | textbook {c['textbook']}/{c['of']} "
                   f"(2 heads {c['by_heads']['h2']['textbook']}, 4 heads {c['by_heads']['h4']['textbook']}) | relay "
-                  f"positions {c.get('relay_deltas')} | loss<2 at {c.get('first_step_with_loss_rep_below_2')}")
+                  f"positions {c.get('relay_deltas')} | not formed {c.get('not_formed')} | loss<2 at "
+                  f"{c.get('first_step_with_loss_rep_below_2')}")
         print("   prediction:", json.dumps(pred))
     print("== windows with the wider mask")
     for arm, o in far.items():

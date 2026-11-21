@@ -162,12 +162,13 @@ def key_use(job: dict, work: Path, smp: dict, summary: dict) -> dict:
         with np.load(work / f"{job['name']}.npz") as f:
             table = f["logodds"][-1]
         codes = np.arange(1 << (2 * nh))
-        only_prev = (codes & ((1 << nh) - 1)) == (1 << prev[0])
-        best = int(codes[only_prev][np.argmax(table[only_prev])])
-        keep = (best >> np.arange(2 * nh)) & 1
-        out["previous_token_head_only"] = {
-            "kept": [f"l{j // nh}h{j % nh}" for j in range(2 * nh) if keep[j]],
-            **score(true_token(probabilities(model, smp["x"], keep.astype(float)), smp), smp)}
+        if table.size == codes.size:                     # no table is kept for more than 12 heads in all
+            only_prev = (codes & ((1 << nh) - 1)) == (1 << prev[0])
+            best = int(codes[only_prev][np.argmax(table[only_prev])])
+            keep = (best >> np.arange(2 * nh)) & 1
+            out["previous_token_head_only"] = {
+                "kept": [f"l{j // nh}h{j % nh}" for j in range(2 * nh) if keep[j]],
+                **score(true_token(probabilities(model, smp["x"], keep.astype(float)), smp), smp)}
     own = [i for i, h in enumerate(l1) if h["attention_to_own_position"] >= 0.3]
     if own:                                              # the "cleaner" test
         xs, rep, lag = smp["xs"], smp["rep"], smp["lag"]

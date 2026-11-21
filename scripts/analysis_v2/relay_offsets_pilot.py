@@ -235,7 +235,9 @@ def attention_summary(job: dict, work: Path) -> dict:
            "loss_rep": loss_rep, "heads": []}
     b = np.arange(1 << (2 * nh))
     n0 = sum((b >> i) & 1 for i in range(nh))
-    out["p_all"], out["p_best_with_one_layer0_head"] = float(p[-1]), float(p[n0 == 1].max())
+    has_table = p.size == b.size                                  # none is kept for more than 12 heads in all
+    out["p_all"] = float(p[-1]) if has_table else None
+    out["p_best_with_one_layer0_head"] = float(p[n0 == 1].max()) if has_table else None
     t_idx = np.arange(T)
     for h in range(nh):                                           # layer 0: attention by offset
         a = maps[0][:, h]

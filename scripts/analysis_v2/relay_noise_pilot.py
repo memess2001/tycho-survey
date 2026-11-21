@@ -156,6 +156,45 @@ token-embedding arm (5 relays). Claude's arm: 0 of 6. On the eight arms S has 28
 threshold (40 possible), against 139 of 150 on the 25 conditions it was built on. Of the remarks above, (ii) and
 (iv) held and (iii) did not (1 of 6 against the baseline's 0 is no improvement).
 
+Sixth set of (c): the reviewer's tenth reply (21 November, to commit 9566534; it states that it ran none of
+these). It withdraws S. Two of its three tasks are here (the third, thresholds at rep_min 4 and 24, is in
+``relay_period_pilot.py``).
+
+(1) Its account of the arm with layer 1's output weights slowed: the outputs of the two layers share the early
+loss, so when one is slow the other grows faster. From two existing pairs of arms that differ by a factor 2 in the
+learning rate of layer 1's output weights (R1 at step 300 lower by 0.67 and 0.72), it predicts for the baseline
+with those weights at twice the learning rate: R1 at step 300 (median of six runs) 0.96, between 0.80 and 1.15
+(baseline 1.375), and at least 4 of 6 textbook circuits (baseline 0). It fails on R1 at 1.25 or more or below 0.70,
+and on the count at 2 or fewer. R1 is the root-mean-square size of layer 0's output over that of the summed
+embeddings at the predictable positions of the probe set.
+
+(2) Why the second key token does not come when layer 0's output is scaled down. Its account: before layer 1
+settles on the source the scaled output is too small for one head to carry the one-token key, so every head of
+layer 0 is drawn to the previous token; once all of them carry that key together, moving any of them to the token
+before it costs loss at first, and the state is stable. By the end of the first stage Adam has made up for the
+factor, so the factor itself is no longer what is in the way. (2A) Learning rate 2e-3 with the output at 1/16 and
+8 heads: at least 5 of 6 textbook circuits (3 of 3 with three seeds) and no relay; it fails at 3 of 6 or fewer.
+(2B) Taking the factor away once the first stage is over, in the eight 2-head runs that stalled: at most 2 of 8
+become textbook circuits (centre 0 to 1), whether the factor is folded into the weights (the function unchanged at
+the switch) or simply dropped (the output jumps by 4 or 16); if dropped, the three runs at 1/16 show a spike in
+the loss and at least one of them leaves the source; if folded, all eight stay on the source with a one-token key.
+It fails at 4 of 8 or more.
+
+Recorded here before the runs. The switch is made at step 1,000 in every run (in the twelve 2-head runs of the four
+arms layer 1 settles on the source between steps 350 and 700, and none has its second key token by step 1,000);
+with the fold, Adam's averages for the folded weights are rescaled, so that training goes on as it would without a
+factor (see ``relay_band_pilot.train``). A trial of the two switches on the first 406 steps of one run (switch at
+step 403, not a run of the set) showed what they do at once: with the fold the loss is unchanged at the switch and
+then rises for some steps (1.25 to 1.75 within two), because the folded weights are small and Adam's steps are
+large against them; with the factor dropped the loss is back at chance in one step (4.27). Added by Claude: the
+four 2-head runs of the same arms that did become textbook circuits, under both switches, to see what the switch
+itself does. The 8-head arm uses seeds 300 to 305.
+Claude's expectations. (1) R1 below the baseline's, and more likely near the top of its interval or just above it
+(1.0 to 1.25) than at its centre: at learning rate 5e-4 a factor 4 on these weights moves R1 at step 300 by only
+0.9, and the two pairs it uses are at 2e-3. The count: 4 of 6 as a single guess, 2 to 6 unsurprising. (2A) 5 of 6.
+(2B) With the fold 0 or 1 of 8, as it says; with the factor dropped no confident view (guess 2 of 8, and at least
+one of the three runs at 1/16 ends off the source). The four control runs: textbook circuits with the fold.
+
 d. A summary made after all of the above (post hoc; no prediction on record): which layer's band attention (mean
    over its heads) passes a level first, against the circuit at the end. The level is chosen on the 48 runs of
    the eight cells and then applied to the intervention arms, to the unperturbed runs at d_model 32 and 128 and to
@@ -226,20 +265,23 @@ ARMS = {"qk0_half": ("base", {"qk0": 0.5}, None), "rest_half": ("base", {"all": 
         "rest_half_y0_quarter": ("base", {"all": 0.5, "qk0": 1.0}, ("at least", 4), {0: 0.25}),
         "base_y0_half": ("base", {}, ("at least", 5), {0: 0.5}),
         "lr2e-3_y0_sixteenth": ("lr2e-3", {}, ("at least", 4), {0: 0.0625}),
-        "lr5e-4_ov1_quarter": ("lr5e-4", {"ov1": 0.25}, ("at most", 3))}
+        "lr5e-4_ov1_quarter": ("lr5e-4", {"ov1": 0.25}, ("at most", 3)),
+        "ov1_double": ("base", {"ov1": 2.0}, ("at least", 4))}
 #: the arms with a fixed factor on layer 0's output in the fourth set; the arms of the eighth round (third and
 #: fourth sets); the arms of the ninth round (fifth set); whose prediction the third entry of an arm is
 OUTPUT = ("base_y0_quarter", "lr5e-4_y0_times4", "lr2e-3_qk0_quarter_y0_quarter")
 NINTH = ("lr2e-3_y0_quarter", "lr5e-4_y0_times2", "tok_double", "qk0_half_y0_times2", "rest_half_y0_quarter",
          "base_y0_half", "lr2e-3_y0_sixteenth", "lr5e-4_ov1_quarter")
+TENTH = ("ov1_double",)
 EIGHTH = tuple(a for a in ARMS if a.startswith("lr2e-3_qk0_quarter_")) + tuple(a for a in OUTPUT if a not in (
     "lr2e-3_qk0_quarter_y0_quarter",))
 PREDICTED_BY = {**{a: "hypothesis H (Claude, seventh round)" for a in ARMS
-                   if a not in EIGHTH + NINTH and ARMS[a][2]},
+                   if a not in EIGHTH + NINTH + TENTH and ARMS[a][2]},
                 **{a: "the reviewer's eighth reply" for a in EIGHTH if ARMS[a][2]},
                 "lr2e-3_qk0_quarter_rest_half": "Claude (reference arm, eighth round)",
                 **{a: "the reviewer's account of layer 0's output, as read by Claude" for a in OUTPUT},
-                **{a: "the reviewer's ninth reply" for a in NINTH}, "lr5e-4_ov1_quarter": "Claude (ninth round)"}
+                **{a: "the reviewer's ninth reply" for a in NINTH}, "lr5e-4_ov1_quarter": "Claude (ninth round)",
+                **{a: "the reviewer's tenth reply" for a in TENTH}}
 #: runs that ended with layer 1 on the source and a one-token key (arms with layer 0's output at a quarter or
 #: less), trained four times as long; chosen after the outcomes of the ninth round
 LONG_STEPS = 48_000
@@ -249,6 +291,17 @@ LONG = {"lr2e-3_y0_sixteenth": ("h2_s300", "h2_s301", "h2_s302", "h4_s300"),
 #: the second stage of the textbook circuit: the loss on predictable tokens stays below this (with a one-token
 #: key it sits at 0.5 to 0.8)
 SECOND_KEY_LOSS = 0.4
+#: tenth round, (1): R1 (layer 0's output over the embeddings) in the first steps of these conditions; the pairs
+#: differ only in the learning rate of layer 1's output weights (slow, fast, factor)
+RATIO_STEPS = (0, 100, 200, 300, 400)
+RATIO_PAIRS = (("lr2e-3_qk0_quarter_ov_half", "lr2e-3_qk0_quarter_ov0_half", 2.0),
+               ("lr2e-3_qk0_quarter_ov1_half", "lr2e-3_qk0_quarter", 2.0), ("lr5e-4_ov1_quarter", "lr5e-4", 4.0),
+               ("base", "ov1_double", 2.0))
+#: tenth round, (2A): the arm with layer 0's output at 1/16, with 8 heads
+EIGHT_ARM, EIGHT_HEADS, EIGHT_SEEDS = "lr2e-3_y0_sixteenth", 8, (300, 301, 302, 303, 304, 305)
+#: tenth round, (2B): the factor on layer 0's output taken away at this step, in the 2-head runs of the arms of
+#: ``LONG``; "fold" keeps the function at the switch, "drop" lets the output jump
+SWITCH_STEP, SWITCH_HOW = 1_000, ("fold", "drop")
 #: the constants of the reviewer's combined quantity S (ninth reply): the noise scale at which layer 0's output
 #: equals the embeddings in what layer 1 reads, the noise scale that stands for the initial embeddings, and the
 #: threshold of S
@@ -331,6 +384,57 @@ def long_jobs() -> list[dict]:
             for arm, picks in LONG.items() for j in arm_jobs(arm) if j["base"].endswith(picks)]
 
 
+def eight_jobs() -> list[dict]:
+    t = next(j for j in arm_jobs(EIGHT_ARM) if j["cfg"]["n_head"] == 4)
+    return [{**t, "name": f"noise_{EIGHT_ARM}_single_rm12_h{EIGHT_HEADS}_s{seed}",
+             "base": f"single_rm12_h{EIGHT_HEADS}_s{seed}", "arm": f"noise_{EIGHT_ARM}_h{EIGHT_HEADS}", "seed": seed,
+             "cfg": {**t["cfg"], "n_head": EIGHT_HEADS, "data_seed": seed}} for seed in EIGHT_SEEDS]
+
+
+def switch_jobs() -> list[dict]:
+    return [{**j, "name": f"noise_{arm}_restore_{how}{SWITCH_STEP}_{j['base']}",
+             "arm": f"noise_{arm}_restore_{how}{SWITCH_STEP}", "switched": arm, "how": how,
+             "stalled_without_the_switch": j["base"].endswith(tuple(LONG[arm])),
+             "out_switch": {"step": SWITCH_STEP, "fold": how == "fold"}}
+            for how in SWITCH_HOW for arm in LONG for j in arm_jobs(arm) if j["cfg"]["n_head"] == 2]
+
+
+def ratio_jobs() -> dict:
+    """The conditions of ``RATIO_PAIRS`` (cells of ``relay_period_pilot.py`` or arms here), as jobs."""
+    names = dict.fromkeys(c for pair in RATIO_PAIRS for c in pair[:2])
+    return {c: arm_jobs(c) if c in ARMS else pp.arm_jobs(f"{c}_natural") for c in names}
+
+
+def ratio_stats(model, task) -> dict:
+    """The band statistics and, at the predictable positions of the probe set, the root-mean-square size of the
+    summed embeddings, of layer 0's output and of layer 1's output (with any factor of ``out_scale`` on them)."""
+    import torch
+
+    out = rb.band_stats(model, task)
+    pr = task._probe
+    x, rep = pr["x"], pr["rep"]
+    with torch.no_grad():
+        mask = model.causal_mask[:x.shape[1], :x.shape[1]]
+        h0 = model.tok(x) + model.pos(torch.arange(x.shape[1]))
+        y0 = model.blocks[0].attn(model.blocks[0].ln1(h0), mask)
+        y1 = model.blocks[1].attn(model.blocks[1].ln1(h0 + y0), mask)
+    out.update({f"rms_{k}": float(torch.sqrt((v[rep] ** 2).mean())) for k, v in (("emb", h0), ("y0", y0), ("y1", y1))})
+    out["r1"] = out["rms_y0"] / out["rms_emb"]
+    return out
+
+
+def run_ratio(args: tuple[str, dict, str]) -> str:
+    condition, job, work = args
+    out = Path(work) / f"noise_ratio_{condition}_{job['base']}.json"
+    if out.exists():
+        return f"cached {out.name}"
+    _, _, stats, _ = rb.train(job, RATIO_STEPS[-1], RATIO_STEPS, block_from=0, block_until=0, layer=0, forbid="band",
+                              stats_fn=ratio_stats, lr_scale=job.get("lr_scale"), out_scale=job.get("out_scale"))
+    out.write_text(json.dumps({"condition": condition, "run": job["base"], "step": list(RATIO_STEPS),
+                               **{k: [stats[s][k] for s in RATIO_STEPS] for k in stats[0]}}) + "\n", encoding="utf-8")
+    return f"done ratio {condition} {job['base']}"
+
+
 def stage_steps(job: dict, work: Path) -> dict:
     """The two stages on the way to a textbook circuit, from a run's curves: the first step with most of layer 1's
     attention on the source, and the first step from which the loss on predictable tokens stays below
@@ -380,15 +484,17 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     clock = clock_jobs()
     arms = {arm: arm_jobs(arm) for arm in ARMS}
-    longer = long_jobs()
+    longer, eight, switched, ratios = long_jobs(), eight_jobs(), switch_jobs(), ratio_jobs()
     if not args.skip_runs:
         with Pool(args.jobs) as pool:
             if args.only != "arms":
                 for msg in pool.imap(run_clock, [(j, str(args.work)) for j in clock]):
                     print(msg, flush=True)
+                for msg in pool.imap(run_ratio, [(c, j, str(args.work)) for c, js in ratios.items() for j in js]):
+                    print(msg, flush=True)
             if args.only != "clock":
                 for msg in pool.imap(pp.run_arm, [(j, str(args.work)) for js in arms.values() for j in js] + [
-                        (j, str(args.work)) for j in longer]):
+                        (j, str(args.work)) for j in longer + eight + switched]):
                     print(msg, flush=True)
     cells = {c: cell_of(c) for c in CELLS}
     grid = list(range(0, N_LAST + 1, N_STEP))
@@ -534,7 +640,7 @@ def main(argv: list[str] | None = None) -> int:
         (REPO / "docs" / "results" / "v2_analysis" / "relay_followup_pilot.json").read_text())["runs"]}
     labelled = {"cells": [], "intervention arms": [], "d_model 32 and 128": [], "rep_min 16": [],
                 "intervention arms of the eighth round": [], "rep_min 8 and 20": [],
-                "intervention arms of the ninth round": []}
+                "intervention arms of the ninth round": [], "intervention arms of the tenth round": []}
     for cell in CELLS:
         rows = {r["name"]: r for r in reference["runs"].get(f"{cell}_natural", [])}
         for j in pp.arm_jobs(f"{cell}_natural"):
@@ -549,7 +655,8 @@ def main(argv: list[str] | None = None) -> int:
     for arm, js in arms.items():
         rows = {r["name"]: r for r in rows_out[arm]}
         group = ("intervention arms of the eighth round" if arm in EIGHTH else
-                 "intervention arms of the ninth round" if arm in NINTH else "intervention arms")
+                 "intervention arms of the ninth round" if arm in NINTH else
+                 "intervention arms of the tenth round" if arm in TENTH else "intervention arms")
         labelled[group] += [(j, rows[j["name"]]["textbook"]) for j in js if j["name"] in rows]
     for group, names in (("d_model 32 and 128", ("d32_natural", "d128_natural")),
                          ("rep_min 16", tuple(f"{c}_natural" for c in pp.SETTINGS if c.startswith("rm16_"))),
@@ -594,7 +701,8 @@ def main(argv: list[str] | None = None) -> int:
         output = ARMS[arm][3] if len(ARMS[arm]) > 3 else None
         conditions.append({"condition": arm, "of": o["of"], "textbook": o["textbook"],
                            "at_the_source": o["textbook"] + o["on_the_source_with_a_one_token_key"],
-                           "set": "the ninth round" if arm in NINTH else "the 25 conditions the ninth reply had",
+                           "set": ("the ninth round" if arm in NINTH else "the tenth round" if arm in TENTH else
+                                   "the 25 conditions the ninth reply had"),
                            **combined_quantity(o["learning_rate"], o["batch"], ARMS[arm][1], output),
                            "S_asymptotic": combined_quantity(o["learning_rate"], o["batch"], ARMS[arm][1], output,
                                                              0.0)["S"]})
@@ -658,7 +766,7 @@ def main(argv: list[str] | None = None) -> int:
                    {r["name"]: r for r in reference["runs"].get(f"{cell}_natural", [])})
                   for cell in CELLS if cell != "base"]
     stage_sets += [(arm, ARMS[arm][3].get(0) if len(ARMS[arm]) > 3 else None, js,
-                    {r["name"]: r for r in rows_out[arm]}) for arm, js in arms.items()]
+                    {r["name"]: r for r in rows_out[arm]}) for arm, js in arms.items() if arm not in TENTH]
     stage_rows, by_condition = [], {}
     for name, factor, js, label in stage_sets:
         got = []
@@ -725,16 +833,94 @@ def main(argv: list[str] | None = None) -> int:
                                        "textbook": int(sum(r["textbook"] for r in long_rows)), "of": len(long_rows),
                                        "planned": len(longer)}}
 
+    # the tenth reply. (1) R1 in the first steps, and the arm with layer 1's output weights at twice the rate
+    ratio = {}
+    for cond, js in ratios.items():
+        fs = [args.work / f"noise_ratio_{cond}_{j['base']}.json" for j in js]
+        rs = [json.loads(f.read_text()) for f in fs if f.exists()]
+        if len(rs) == len(js):
+            ratio[cond] = {**{k: np.median([r[k] for r in rs], axis=0).tolist()
+                              for k in ("r1", "rms_emb", "rms_y0", "rms_y1", "band_l0", "band_l1")},
+                           "r1_at_step_300_by_run": {r["run"]: r["r1"][RATIO_STEPS.index(300)] for r in rs}}
+    pairs = [{"slow": a, "fast": b, "factor_on_layer_1_output_weights": f,
+              "r1_fast_over_slow": [y / x for x, y in zip(ratio[a]["r1"], ratio[b]["r1"])][1:],
+              "y0_fast_over_slow": [y / x for x, y in zip(ratio[a]["rms_y0"], ratio[b]["rms_y0"])][1:]}
+             for a, b, f in RATIO_PAIRS if a in ratio and b in ratio]
+    doubled = intervention["arms"]["ov1_double"]
+    r1_300 = ratio["ov1_double"]["r1"][RATIO_STEPS.index(300)] if "ov1_double" in ratio else None
+    n_doubled = doubled["textbook"] if doubled["complete"] else None
+    shared_loss = {
+        "steps": list(RATIO_STEPS), "conditions": ratio, "pairs": pairs, "r1_at_step_300": r1_300,
+        "textbook_of_6": n_doubled,
+        "r1_between_0.80_and_1.15": None if r1_300 is None else bool(0.80 <= r1_300 <= 1.15),
+        "r1_fails": None if r1_300 is None else bool(r1_300 >= 1.25 or r1_300 < 0.70),
+        "count_at_least_4": None if n_doubled is None else bool(n_doubled >= 4),
+        "count_fails": None if n_doubled is None else bool(n_doubled <= 2)}
+
+    def final_row(j: dict) -> dict:
+        """The circuit a run ends with, where layer 0's heads attend, and its two stages."""
+        r = wp.row_of({**j, "name": f"period_{j['name']}"}, args.work, samples)
+        step, st = pp.curves(j, args.work)
+        after = (step > SWITCH_STEP) & (step <= SWITCH_STEP + 500)
+        return {"run": j["base"], "n_head": r["n_head"], "textbook": r["textbook"], "formed": r["formed"],
+                "relay_delta": r["relay_delta"], "layer1_modal_deltas": r["layer1_modal_deltas"],
+                "on_the_source": on_the_source(r), "deep_decoy_over_clean": r["deep_decoy_over_clean"],
+                "loss_rep": r["loss_rep"], "source_l1_at_the_end": r["source_l1_at_the_end"],
+                "layer_0_offsets": layer_0_offsets(r), **stage_steps(j, args.work),
+                "loss_rep_at_the_switch_step": float(st["loss_rep"][step == SWITCH_STEP][0]),
+                "largest_loss_rep_in_the_500_steps_after": float(st["loss_rep"][after].max())}
+
+    # (2A) eight heads with layer 0's output at 1/16
+    rows8 = [final_row(j) for j in eight if (args.work / f"period_{j['name']}.npz").exists()]
+    n8 = int(sum(r["textbook"] for r in rows8)) if len(rows8) == len(eight) else None
+    first3 = [r for r in rows8 if r["run"].endswith(tuple(f"s{x}" for x in EIGHT_SEEDS[:3]))]
+    eight_heads = {
+        "arm": EIGHT_ARM, "n_head": EIGHT_HEADS, "seeds": list(EIGHT_SEEDS), "runs": rows8, "textbook": n8,
+        "textbook_of_the_first_three_seeds": int(sum(r["textbook"] for r in first3)) if len(first3) == 3 else None,
+        "displaced_relays": int(sum(r["formed"] and r["relay_delta"] != 0 for r in rows8)),
+        "on_the_source_with_a_one_token_key": int(sum(r["on_the_source"] and not r["textbook"] for r in rows8)),
+        "at_least_5": None if n8 is None else bool(n8 >= 5), "fails": None if n8 is None else bool(n8 <= 3)}
+
+    # (2B) the factor taken away at SWITCH_STEP, in the 2-head runs of the arms of LONG
+    after_switch = {}
+    for how in SWITCH_HOW:
+        js = [j for j in switched if j["how"] == how]
+        got = [{"arm": j["switched"], "stalled_without_the_switch": j["stalled_without_the_switch"], **final_row(j)}
+               for j in js if (args.work / f"period_{j['name']}.npz").exists()]
+        stalled = [r for r in got if r["stalled_without_the_switch"]]
+        control = [r for r in got if not r["stalled_without_the_switch"]]
+        sixteenth = [r for r in stalled if r["arm"] == "lr2e-3_y0_sixteenth"]
+        done = len(got) == len(js)
+        n_s = int(sum(r["textbook"] for r in stalled)) if done else None
+        after_switch[how] = {
+            "runs": got, "complete": done, "stalled_runs": len(stalled), "textbook_of_the_stalled_runs": n_s,
+            "stalled_runs_still_on_the_source_with_a_one_token_key": int(sum(
+                r["on_the_source"] and not r["textbook"] for r in stalled)) if done else None,
+            "runs_at_one_sixteenth_off_the_source": int(sum(
+                not r["on_the_source"] or any(d != 0 for d in r["layer1_modal_deltas"]) for r in sixteenth))
+            if done else None,
+            "loss_rise_after_the_switch_at_one_sixteenth": [
+                r["largest_loss_rep_in_the_500_steps_after"] - r["loss_rep_at_the_switch_step"] for r in sixteenth],
+            "control_runs": len(control), "textbook_of_the_control_runs": int(sum(r["textbook"] for r in control))
+            if done else None,
+            "at_most_2": None if n_s is None else bool(n_s <= 2), "fails": None if n_s is None else bool(n_s >= 4)}
+    tenth = {"shared_loss": shared_loss, "eight_heads": eight_heads,
+             "factor_taken_away": {"step": SWITCH_STEP, **after_switch}}
+
     result = {"status": "exploratory pilot; local runs; not independently recomputed",
               "missing": {"clock": [f"{j['cell']} {j['base']}" for j in clock if not (
                   args.work / f"noise_clock_{j['cell']}_{j['base']}.json").exists()],
                           "arms": [j["name"] for js in arms.values() for j in js if not (
                               args.work / f"period_{j['name']}.npz").exists()],
                           "longer": [j["name"] for j in longer if not (
-                              args.work / f"period_{j['name']}.npz").exists()]},
+                              args.work / f"period_{j['name']}.npz").exists()],
+                          "tenth": [j["name"] for j in eight + switched if not (
+                              args.work / f"period_{j['name']}.npz").exists()] + [
+                              f"ratio {c} {j['base']}" for c, js in ratios.items() for j in js if not (
+                                  args.work / f"noise_ratio_{c}_{j['base']}.json").exists()]},
               "equal_numbers_of_sequences": equal_n, "displacement": displacement, "intervention": intervention,
               "first_layer_past_a_level": first, "combined_quantity_of_the_ninth_reply": combined,
-              "two_stages": two_stages, "runs": rows_out}
+              "two_stages": two_stages, "tenth_reply": tenth, "runs": rows_out}
     args.out.write_text(json.dumps(result, indent=1) + "\n", encoding="utf-8")
 
     pick = [i for i, n in enumerate(grid) if n in (6400, 12800, 19200, 25600, 38400)]
@@ -824,6 +1010,39 @@ def main(argv: list[str] | None = None) -> int:
               f"{r['loss_rep']:.2f} | layer-0 heads on offsets {r['layer_0_offsets']} | layer-1 positions "
               f"{r['layer1_modal_deltas']} | second stage at {r['second_key_step']} | loss every 6,000 steps "
               f"{[round(x, 2) for x in r['loss_rep_every_6000_steps']]}")
+    print("== the tenth reply (1): R1 at steps", list(RATIO_STEPS)[1:], "(medians of six runs)")
+    for cond, v in ratio.items():
+        print(f"   {cond:>28s}: R1 {[round(x, 3) for x in v['r1'][1:]]} | layer 0's output "
+              f"{[round(x, 3) for x in v['rms_y0'][1:]]} | layer 1's {[round(x, 3) for x in v['rms_y1'][1:]]} | "
+              f"embeddings {[round(x, 3) for x in v['rms_emb'][1:]]}")
+    for pr in pairs:
+        print(f"   {pr['fast']} over {pr['slow']} (factor {pr['factor_on_layer_1_output_weights']}): R1 "
+              f"{[round(x, 2) for x in pr['r1_fast_over_slow']]}, layer 0's output "
+              f"{[round(x, 2) for x in pr['y0_fast_over_slow']]}")
+    print("   ", json.dumps({k: v for k, v in shared_loss.items() if k not in ("conditions", "pairs", "steps")}))
+    print("== the tenth reply (2A):", EIGHT_HEADS, "heads on", EIGHT_ARM, "| textbook", eight_heads["textbook"],
+          "of", len(eight), "| first three seeds", eight_heads["textbook_of_the_first_three_seeds"],
+          "| displaced relays", eight_heads["displaced_relays"], "| one-token key on the source",
+          eight_heads["on_the_source_with_a_one_token_key"], "| at least 5:", eight_heads["at_least_5"], "| fails:",
+          eight_heads["fails"])
+    for r in rows8:
+        print(f"      {r['run']}: textbook {r['textbook']} | decoy {r['deep_decoy_over_clean']:.2f} | loss "
+              f"{r['loss_rep']:.2f} | layer-0 offsets {r['layer_0_offsets']} | layer-1 positions "
+              f"{r['layer1_modal_deltas']} | stages at {r['source_step']}, {r['second_key_step']}")
+    for how, v in after_switch.items():
+        print(f"== the tenth reply (2B): the factor taken away at step {SWITCH_STEP} ({how}) | stalled runs: textbook "
+              f"{v['textbook_of_the_stalled_runs']} of {v['stalled_runs']}, still one-token on the source "
+              f"{v['stalled_runs_still_on_the_source_with_a_one_token_key']}, at 1/16 off the source "
+              f"{v['runs_at_one_sixteenth_off_the_source']} | control runs: textbook "
+              f"{v['textbook_of_the_control_runs']} of {v['control_runs']} | at most 2: {v['at_most_2']} | fails: "
+              f"{v['fails']}")
+        for r in v["runs"]:
+            print(f"      {r['arm']} {r['run']} ({'stalled' if r['stalled_without_the_switch'] else 'control'}): "
+                  f"textbook {r['textbook']} | delta {r['relay_delta']} | decoy {r['deep_decoy_over_clean']:.2f} | "
+                  f"loss {r['loss_rep']:.2f} | layer-0 offsets {r['layer_0_offsets']} | layer-1 positions "
+                  f"{r['layer1_modal_deltas']} | second stage at {r['second_key_step']} | loss at the switch "
+                  f"{r['loss_rep_at_the_switch_step']:.2f}, largest in the next 500 steps "
+                  f"{r['largest_loss_rep_in_the_500_steps_after']:.2f}")
     print("missing:", {k: len(v) for k, v in result["missing"].items()})
     return 0
 
