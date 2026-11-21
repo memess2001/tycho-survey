@@ -484,13 +484,14 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     clock = clock_jobs()
     arms = {arm: arm_jobs(arm) for arm in ARMS}
-    longer, eight, switched, ratios = long_jobs(), eight_jobs(), switch_jobs(), ratio_jobs()
+    longer, eight, switched, ratio_runs = long_jobs(), eight_jobs(), switch_jobs(), ratio_jobs()
     if not args.skip_runs:
         with Pool(args.jobs) as pool:
             if args.only != "arms":
                 for msg in pool.imap(run_clock, [(j, str(args.work)) for j in clock]):
                     print(msg, flush=True)
-                for msg in pool.imap(run_ratio, [(c, j, str(args.work)) for c, js in ratios.items() for j in js]):
+                for msg in pool.imap(run_ratio, [(c, j, str(args.work)) for c, js in ratio_runs.items()
+                                                 for j in js]):
                     print(msg, flush=True)
             if args.only != "clock":
                 for msg in pool.imap(pp.run_arm, [(j, str(args.work)) for js in arms.values() for j in js] + [
@@ -835,7 +836,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # the tenth reply. (1) R1 in the first steps, and the arm with layer 1's output weights at twice the rate
     ratio = {}
-    for cond, js in ratios.items():
+    for cond, js in ratio_runs.items():
         fs = [args.work / f"noise_ratio_{cond}_{j['base']}.json" for j in js]
         rs = [json.loads(f.read_text()) for f in fs if f.exists()]
         if len(rs) == len(js):
@@ -916,7 +917,7 @@ def main(argv: list[str] | None = None) -> int:
                               args.work / f"period_{j['name']}.npz").exists()],
                           "tenth": [j["name"] for j in eight + switched if not (
                               args.work / f"period_{j['name']}.npz").exists()] + [
-                              f"ratio {c} {j['base']}" for c, js in ratios.items() for j in js if not (
+                              f"ratio {c} {j['base']}" for c, js in ratio_runs.items() for j in js if not (
                                   args.work / f"noise_ratio_{c}_{j['base']}.json").exists()]},
               "equal_numbers_of_sequences": equal_n, "displacement": displacement, "intervention": intervention,
               "first_layer_past_a_level": first, "combined_quantity_of_the_ninth_reply": combined,
