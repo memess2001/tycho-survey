@@ -1,0 +1,71 @@
+{
+  "torch_version": "2.15.0+cpu",
+  "platform": "Linux-5.15.0-187-generic-x86_64-with-glibc2.35",
+  "IC4": {
+    "max_abs_weight_diff": 0.0,
+    "max_abs_stat_diff": 0.0,
+    "pass": true
+  },
+  "IC1": {
+    "pairs": {
+      "base_h2_s300": {
+        "max_weight_diff": 0.0,
+        "max_stat_diff": 0.0,
+        "bit_identical": true
+      },
+      "low_h4_s300": {
+        "max_weight_diff": 0.0,
+        "max_stat_diff": 0.0,
+        "bit_identical": true
+      }
+    },
+    "pass": true
+  },
+  "IC2": {
+    "arms": {
+      "base": {
+        "expected_source_of_6": 0,
+        "got_T_S": 0,
+        "got_T_S_M": 0,
+        "cats": [
+          "R",
+          "R",
+          "R",
+          "R",
+          "R",
+          "R"
+        ]
+      },
+      "lr5e-4": {
+        "expected_source_of_6": 6,
+        "got_T_S": 6,
+        "got_T_S_M": 6,
+        "cats": [
+          "T",
+          "T",
+          "T",
+          "T",
+          "T",
+          "T"
+        ]
+      },
+      "ov1_double": {
+        "expected_source_of_6": 6,
+        "got_T_S": 6,
+        "got_T_S_M": 6,
+        "cats": [
+          "T",
+          "T",
+          "T",
+          "T",
+          "T",
+          "T"
+        ]
+      }
+    },
+    "total_flips_T_S": 0,
+    "total_flips_T_S_M": 0,
+    "pass": true
+  },
+  "all_pass": true
+}
