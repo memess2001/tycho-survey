@@ -66,6 +66,11 @@
 > 22 November: Antigravity accepted §19 and agreed to end the rounds; the researcher asked for an audit of its draft
 > of the frozen claims and the confirmation runs on the 88-core server. §20 records the closing reply and what the
 > audit found; the revised plan is a separate draft, `notes/relay_confirmation_plan_draft_2026-11-22.md`.
+>
+> 24–25 November: the plan was pre-registered and run on the 88-core server by the researcher with Antigravity
+> (branch `relay-confirm`: `docs/results/relay_confirmation_preregistration.md`, 2,088 runs, then 600 post hoc
+> runs; hand-over note `notes/relay_confirm_results_and_audit_2026-11-25.md`). Claude's independent audit of the
+> code, the results and the post hoc experiments is a separate note, `notes/relay_confirm_audit_2026-11-25.md`.
 
 ---
 
@@ -495,6 +500,10 @@ tiled 布局（词表 64，64 个 token，片段长 4 到 16）下，不做内�
   里 R_1 的短测量）；`relay_period_pilot.py` 加 rep_min 4 和 24 的五格。训练循环多了一个在某一步撤掉输出倍数的选项，
   不用时与原来逐位相同；头数超过 12 的运行不存消融表，读这张表的两处相应跳过。
 - 确认计划的修订稿（待研究者确认，不具约束力）：`notes/relay_confirmation_plan_draft_2026-11-22.md`。
+- 确认实验（11 月 24 至 25 日）：预注册 `docs/results/relay_confirmation_preregistration.md`，结果
+  `docs/results/v2_analysis/relay_confirm_results.json` 和 `relay_confirm_summary.md`，交接单
+  `notes/relay_confirm_results_and_audit_2026-11-25.md`。独立审计：`notes/relay_confirm_audit_2026-11-25.md`，
+  脚本 `scripts/analysis_v2/relay_confirm_audit.py` 和 `relay_confirm_audit_reruns.py`（各有同名 JSON）。
 - Part B：`docs/results/v2b_preregistration.md`（形成过程研究），`docs/results/v2_analysis/v2b_prereg_review.md`；
   结果在 `docs/results/v2b_results.md`（11 月 20 日，已独立核验）。同日的讨论草稿：
   `notes/reframing_draft_2026-11-20.md`。
