@@ -1,0 +1,39 @@
+{
+  "torch_version": "2.15.0+cpu",
+  "platform": "Linux-5.15.0-187-generic-x86_64-with-glibc2.35",
+  "math_and_fold": {
+    "rope_norm_err": 4.76837158203125e-07,
+    "rope_rel_err": 5.364418029785156e-07,
+    "fold_diffs": {
+      "M1-both05": {
+        "pre_vs_post_fold": 0.0,
+        "post_vs_reload": 0.0
+      },
+      "R1-mlp-2e3-both025": {
+        "pre_vs_post_fold": 0.0,
+        "post_vs_reload": 0.0
+      },
+      "D1-abs-l01_05-24k": {
+        "pre_vs_post_fold": 0.0,
+        "post_vs_reload": 0.0
+      }
+    },
+    "pass": true
+  },
+  "repeatability": {
+    "pairs": {
+      "m1_base_h2_s300": {
+        "max_weight_diff": 0.0,
+        "max_stat_diff": 0.0,
+        "bit_identical": true
+      },
+      "d1_rope_h4_s300": {
+        "max_weight_diff": 0.0,
+        "max_stat_diff": 0.0,
+        "bit_identical": true
+      }
+    },
+    "pass": true
+  },
+  "all_pass": true
+}
