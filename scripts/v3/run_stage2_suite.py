@@ -105,7 +105,7 @@ def main() -> int:
     ap.add_argument("--out-root", type=Path, required=True)
     ap.add_argument("--sync-root", type=Path, default=None, help="Google Drive mirror root")
     ap.add_argument("--sync-latest", action="store_true", help="Mirror latest.pt (~700MB) to Drive for cross-session resume")
-    ap.add_argument("--peak-lr", type=float, default=1e-3)
+    ap.add_argument("--peak-lr", type=float, default=2e-3)
     ap.add_argument("--total-steps", type=int, default=None)
     ap.add_argument("--save-latest-every", type=int, default=1000)
     ap.add_argument("--compile", action="store_true")

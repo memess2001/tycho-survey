@@ -560,7 +560,7 @@ def main() -> int:
     ap.add_argument("--train-bin", type=Path, default=None)
     ap.add_argument("--val-bin", type=Path, default=None)
     ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--peak-lr", type=float, default=1e-3)
+    ap.add_argument("--peak-lr", type=float, default=2e-3)
     ap.add_argument("--weight-decay", type=float, default=0.1)
     ap.add_argument("--no-wd-gamma", action="store_true")
     ap.add_argument("--total-steps", type=int, default=None)
@@ -585,11 +585,17 @@ def main() -> int:
         cfg = Stage2Config(arm=args.arm, vocab_size=50257, n_layers=12, d_model=512, n_heads=8, d_ff=1376, seq_len=512)
         total_steps = args.total_steps or 15260
         warmup_steps = args.warmup_steps or 400
-        # Auto-select single-pass micro_batch=128 on >=40GB VRAM (RTX PRO 6000 96GB / A100 80GB)
-        high_vram = device.type == "cuda" and (torch.cuda.get_device_properties(device).total_memory >= 40 * (1024**3))
-        default_mb, default_ga = (128, 1) if high_vram else (32, 4)
+        # Auto-select micro_batch by VRAM (all keep exact 65,536 tokens/step):
+        # >=40GB (PRO 6000 / A100 / H100): 128x1; >=20GB (L4 22.5GB): 64x2; <20GB: 32x4
+        vram_gb = (torch.cuda.get_device_properties(device).total_memory / (1024**3)) if device.type == "cuda" else 0.0
+        if vram_gb >= 40.0:
+            default_mb, default_ga = 128, 1
+        elif vram_gb >= 20.0:
+            default_mb, default_ga = 64, 2
+        else:
+            default_mb, default_ga = 32, 4
         micro_bs = args.micro_batch or default_mb
-        grad_accum = args.grad_accum or default_ga  # both equal 65,536 tokens/step
+        grad_accum = args.grad_accum or default_ga  # all equal 65,536 tokens/step
         val_seqs, diag_seqs = 64, 8
     else:
         cfg = Stage2Config(arm=args.arm, vocab_size=512, n_layers=4, d_model=128, n_heads=4, d_ff=352, seq_len=64)
