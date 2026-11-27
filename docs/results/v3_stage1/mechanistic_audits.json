@@ -1,0 +1,837 @@
+{
+  "hydra_audit": [
+    {
+      "model_id": "EleutherAI/pythia-1b",
+      "revision": "step143000",
+      "ce_clean": 3.9751,
+      "acc_clean": 0.3418,
+      "pairs": [
+        {
+          "pair": "Attn_L1_L2",
+          "dCE_1": 0.2049,
+          "dCE_2": 0.0368,
+          "dCE_12": 0.4972,
+          "E_CE": 0.2556,
+          "E_CE_norm": 1.057,
+          "dAcc_1": 0.0253,
+          "dAcc_2": 0.0013,
+          "dAcc_12": 0.0678,
+          "E_Acc": 0.0412,
+          "KL_1": 0.2114,
+          "KL_2": 0.0814,
+          "KL_12": 0.5541,
+          "E_KL": 0.2613,
+          "cos_active_compensation": 0.2068,
+          "rel_shift_next_norm": 0.5281,
+          "cos_static_l_l1": 0.0592
+        },
+        {
+          "pair": "Attn_L5_L6",
+          "dCE_1": 0.038,
+          "dCE_2": 0.1328,
+          "dCE_12": 0.5459,
+          "E_CE": 0.375,
+          "E_CE_norm": 2.195,
+          "dAcc_1": 0.0093,
+          "dAcc_2": 0.0253,
+          "dAcc_12": 0.0585,
+          "E_Acc": 0.0239,
+          "KL_1": 0.0556,
+          "KL_2": 0.1719,
+          "KL_12": 0.5719,
+          "E_KL": 0.3445,
+          "cos_active_compensation": -0.1237,
+          "rel_shift_next_norm": 0.3573,
+          "cos_static_l_l1": 0.3213
+        },
+        {
+          "pair": "Attn_L6_L7",
+          "dCE_1": 0.1328,
+          "dCE_2": 0.0124,
+          "dCE_12": 0.2737,
+          "E_CE": 0.1285,
+          "E_CE_norm": 0.885,
+          "dAcc_1": 0.0253,
+          "dAcc_2": 0.0106,
+          "dAcc_12": 0.0346,
+          "E_Acc": -0.0013,
+          "KL_1": 0.1719,
+          "KL_2": 0.0706,
+          "KL_12": 0.3542,
+          "E_KL": 0.1117,
+          "cos_active_compensation": -0.1927,
+          "rel_shift_next_norm": 0.5019,
+          "cos_static_l_l1": 0.299
+        }
+      ]
+    },
+    {
+      "model_id": "allenai/OLMo-1B-0724-hf",
+      "revision": "step1454000-tokens3048B",
+      "ce_clean": 3.8176,
+      "acc_clean": 0.3484,
+      "pairs": [
+        {
+          "pair": "Attn_L2_L3",
+          "dCE_1": 0.0518,
+          "dCE_2": 0.0744,
+          "dCE_12": 0.7848,
+          "E_CE": 0.6586,
+          "E_CE_norm": 5.218,
+          "dAcc_1": 0.0093,
+          "dAcc_2": 0.0133,
+          "dAcc_12": 0.0678,
+          "E_Acc": 0.0452,
+          "KL_1": 0.1196,
+          "KL_2": 0.1239,
+          "KL_12": 0.83,
+          "E_KL": 0.5865,
+          "cos_active_compensation": 0.0346,
+          "rel_shift_next_norm": 0.6564,
+          "cos_static_l_l1": 0.187
+        },
+        {
+          "pair": "Attn_L3_L4",
+          "dCE_1": 0.0744,
+          "dCE_2": -0.0102,
+          "dCE_12": 0.266,
+          "E_CE": 0.2018,
+          "E_CE_norm": 2.385,
+          "dAcc_1": 0.0133,
+          "dAcc_2": 0.0027,
+          "dAcc_12": 0.0332,
+          "E_Acc": 0.0173,
+          "KL_1": 0.1239,
+          "KL_2": 0.046,
+          "KL_12": 0.3294,
+          "E_KL": 0.1595,
+          "cos_active_compensation": 0.1748,
+          "rel_shift_next_norm": 0.6652,
+          "cos_static_l_l1": 0.12
+        },
+        {
+          "pair": "Attn_L4_L5",
+          "dCE_1": -0.0102,
+          "dCE_2": 0.0186,
+          "dCE_12": 0.1914,
+          "E_CE": 0.183,
+          "E_CE_norm": 6.354,
+          "dAcc_1": 0.0027,
+          "dAcc_2": 0.0,
+          "dAcc_12": 0.0133,
+          "E_Acc": 0.0106,
+          "KL_1": 0.046,
+          "KL_2": 0.0631,
+          "KL_12": 0.2492,
+          "E_KL": 0.14,
+          "cos_active_compensation": 0.194,
+          "rel_shift_next_norm": 0.5095,
+          "cos_static_l_l1": 0.2061
+        }
+      ]
+    },
+    {
+      "model_id": "allenai/OLMo-2-0425-1B",
+      "revision": "stage1-step140000-tokens294B",
+      "ce_clean": 3.9643,
+      "acc_clean": 0.3324,
+      "pairs": [
+        {
+          "pair": "Attn_L0_L1",
+          "dCE_1": 0.0497,
+          "dCE_2": 0.1439,
+          "dCE_12": 0.5986,
+          "E_CE": 0.405,
+          "E_CE_norm": 2.091,
+          "dAcc_1": 0.008,
+          "dAcc_2": 0.0053,
+          "dAcc_12": 0.0479,
+          "E_Acc": 0.0346,
+          "KL_1": 0.0762,
+          "KL_2": 0.1805,
+          "KL_12": 0.6231,
+          "E_KL": 0.3665,
+          "cos_active_compensation": 0.1016,
+          "rel_shift_next_norm": 0.406,
+          "cos_static_l_l1": 0.0204
+        },
+        {
+          "pair": "Attn_L4_L5",
+          "dCE_1": 0.0407,
+          "dCE_2": 0.035,
+          "dCE_12": 0.3803,
+          "E_CE": 0.3046,
+          "E_CE_norm": 4.024,
+          "dAcc_1": 0.004,
+          "dAcc_2": 0.0053,
+          "dAcc_12": 0.0279,
+          "E_Acc": 0.0186,
+          "KL_1": 0.0423,
+          "KL_2": 0.1175,
+          "KL_12": 0.4271,
+          "E_KL": 0.2672,
+          "cos_active_compensation": 0.0743,
+          "rel_shift_next_norm": 0.3979,
+          "cos_static_l_l1": 0.1993
+        },
+        {
+          "pair": "Attn_L5_L6",
+          "dCE_1": 0.035,
+          "dCE_2": 0.0167,
+          "dCE_12": 0.1892,
+          "E_CE": 0.1375,
+          "E_CE_norm": 2.661,
+          "dAcc_1": 0.0053,
+          "dAcc_2": 0.0,
+          "dAcc_12": 0.0093,
+          "E_Acc": 0.004,
+          "KL_1": 0.1175,
+          "KL_2": 0.028,
+          "KL_12": 0.2503,
+          "E_KL": 0.1048,
+          "cos_active_compensation": 0.0099,
+          "rel_shift_next_norm": 0.5631,
+          "cos_static_l_l1": 0.2097
+        }
+      ]
+    }
+  ],
+  "outlier_token_audit": {
+    "pythia-1b": [
+      {
+        "model_id": "EleutherAI/pythia-1b",
+        "revision": "step80000",
+        "peak_layer": 1,
+        "max_ratio_int": 138.2,
+        "top_interior": [
+          {
+            "tok": ".",
+            "prev_tok": " continents",
+            "pos": 19,
+            "dim": 371,
+            "val": 50.7,
+            "ratio": 138.2
+          },
+          {
+            "tok": ".",
+            "prev_tok": " Naples",
+            "pos": 25,
+            "dim": 371,
+            "val": 48.7,
+            "ratio": 132.8
+          },
+          {
+            "tok": ".",
+            "prev_tok": " shore",
+            "pos": 26,
+            "dim": 371,
+            "val": 48.3,
+            "ratio": 131.6
+          },
+          {
+            "tok": ".",
+            "prev_tok": " workshops",
+            "pos": 23,
+            "dim": 371,
+            "val": 47.8,
+            "ratio": 130.2
+          },
+          {
+            "tok": ".",
+            "prev_tok": " autumn",
+            "pos": 28,
+            "dim": 371,
+            "val": 47.3,
+            "ratio": 129.0
+          },
+          {
+            "tok": ".",
+            "prev_tok": " phosphorylation",
+            "pos": 23,
+            "dim": 371,
+            "val": 47.2,
+            "ratio": 128.7
+          }
+        ],
+        "top_pos0": [
+          {
+            "pos": 0,
+            "tok": "<|endoftext|>",
+            "dim": 371,
+            "val": 84.7,
+            "ratio": 165.5
+          },
+          {
+            "pos": 0,
+            "tok": "<|endoftext|>",
+            "dim": 371,
+            "val": 84.7,
+            "ratio": 165.5
+          },
+          {
+            "pos": 0,
+            "tok": "<|endoftext|>",
+            "dim": 371,
+            "val": 84.7,
+            "ratio": 165.5
+          }
+        ]
+      },
+      {
+        "model_id": "EleutherAI/pythia-1b",
+        "revision": "step96000",
+        "peak_layer": 2,
+        "max_ratio_int": 129.6,
+        "top_interior": [
+          {
+            "tok": ".",
+            "prev_tok": " continents",
+            "pos": 19,
+            "dim": 371,
+            "val": 47.5,
+            "ratio": 129.6
+          },
+          {
+            "tok": ".",
+            "prev_tok": " Naples",
+            "pos": 25,
+            "dim": 371,
+            "val": 45.6,
+            "ratio": 124.2
+          },
+          {
+            "tok": ".",
+            "prev_tok": " shore",
+            "pos": 26,
+            "dim": 371,
+            "val": 44.9,
+            "ratio": 122.5
+          },
+          {
+            "tok": ".",
+            "prev_tok": " workshops",
+            "pos": 23,
+            "dim": 371,
+            "val": 44.8,
+            "ratio": 122.2
+          },
+          {
+            "tok": ".",
+            "prev_tok": " phosphorylation",
+            "pos": 23,
+            "dim": 371,
+            "val": 44.5,
+            "ratio": 121.3
+          },
+          {
+            "tok": ".",
+            "prev_tok": " autumn",
+            "pos": 28,
+            "dim": 371,
+            "val": 44.5,
+            "ratio": 121.3
+          }
+        ],
+        "top_pos0": [
+          {
+            "pos": 0,
+            "tok": "<|endoftext|>",
+            "dim": 371,
+            "val": 82.4,
+            "ratio": 151.4
+          },
+          {
+            "pos": 0,
+            "tok": "<|endoftext|>",
+            "dim": 371,
+            "val": 82.4,
+            "ratio": 151.4
+          },
+          {
+            "pos": 0,
+            "tok": "<|endoftext|>",
+            "dim": 371,
+            "val": 82.4,
+            "ratio": 151.4
+          }
+        ]
+      },
+      {
+        "model_id": "EleutherAI/pythia-1b",
+        "revision": "step112000",
+        "peak_layer": 1,
+        "max_ratio_int": 121.2,
+        "top_interior": [
+          {
+            "tok": ".",
+            "prev_tok": " continents",
+            "pos": 19,
+            "dim": 371,
+            "val": 34.6,
+            "ratio": 121.2
+          },
+          {
+            "tok": ".",
+            "prev_tok": " Naples",
+            "pos": 25,
+            "dim": 371,
+            "val": 33.6,
+            "ratio": 117.4
+          },
+          {
+            "tok": ".",
+            "prev_tok": " workshops",
+            "pos": 23,
+            "dim": 371,
+            "val": 33.0,
+            "ratio": 115.6
+          },
+          {
+            "tok": ".",
+            "prev_tok": " shore",
+            "pos": 26,
+            "dim": 371,
+            "val": 32.8,
+            "ratio": 114.6
+          },
+          {
+            "tok": ".",
+            "prev_tok": " autumn",
+            "pos": 28,
+            "dim": 371,
+            "val": 32.4,
+            "ratio": 113.2
+          },
+          {
+            "tok": ".",
+            "prev_tok": " phosphorylation",
+            "pos": 23,
+            "dim": 371,
+            "val": 32.3,
+            "ratio": 113.1
+          }
+        ],
+        "top_pos0": [
+          {
+            "pos": 0,
+            "tok": "<|endoftext|>",
+            "dim": 371,
+            "val": 61.1,
+            "ratio": 153.3
+          },
+          {
+            "pos": 0,
+            "tok": "<|endoftext|>",
+            "dim": 371,
+            "val": 61.1,
+            "ratio": 153.3
+          },
+          {
+            "pos": 0,
+            "tok": "<|endoftext|>",
+            "dim": 371,
+            "val": 61.1,
+            "ratio": 153.3
+          }
+        ]
+      },
+      {
+        "model_id": "EleutherAI/pythia-1b",
+        "revision": "step143000",
+        "peak_layer": 2,
+        "max_ratio_int": 112.8,
+        "top_interior": [
+          {
+            "tok": ".",
+            "prev_tok": " continents",
+            "pos": 19,
+            "dim": 371,
+            "val": 32.1,
+            "ratio": 112.8
+          },
+          {
+            "tok": ".",
+            "prev_tok": " Naples",
+            "pos": 25,
+            "dim": 371,
+            "val": 31.0,
+            "ratio": 109.2
+          },
+          {
+            "tok": ".",
+            "prev_tok": " phosphorylation",
+            "pos": 23,
+            "dim": 371,
+            "val": 30.9,
+            "ratio": 108.8
+          },
+          {
+            "tok": ".",
+            "prev_tok": " workshops",
+            "pos": 23,
+            "dim": 371,
+            "val": 30.8,
+            "ratio": 108.3
+          },
+          {
+            "tok": ".",
+            "prev_tok": " shore",
+            "pos": 26,
+            "dim": 371,
+            "val": 30.5,
+            "ratio": 107.3
+          },
+          {
+            "tok": ".",
+            "prev_tok": " antennas",
+            "pos": 26,
+            "dim": 371,
+            "val": 30.3,
+            "ratio": 106.7
+          }
+        ],
+        "top_pos0": [
+          {
+            "pos": 0,
+            "tok": "<|endoftext|>",
+            "dim": 371,
+            "val": 60.3,
+            "ratio": 145.9
+          },
+          {
+            "pos": 0,
+            "tok": "<|endoftext|>",
+            "dim": 371,
+            "val": 60.3,
+            "ratio": 145.9
+          },
+          {
+            "pos": 0,
+            "tok": "<|endoftext|>",
+            "dim": 371,
+            "val": 60.3,
+            "ratio": 145.9
+          }
+        ]
+      }
+    ],
+    "olmo-1b": [
+      {
+        "model_id": "allenai/OLMo-1B-0724-hf",
+        "revision": "step64000-tokens134B",
+        "peak_layer": 2,
+        "max_ratio_int": 3187.3,
+        "top_interior": [
+          {
+            "tok": ".",
+            "prev_tok": " workshops",
+            "pos": 22,
+            "dim": 1764,
+            "val": -556.2,
+            "ratio": 3187.3
+          },
+          {
+            "tok": ".",
+            "prev_tok": " continents",
+            "pos": 18,
+            "dim": 1764,
+            "val": -554.0,
+            "ratio": 3175.0
+          },
+          {
+            "tok": ".",
+            "prev_tok": " shore",
+            "pos": 25,
+            "dim": 1764,
+            "val": -551.3,
+            "ratio": 3159.2
+          },
+          {
+            "tok": " of",
+            "prev_tok": " limit",
+            "pos": 8,
+            "dim": 1764,
+            "val": -528.8,
+            "ratio": 3030.2
+          },
+          {
+            "tok": ",",
+            "prev_tok": " cells",
+            "pos": 3,
+            "dim": 1764,
+            "val": -524.2,
+            "ratio": 3003.9
+          },
+          {
+            "tok": " of",
+            "prev_tok": " bottom",
+            "pos": 8,
+            "dim": 1764,
+            "val": -517.8,
+            "ratio": 2967.5
+          }
+        ],
+        "top_pos0": [
+          {
+            "pos": 0,
+            "tok": "In",
+            "dim": 1764,
+            "val": -90.2,
+            "ratio": 228.0
+          },
+          {
+            "pos": 0,
+            "tok": "In",
+            "dim": 1764,
+            "val": -90.2,
+            "ratio": 228.0
+          },
+          {
+            "pos": 0,
+            "tok": "Gl",
+            "dim": 1764,
+            "val": -88.1,
+            "ratio": 222.9
+          }
+        ]
+      },
+      {
+        "model_id": "allenai/OLMo-1B-0724-hf",
+        "revision": "step500000-tokens1048B",
+        "peak_layer": 1,
+        "max_ratio_int": 153.9,
+        "top_interior": [
+          {
+            "tok": " the",
+            "prev_tok": " at",
+            "pos": 6,
+            "dim": 623,
+            "val": 16.4,
+            "ratio": 153.9
+          },
+          {
+            "tok": ",",
+            "prev_tok": " inflation",
+            "pos": 7,
+            "dim": 623,
+            "val": 16.0,
+            "ratio": 149.9
+          },
+          {
+            "tok": ",",
+            "prev_tok": " cells",
+            "pos": 3,
+            "dim": 623,
+            "val": 15.8,
+            "ratio": 148.3
+          },
+          {
+            "tok": " the",
+            "prev_tok": " from",
+            "pos": 16,
+            "dim": 623,
+            "val": 15.4,
+            "ratio": 144.1
+          },
+          {
+            "tok": ",",
+            "prev_tok": "ilers",
+            "pos": 4,
+            "dim": 623,
+            "val": 15.2,
+            "ratio": 141.9
+          },
+          {
+            "tok": " the",
+            "prev_tok": "comes",
+            "pos": 5,
+            "dim": 623,
+            "val": 15.1,
+            "ratio": 141.4
+          }
+        ],
+        "top_pos0": [
+          {
+            "pos": 0,
+            "tok": "S",
+            "dim": 623,
+            "val": 12.6,
+            "ratio": 49.1
+          },
+          {
+            "pos": 0,
+            "tok": "Gl",
+            "dim": 623,
+            "val": 12.5,
+            "ratio": 48.8
+          },
+          {
+            "pos": 0,
+            "tok": "M",
+            "dim": 623,
+            "val": 12.3,
+            "ratio": 47.9
+          }
+        ]
+      },
+      {
+        "model_id": "allenai/OLMo-1B-0724-hf",
+        "revision": "step750000-tokens1572B",
+        "peak_layer": 7,
+        "max_ratio_int": 2812.9,
+        "top_interior": [
+          {
+            "tok": " the",
+            "prev_tok": " from",
+            "pos": 16,
+            "dim": 1764,
+            "val": -478.8,
+            "ratio": 2812.9
+          },
+          {
+            "tok": ".",
+            "prev_tok": " Naples",
+            "pos": 24,
+            "dim": 1764,
+            "val": -304.9,
+            "ratio": 1791.7
+          },
+          {
+            "tok": " the",
+            "prev_tok": " from",
+            "pos": 16,
+            "dim": 623,
+            "val": -43.5,
+            "ratio": 255.8
+          },
+          {
+            "tok": " the",
+            "prev_tok": " from",
+            "pos": 16,
+            "dim": 1110,
+            "val": -40.1,
+            "ratio": 235.8
+          },
+          {
+            "tok": ".",
+            "prev_tok": " Naples",
+            "pos": 24,
+            "dim": 623,
+            "val": -25.7,
+            "ratio": 150.7
+          },
+          {
+            "tok": ".",
+            "prev_tok": " Naples",
+            "pos": 24,
+            "dim": 1110,
+            "val": -21.6,
+            "ratio": 127.0
+          }
+        ],
+        "top_pos0": [
+          {
+            "pos": 0,
+            "tok": "M",
+            "dim": 1764,
+            "val": -1041.6,
+            "ratio": 1083.6
+          },
+          {
+            "pos": 0,
+            "tok": "S",
+            "dim": 1764,
+            "val": -1012.2,
+            "ratio": 1052.9
+          },
+          {
+            "pos": 0,
+            "tok": "During",
+            "dim": 1764,
+            "val": -1007.3,
+            "ratio": 1047.9
+          }
+        ]
+      },
+      {
+        "model_id": "allenai/OLMo-1B-0724-hf",
+        "revision": "step1454000-tokens3048B",
+        "peak_layer": 1,
+        "max_ratio_int": 278.0,
+        "top_interior": [
+          {
+            "tok": ",",
+            "prev_tok": " cells",
+            "pos": 3,
+            "dim": 623,
+            "val": 6.0,
+            "ratio": 278.0
+          },
+          {
+            "tok": ",",
+            "prev_tok": "ilers",
+            "pos": 4,
+            "dim": 623,
+            "val": 5.6,
+            "ratio": 258.4
+          },
+          {
+            "tok": ",",
+            "prev_tok": " engines",
+            "pos": 4,
+            "dim": 623,
+            "val": 5.2,
+            "ratio": 238.4
+          },
+          {
+            "tok": ",",
+            "prev_tok": " inflation",
+            "pos": 7,
+            "dim": 623,
+            "val": 5.2,
+            "ratio": 238.3
+          },
+          {
+            "tok": " the",
+            "prev_tok": " from",
+            "pos": 16,
+            "dim": 623,
+            "val": 5.2,
+            "ratio": 238.1
+          },
+          {
+            "tok": ".",
+            "prev_tok": " continents",
+            "pos": 18,
+            "dim": 623,
+            "val": 5.0,
+            "ratio": 231.1
+          }
+        ],
+        "top_pos0": [
+          {
+            "pos": 0,
+            "tok": "M",
+            "dim": 623,
+            "val": 3.8,
+            "ratio": 69.3
+          },
+          {
+            "pos": 0,
+            "tok": "S",
+            "dim": 623,
+            "val": 3.6,
+            "ratio": 64.6
+          },
+          {
+            "pos": 0,
+            "tok": "Gl",
+            "dim": 623,
+            "val": 3.6,
+            "ratio": 64.4
+          }
+        ]
+      }
+    ]
+  }
+}

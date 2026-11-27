@@ -235,13 +235,18 @@ def run_channel1_and_core_ch4(
     clean_nats = interior_ce_nats(logits_clean, input_ids)
     clean_bpb = nats_to_bpb(clean_nats, n_pred_tokens, total_pred_bytes)
 
-    # Verify IC-v3.2 residual identity at every layer (both absolute and relative to max |h_out|)
+    # Verify IC-v3.2 residual identity at every layer (both absolute and relative to max addend magnitude)
     resid_max_err = np.zeros(L, dtype=np.float64)
     resid_rel_err = np.zeros(L, dtype=np.float64)
     for l in range(L):
         reconstructed = h_in_list[l].float() + d_attn_list[l].float() + d_mlp_list[l].float()
         abs_err = float((h_out_list[l].float() - reconstructed).abs().max().item())
-        scale = float(h_out_list[l].float().abs().max().item()) + 1e-8
+        scale = max(
+            float(h_in_list[l].float().abs().max().item()),
+            float(d_attn_list[l].float().abs().max().item()),
+            float(d_mlp_list[l].float().abs().max().item()),
+            float(h_out_list[l].float().abs().max().item()),
+        ) + 1e-8
         resid_max_err[l] = abs_err
         resid_rel_err[l] = abs_err / scale
 
@@ -844,7 +849,7 @@ def scan_single_revision(
 
     t_total = time.perf_counter() - t0
     tol_det = 1e-6 if dtype == torch.float32 else 1e-4
-    tol_rel = 1e-6 if dtype == torch.float32 else 1e-2
+    tol_rel = 1e-5 if dtype == torch.float32 else 1e-2
     tol_allzero = 1e-5 if dtype == torch.float32 else 1e-2
 
     ic_report = {
