@@ -24,6 +24,7 @@ import argparse
 import json
 import math
 import os
+import shutil
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -452,6 +453,14 @@ class BinaryShardStream:
             rows.append(self.data[s : s + self.seq_len].astype(np.int64))
         return torch.from_numpy(np.stack(rows, axis=0))
 
+    def state_dict(self) -> dict:
+        return {"ptr": int(self.ptr), "perm": self.perm.copy(), "rng_state": self.rng.bit_generator.state}
+
+    def load_state_dict(self, st: dict) -> None:
+        self.ptr = int(st["ptr"])
+        self.perm = np.array(st["perm"], dtype=np.int64)
+        self.rng.bit_generator.state = st["rng_state"]
+
 
 class FineWebEduStream:
     """Streaming HuggingFaceFW/fineweb-edu (sample-10BT) packed into fixed seq_len chunks."""
@@ -562,15 +571,25 @@ def main() -> int:
     ap.add_argument("--dtype", default="auto", choices=["auto", "bf16", "fp32"])
     ap.add_argument("--compile", action="store_true")
     ap.add_argument("--out-dir", type=Path, required=True)
+    ap.add_argument("--sync-dir", type=Path, default=None, help="Optional Google Drive mirror dir for metrics/checkpoints")
+    ap.add_argument("--sync-latest", action="store_true", help="Also mirror latest.pt to --sync-dir for cross-session resume")
+    ap.add_argument("--resume", action="store_true", help="Resume from out_dir/latest.pt (or sync_dir/latest.pt) if present")
+    ap.add_argument("--save-latest-every", type=int, default=1000, help="Save rolling latest.pt every N steps (0=disable)")
     ap.add_argument("--save-ckpts", action="store_true")
     args = ap.parse_args()
+
+    device = torch.device("cuda" if (args.device == "cuda" or (args.device == "auto" and torch.cuda.is_available())) else "cpu")
+    use_bf16 = (args.dtype == "bf16") or (args.dtype == "auto" and device.type == "cuda")
 
     if args.preset == "stage2_70m":
         cfg = Stage2Config(arm=args.arm, vocab_size=50257, n_layers=12, d_model=512, n_heads=8, d_ff=1376, seq_len=512)
         total_steps = args.total_steps or 15260
         warmup_steps = args.warmup_steps or 400
-        micro_bs = args.micro_batch or 32
-        grad_accum = args.grad_accum or 4  # 32 * 4 * 512 = 65,536 tokens/step
+        # Auto-select single-pass micro_batch=128 on >=40GB VRAM (RTX PRO 6000 96GB / A100 80GB)
+        high_vram = device.type == "cuda" and (torch.cuda.get_device_properties(device).total_memory >= 40 * (1024**3))
+        default_mb, default_ga = (128, 1) if high_vram else (32, 4)
+        micro_bs = args.micro_batch or default_mb
+        grad_accum = args.grad_accum or default_ga  # both equal 65,536 tokens/step
         val_seqs, diag_seqs = 64, 8
     else:
         cfg = Stage2Config(arm=args.arm, vocab_size=512, n_layers=4, d_model=128, n_heads=4, d_ff=352, seq_len=64)
@@ -580,8 +599,15 @@ def main() -> int:
         grad_accum = args.grad_accum or 2
         val_seqs, diag_seqs = 16, 4
 
-    device = torch.device("cuda" if (args.device == "cuda" or (args.device == "auto" and torch.cuda.is_available())) else "cpu")
-    use_bf16 = (args.dtype == "bf16") or (args.dtype == "auto" and device.type == "cuda")
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    if args.sync_dir is not None:
+        args.sync_dir.mkdir(parents=True, exist_ok=True)
+
+    done_path = args.out_dir / "DONE"
+    sync_done = (args.sync_dir / "DONE") if args.sync_dir is not None else None
+    if args.resume and (done_path.exists() or (sync_done is not None and sync_done.exists())):
+        print(f"[{cfg.arm} s={args.seed}] SKIP already DONE in {args.out_dir}", flush=True)
+        return 0
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -589,8 +615,19 @@ def main() -> int:
         torch.cuda.manual_seed_all(args.seed)
         torch.backends.cuda.matmul.allow_tf32 = True
 
-    args.out_dir.mkdir(parents=True, exist_ok=True)
     metrics_path = args.out_dir / "metrics.jsonl"
+    latest_path = args.out_dir / "latest.pt"
+
+    # Pull prior artifacts from --sync-dir if resuming on a fresh Colab runtime
+    if args.resume and args.sync_dir is not None:
+        for fn in ["metrics.jsonl", "latest.pt"]:
+            src = args.sync_dir / fn
+            dst = args.out_dir / fn
+            if src.exists() and not dst.exists():
+                shutil.copy2(src, dst)
+
+    if not args.resume and metrics_path.exists():
+        metrics_path.unlink()
 
     # Build deterministic validation + training data streams
     if args.dataset == "synthetic":
@@ -605,7 +642,13 @@ def main() -> int:
         val_batch = val_stream.sample_batch(val_seqs)
         diag_batch = val_batch[:diag_seqs].clone()
         train_stream = BinaryShardStream(args.train_bin, cfg.seq_len, seed=args.seed)
-        bytes_per_token = 4.2  # GPT-2 FineWeb-Edu nominal byte/token ratio
+        bytes_per_token = 4.2
+        dmeta = args.train_bin.parent / "dataset_meta.json"
+        if dmeta.exists():
+            try:
+                bytes_per_token = float(json.loads(dmeta.read_text()).get("bytes_per_token", bytes_per_token))
+            except Exception:
+                pass
     else:
         val_stream = FineWebEduStream(cfg.seq_len, seed=99991, skip_docs=0)
         val_batch = val_stream.sample_batch(val_seqs)
@@ -617,6 +660,31 @@ def main() -> int:
     n_params = sum(p.numel() for p in model.parameters())
     n_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     opt = build_optimizer(model, peak_lr=args.peak_lr, weight_decay=args.weight_decay, wd_gamma=not args.no_wd_gamma)
+
+    start_step = 0
+    prior_wall_s = 0.0
+    logged_steps = set()
+    if args.resume and latest_path.exists():
+        ckpt = torch.load(latest_path, map_location=device, weights_only=False)
+        model.load_state_dict(ckpt["model"])
+        opt.load_state_dict(ckpt["optimizer"])
+        start_step = int(ckpt["step"])
+        prior_wall_s = float(ckpt.get("wall_s", 0.0))
+        if isinstance(train_stream, BinaryShardStream) and "stream" in ckpt:
+            train_stream.load_state_dict(ckpt["stream"])
+        if metrics_path.exists():
+            # Deduplicate any metrics logged past start_step
+            kept = []
+            for line in metrics_path.read_text().splitlines():
+                if not line.strip():
+                    continue
+                r = json.loads(line)
+                if int(r["step"]) <= start_step:
+                    kept.append(line)
+                    logged_steps.add(int(r["step"]))
+            metrics_path.write_text("\n".join(kept) + ("\n" if kept else ""))
+        print(f"[{cfg.arm} s={args.seed}] RESUMED from step={start_step} (prior_wall={prior_wall_s:.1f}s)", flush=True)
+
     train_fn = torch.compile(model) if (args.compile and device.type == "cuda") else model
 
     meta = {
@@ -629,24 +697,51 @@ def main() -> int:
         "wd_gamma": not args.no_wd_gamma,
         "total_steps": total_steps,
         "warmup_steps": warmup_steps,
+        "micro_batch": micro_bs,
+        "grad_accum": grad_accum,
         "tokens_per_step": micro_bs * grad_accum * cfg.seq_len,
         "dataset": args.dataset,
-        "bytes_per_token": round(bytes_per_token, 4),
+        "bytes_per_token": round(bytes_per_token, 5),
         "device": str(device),
         "bf16": use_bf16,
     }
-    (args.out_dir / "run_meta.json").write_text(json.dumps(meta, indent=2) + "\n")
+    meta_path = args.out_dir / "run_meta.json"
+    meta_path.write_text(json.dumps(meta, indent=2) + "\n")
+
+    def sync_file(src: Path) -> None:
+        if args.sync_dir is not None and src.exists():
+            tmp = args.sync_dir / (src.name + ".tmp")
+            shutil.copy2(src, tmp)
+            os.replace(tmp, args.sync_dir / src.name)
+
+    sync_file(meta_path)
 
     eval_steps = set(default_eval_steps(total_steps))
     tokens_per_step = micro_bs * grad_accum * cfg.seq_len
     t_start = time.perf_counter()
+
+    def save_latest(step: int) -> None:
+        payload = {
+            "step": step,
+            "wall_s": prior_wall_s + (time.perf_counter() - t_start),
+            "config": asdict(cfg),
+            "model": model.state_dict(),
+            "optimizer": opt.state_dict(),
+        }
+        if isinstance(train_stream, BinaryShardStream):
+            payload["stream"] = train_stream.state_dict()
+        tmp = args.out_dir / "latest.pt.tmp"
+        torch.save(payload, tmp)
+        os.replace(tmp, latest_path)
+        if args.sync_latest:
+            sync_file(latest_path)
 
     def log_eval(step: int, train_nats: Optional[float], grad_norm: Optional[float], lr_val: float) -> None:
         diag = evaluate_diagnostics(model, val_batch, diag_batch, bytes_per_token, device)
         row = {
             "step": step,
             "tokens": step * tokens_per_step,
-            "wall_s": round(time.perf_counter() - t_start, 2),
+            "wall_s": round(prior_wall_s + (time.perf_counter() - t_start), 2),
             "lr": round(lr_val, 7),
             "train_nats": None if train_nats is None else round(train_nats, 4),
             "grad_norm": None if grad_norm is None else round(grad_norm, 4),
@@ -654,6 +749,7 @@ def main() -> int:
         }
         with metrics_path.open("a") as f:
             f.write(json.dumps(row) + "\n")
+        sync_file(metrics_path)
         print(
             f"[{cfg.arm:18s} s={args.seed}] step={step:5d} tok={row['tokens']/1e6:6.1f}M "
             f"| val_bpb={diag['val_bpb']:.4f} R0={diag['R_0']:6.2f} emb={diag['eff_embed_rms']:.4f} gA0={diag['gamma_attn'][0]:.4f} "
@@ -667,11 +763,11 @@ def main() -> int:
                 args.out_dir / f"ckpt_step{step:06d}.pt",
             )
 
-    if 0 in eval_steps:
+    if start_step == 0 and 0 in eval_steps and 0 not in logged_steps:
         log_eval(0, None, None, 0.0)
 
     model.train()
-    for step in range(1, total_steps + 1):
+    for step in range(start_step + 1, total_steps + 1):
         lr_now = cosine_lr(step - 1, total_steps, warmup_steps, args.peak_lr)
         for pg in opt.param_groups:
             pg["lr"] = lr_now
@@ -690,7 +786,14 @@ def main() -> int:
 
         if step in eval_steps:
             log_eval(step, acc_loss, gnorm, lr_now)
+        if args.save_latest_every > 0 and (step % args.save_latest_every == 0 or step == total_steps):
+            save_latest(step)
 
+    done_path.write_text(f"completed_step={total_steps}\n")
+    sync_file(done_path)
+    # Clean up rolling ~1GB resume checkpoint from Drive once run is safely DONE
+    if args.sync_dir is not None and (args.sync_dir / "latest.pt").exists():
+        (args.sync_dir / "latest.pt").unlink()
     return 0
 
 
