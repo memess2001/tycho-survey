@@ -248,7 +248,7 @@ def evaluate_diagnostics(
     # 1. Full validation CE / bpb (fp32 for precision)
     val_ids = val_batch.to(device)
     val_nats_list = []
-    bs_chunk = min(8, val_ids.size(0))
+    bs_chunk = min(4, val_ids.size(0))
     for i in range(0, val_ids.size(0), bs_chunk):
         chunk = val_ids[i : i + bs_chunk]
         lg = model(chunk)
@@ -358,6 +358,8 @@ def evaluate_diagnostics(
 
     if was_training:
         model.train()
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
 
     return {
         "val_nats": round(val_nats, 4),
@@ -586,11 +588,11 @@ def main() -> int:
         total_steps = args.total_steps or 15260
         warmup_steps = args.warmup_steps or 400
         # Auto-select micro_batch by VRAM (all keep exact 65,536 tokens/step):
-        # >=40GB (PRO 6000 / A100 / H100): 128x1; >=20GB (L4 22.5GB): 64x2; <20GB: 32x4
+        # >=40GB (PRO 6000 96GB / A100 80GB / H100): 64x2 (or 128x1 on >=70GB); <40GB (L4 22.5GB): 32x4 (~10.5GB peak)
         vram_gb = (torch.cuda.get_device_properties(device).total_memory / (1024**3)) if device.type == "cuda" else 0.0
-        if vram_gb >= 40.0:
+        if vram_gb >= 70.0:
             default_mb, default_ga = 128, 1
-        elif vram_gb >= 20.0:
+        elif vram_gb >= 38.0:
             default_mb, default_ga = 64, 2
         else:
             default_mb, default_ga = 32, 4
@@ -632,7 +634,7 @@ def main() -> int:
             if src.exists() and not dst.exists():
                 shutil.copy2(src, dst)
 
-    if not args.resume and metrics_path.exists():
+    if (not args.resume or not latest_path.exists()) and metrics_path.exists():
         metrics_path.unlink()
 
     # Build deterministic validation + training data streams
