@@ -48,6 +48,7 @@ def probe_one_checkpoint(
     cache_root: Path,
     threads: int,
 ) -> dict:
+    from huggingface_hub import snapshot_download
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     torch.set_num_threads(threads)
@@ -56,11 +57,18 @@ def probe_one_checkpoint(
     os.environ["HF_HOME"] = str(tmp_cache)
     t0 = time.perf_counter()
     try:
-        tok = AutoTokenizer.from_pretrained(model_id, revision=revision, use_fast=True, cache_dir=str(tmp_cache))
-        # Load in float32 on CPU (s82 Xeon Broadwell-EX AVX2 is faster & exact in fp32)
         t_ld0 = time.perf_counter()
+        snap_dir = snapshot_download(
+            repo_id=model_id,
+            revision=revision,
+            cache_dir=str(tmp_cache),
+            max_workers=8,
+            allow_patterns=["*.safetensors", "*.json", "tokenizer*"],
+        )
+        tok = AutoTokenizer.from_pretrained(snap_dir, use_fast=True, local_files_only=True)
+        # Load in float32 on CPU (s82 Xeon Broadwell-EX AVX2 is faster & exact in fp32)
         model = AutoModelForCausalLM.from_pretrained(
-            model_id, revision=revision, dtype=torch.float32, attn_implementation="eager", cache_dir=str(tmp_cache)
+            snap_dir, dtype=torch.float32, attn_implementation="eager", local_files_only=True
         )
         model.eval()
         t_load = time.perf_counter() - t_ld0
@@ -261,6 +269,7 @@ def main() -> int:
         results.append(rec)
         # Save incrementally after every checkpoint
         out_p.write_text(json.dumps(results, indent=2) + "\n")
+    out_p.write_text(json.dumps(results, indent=2) + "\n")
     return 0
 
 

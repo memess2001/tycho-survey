@@ -38,87 +38,119 @@ def _parse_tok(rev: str) -> float:
     return 0.0
 
 
+def _parse_step(rev: str) -> float:
+    m = re.search(r"step(\d+)", rev)
+    return float(m.group(1)) if m else 0.0
+
+
 def fig1_olmo2_r0_evacuation() -> None:
-    """Master Figure 1: Dimensionless Order Parameter R_0 = gamma_A0 / RMS(E_tok) governs Layer-0 evacuation across 1B & 7B."""
+    """Master Figure 1: Dimensionless Order Parameter R_0 = gamma_A0 / RMS(E_tok) unifies 1B, 7B, & 13B evacuation."""
     o1 = json.loads((DATA_DIR / "olmo2_1b_mechanism.json").read_text())
     o7 = json.loads((DATA_DIR / "olmo2_7b_mechanism.json").read_text())
+    o13 = json.loads((DATA_DIR / "olmo2_13b_mechanism.json").read_text())
 
     def extract(rows):
         toks = np.array([max(0.3, _parse_tok(r["revision"])) for r in rows])
+        steps = np.array([max(1.0, _parse_step(r["revision"])) for r in rows])
         r0 = np.array([r["gamma_attn"][0] / r["embed_rms"] for r in rows])
         dA0 = np.array([r["causal_nats"]["dA0"] for r in rows])
         dM0 = np.array([r["causal_nats"]["dM0"] for r in rows])
         dA0M0 = np.array([r["causal_nats"]["dA0M0"] for r in rows])
         e_s0 = np.array([r["causal_nats"]["E_same_L0"] for r in rows])
         min_ca = np.array([r["min_cosA_stream"] for r in rows])
-        gA0 = np.array([r["gamma_attn"][0] for r in rows])
-        gAlast = np.array([r["gamma_attn"][-1] for r in rows])
-        return dict(toks=toks, r0=r0, dA0=dA0, dM0=dM0, dA0M0=dA0M0, e_s0=e_s0, min_ca=min_ca, gA0=gA0, gAlast=gAlast)
+        return dict(toks=toks, steps=steps, r0=r0, dA0=dA0, dM0=dM0, dA0M0=dA0M0, e_s0=e_s0, min_ca=min_ca)
 
-    d1, d7 = extract(o1), extract(o7)
-    # Exclude step0 (t=0.3 dummy) from post-init dynamic curves where helpful
+    d1, d7, d13 = extract(o1), extract(o7), extract(o13)
     m1 = d1["toks"] >= 0.5
     m7 = d7["toks"] >= 0.5
+    m13 = d13["toks"] >= 0.5
 
-    fig, axes = plt.subplots(2, 2, figsize=(11.5, 8.2))
+    # Skip pre-trap warmup (<10B for 1B/7B; include 9B for 13B which already has dA0=5.55; exclude 13B step4k loss-spike outlier? Keep all points >= 9B transparently!)
+    u1 = d1["toks"] >= 10.0
+    u7 = d7["toks"] >= 10.0
+    u13 = d13["toks"] >= 8.0
 
-    # Panel A: R_0(t) vs tokens (log-log)
+    c1, c7, c13 = "#1f77b4", "#d62728", "#6a3d9a"
+    l1 = "OLMo-2-1B (16L, d=2048)"
+    l7 = "OLMo-2-7B (32L, d=4096, lr=3e-4)"
+    l13 = "OLMo-2-13B (40L, d=5120, lr=9e-4)"
+
+    fig, axes = plt.subplots(2, 2, figsize=(12.2, 8.6))
+
+    # Panel A: R_0(t) vs Tokens (log-log) — non-monotonic crossing times across scale
     ax = axes[0, 0]
-    ax.plot(d1["toks"][m1], d1["r0"][m1], "o-", lw=2.2, color="#1f77b4", label="OLMo-2-1B (16L, d=2048)")
-    ax.plot(d7["toks"][m7], d7["r0"][m7], "s-", lw=2.2, color="#d62728", label="OLMo-2-7B (32L, d=4096)")
-    ax.axhline(1.0, ls="--", color="black", lw=1.2, alpha=0.8, label=r"Critical threshold $\mathcal{R}_0 = 1$")
-    ax.axhspan(0.8, 2.2, color="#ffdd57", alpha=0.22)
+    ax.plot(d1["toks"][m1], d1["r0"][m1], "o-", lw=2.2, ms=5.5, color=c1, label=l1)
+    ax.plot(d7["toks"][m7], d7["r0"][m7], "s-", lw=2.2, ms=5.5, color=c7, label=l7)
+    ax.plot(d13["toks"][m13], d13["r0"][m13], "D-", lw=2.2, ms=5.5, color=c13, label=l13)
+    ax.axhline(1.0, ls="--", color="black", lw=1.2, alpha=0.85, label=r"Critical threshold $\mathcal{R}_0 = 1$")
+    ax.axhspan(0.8, 2.5, color="#ffdd57", alpha=0.22)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("Pretraining Tokens (Billions)")
     ax.set_ylabel(r"Order Parameter $\mathcal{R}_0 = \mathrm{RMS}(\gamma_{A0}) / \mathrm{RMS}(E_{\mathrm{tok}})$")
-    ax.set_title("A. Post-RMSNorm / Embedding Scale Ratio Collapse (50x -> 0.3x)")
-    ax.legend(loc="lower left")
+    ax.set_title("A. Scale Ratio Decay: Non-Monotonic Crossing in Tokens")
+    ax.legend(loc="lower left", fontsize=8.2)
 
-    # Panel B: Layer-0 Causal Damage dA0 vs tokens
+    # Panel B: Layer-0 Causal Damage dA0 vs Optimizer Steps (3.5x separation in steps!)
     ax = axes[0, 1]
-    ax.plot(d1["toks"][m1], d1["dA0"][m1], "o-", lw=2.2, color="#1f77b4", label="OLMo-2-1B: Ablate Attn0")
-    ax.plot(d7["toks"][m7], d7["dA0"][m7], "s-", lw=2.2, color="#d62728", label="OLMo-2-7B: Ablate Attn0")
-    ax.plot(d1["toks"][m1], d1["e_s0"][m1], "o--", lw=1.5, color="#1f77b4", alpha=0.65, label="OLMo-2-1B: Hydra E(Attn0, MLP0)")
-    ax.plot(d7["toks"][m7], d7["e_s0"][m7], "s--", lw=1.5, color="#d62728", alpha=0.65, label="OLMo-2-7B: Hydra E(Attn0, MLP0)")
-    ax.axhline(0.0, ls=":", color="gray", lw=1.0)
+    ax.plot(d1["steps"][m1], d1["dA0"][m1], "o-", lw=2.2, ms=5.5, color=c1, label=l1)
+    ax.plot(d7["steps"][m7], d7["dA0"][m7], "s-", lw=2.2, ms=5.5, color=c7, label=l7)
+    ax.plot(d13["steps"][m13], d13["dA0"][m13], "D-", lw=2.2, ms=5.5, color=c13, label=l13)
+    ax.axhline(5.91, ls=":", color="#ff7f0e", lw=1.6, label="Pre-LN OLMo-1B @ 3T (trapped)")
+    ax.annotate(
+        "13B early spike\n(bpb=2.25)",
+        xy=(4000, 2.82),
+        xytext=(1400, 0.55),
+        fontsize=7.6,
+        color=c13,
+        arrowprops=dict(arrowstyle="->", color=c13, lw=0.9),
+    )
     ax.set_xscale("log")
-    ax.set_xlabel("Pretraining Tokens (Billions)")
-    ax.set_ylabel("Mean-Ablation Loss Delta / Excess Joint Loss (nats)")
-    ax.set_title("B. Layer-0 Bottleneck Evacuation via Transient Hydra Bridge")
-    ax.legend(loc="upper right", fontsize=8)
+    ax.set_xlabel("Optimizer Steps")
+    ax.set_ylabel("Layer-0 Attn Ablation Damage dA0 (nats)")
+    ax.set_title("B. Evacuation Fails to Align in Steps (13B ~18k vs 1B/7B ~60–70k)")
+    ax.set_ylim(-0.5, 11.8)
+    ax.legend(loc="upper right", fontsize=7.9, framealpha=0.92)
 
-    # Panel C: Universal Data Collapse — dA0 & minCosA plotted directly against R_0!
+    # Panel C: Universal Data Collapse I — dA0 vs R_0
     ax = axes[1, 0]
-    # Skip initial warmup step (1B) before L0 bottleneck forms (use tok >= 10B)
-    u1 = d1["toks"] >= 10.0
-    u7 = d7["toks"] >= 10.0
-    ax.plot(d1["r0"][u1], d1["dA0"][u1], "o-", lw=2.2, color="#1f77b4", label="OLMo-2-1B (dA0, 21B-4001B)")
-    ax.plot(d7["r0"][u7], d7["dA0"][u7], "s-", lw=2.2, color="#d62728", label="OLMo-2-7B (dA0, 10B-3896B)")
-    ax.axvline(1.0, ls="--", color="black", lw=1.2, alpha=0.8)
-    ax.axvspan(0.8, 2.5, color="#ffdd57", alpha=0.22, label=r"Transition band $\mathcal{R}_0 \in [0.8, 2.5]$")
+    ax.plot(d1["r0"][u1], d1["dA0"][u1], "o-", lw=2.2, ms=5.5, color=c1, label="OLMo-2-1B (138x collapse)")
+    ax.plot(d7["r0"][u7], d7["dA0"][u7], "s-", lw=2.2, ms=5.5, color=c7, label="OLMo-2-7B (163x collapse)")
+    ax.plot(d13["r0"][u13], d13["dA0"][u13], "D-", lw=2.2, ms=5.5, color=c13, label="OLMo-2-13B (159x collapse)")
+    ax.axvline(1.0, ls="--", color="black", lw=1.2, alpha=0.85)
+    ax.axvspan(0.75, 2.5, color="#ffdd57", alpha=0.22, label=r"Transition band $\mathcal{R}_0 \in [0.75, 2.5]$")
     ax.set_xscale("log")
     ax.invert_xaxis()
+    ax.set_ylim(-0.5, 11.2)
     ax.set_xlabel(r"Order Parameter $\mathcal{R}_0(t) = \gamma_{A0} / \mathrm{RMS}(E_{\mathrm{tok}})$  (training flows left $\to$ right)")
     ax.set_ylabel("Layer-0 Attn Ablation Damage dA0 (nats)")
-    ax.set_title("C. Scale Collapse (1B vs 7B): Evacuation Locks to R_0 ~ 1")
-    ax.legend(loc="upper right")
+    ax.set_title(r"C. Three-Scale Collapse (1B / 7B / 13B): Evacuation Locks to $\mathcal{R}_0 \approx 1$")
+    ax.legend(loc="upper right", fontsize=8.0, framealpha=0.92)
 
-    # Panel D: Anti-Residual Erasure minCosA vs tokens
+    # Panel D: Universal Data Collapse II — Transient Hydra Bridge E(Attn0, MLP0) vs R_0
     ax = axes[1, 1]
-    ax.plot(d1["toks"][m1], d1["min_ca"][m1], "o-", lw=2.2, color="#1f77b4", label="OLMo-2-1B min cos(Attn_l, h_in)")
-    ax.plot(d7["toks"][m7], d7["min_ca"][m7], "s-", lw=2.2, color="#d62728", label="OLMo-2-7B min cos(Attn_l, h_in)")
-    ax.axhline(0.0, ls=":", color="gray", lw=1.0)
+    ax.plot(d1["r0"][u1], d1["e_s0"][u1], "o-", lw=2.2, ms=5.5, color=c1, label="OLMo-2-1B (peak +2.45 nats)")
+    ax.plot(d7["r0"][u7], d7["e_s0"][u7], "s-", lw=2.2, ms=5.5, color=c7, label="OLMo-2-7B (peak +4.18 nats)")
+    ax.plot(d13["r0"][u13], d13["e_s0"][u13], "D-", lw=2.2, ms=5.5, color=c13, label="OLMo-2-13B (peak +2.86 nats)")
+    ax.axhline(0.0, ls=":", color="gray", lw=1.1)
+    ax.axvline(1.0, ls="--", color="black", lw=1.2, alpha=0.85)
+    ax.axvspan(0.75, 2.5, color="#ffdd57", alpha=0.22)
     ax.set_xscale("log")
-    ax.set_ylim(-0.98, 0.1)
-    ax.set_xlabel("Pretraining Tokens (Billions)")
-    ax.set_ylabel(r"Minimum Layer Write-Stream Cosine $\min_l \cos(\Delta h_{\mathrm{attn}, l}, h_{\mathrm{in}, l})$")
-    ax.set_title("D. Early Anti-Residual Erasure (-0.85) Relaxes Upon Evacuation")
-    ax.legend(loc="lower right")
+    ax.invert_xaxis()
+    ax.set_ylim(-5.6, 5.2)
+    ax.set_xlabel(r"Order Parameter $\mathcal{R}_0(t) = \gamma_{A0} / \mathrm{RMS}(E_{\mathrm{tok}})$  (training flows left $\to$ right)")
+    ax.set_ylabel("Layer-0 Hydra Excess Joint Loss E(Attn0, MLP0) (nats)")
+    ax.set_title(r"D. Universal Transient Hydra Bridge Fires at $\mathcal{R}_0 \approx 1$–$2$")
+    ax.legend(loc="lower right", fontsize=8.0, framealpha=0.92)
 
-    fig.suptitle("Discovery 1: Post-RMSNorm Embedding-Skip Mismatch Trap & Self-Evacuation (OLMo-2 1B & 7B)", fontsize=13, fontweight="bold", y=0.98)
+    fig.suptitle(
+        r"Discovery 1: Post-RMSNorm Embedding–Skip Mismatch Trap & $\mathcal{R}_0 \approx 1$ Self-Evacuation Across 1B, 7B, and 13B",
+        fontsize=12.6,
+        fontweight="bold",
+        y=0.98,
+    )
     fig.tight_layout(rect=[0, 0, 1, 0.95])
-    fig.savefig(OUT_DIR / "fig1_olmo2_R0_evacuation_1B_7B.png")
+    fig.savefig(OUT_DIR / "fig1_olmo2_R0_evacuation_1B_7B_13B.png")
     plt.close(fig)
 
 
