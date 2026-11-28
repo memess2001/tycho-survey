@@ -1,0 +1,30 @@
+{
+  "config": {
+    "arm": "pre_ln",
+    "vocab_size": 50257,
+    "n_layers": 12,
+    "d_model": 512,
+    "n_heads": 8,
+    "d_ff": 1376,
+    "seq_len": 512,
+    "emb_std": 0.02,
+    "init_std": 0.02,
+    "rope_theta": 10000.0,
+    "eps": 1e-06
+  },
+  "n_params": 89433600,
+  "n_trainable": 89433600,
+  "seed": 42,
+  "peak_lr": 0.002,
+  "weight_decay": 0.1,
+  "wd_gamma": true,
+  "total_steps": 15260,
+  "warmup_steps": 400,
+  "micro_batch": 128,
+  "grad_accum": 1,
+  "tokens_per_step": 65536,
+  "dataset": "bin",
+  "bytes_per_token": 4.61979,
+  "device": "cuda",
+  "bf16": true
+}
